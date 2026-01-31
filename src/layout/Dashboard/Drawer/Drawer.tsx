@@ -80,9 +80,9 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                         <SidebarMenuButton
                                                             tooltip={item.title}
                                                             isActive={hasActiveChild}
-                                                            className="cursor-pointer"
+                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
                                                         >
-                                                            {Icon && <Icon />}
+                                                            {Icon && <Icon className="h-5 w-5" />}
                                                             <span className="text-[16px]">
                                                                 {item.title}
                                                             </span>
@@ -100,6 +100,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                                         <SidebarMenuSubButton
                                                                             asChild
                                                                             isActive={isSubActive}
+                                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
                                                                         >
                                                                             <a
                                                                                 href={subItem.url}
@@ -136,7 +137,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                     tooltip={item.title}
                                                     disabled={item.disabled}
                                                     isActive={isActive}
-                                                    className="cursor-pointer"
+                                                    className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
                                                 >
                                                     <a
                                                         href={item.url}

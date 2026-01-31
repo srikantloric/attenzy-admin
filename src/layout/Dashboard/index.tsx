@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom"
 import { Drawer } from "./Drawer/Drawer"
 import AppBar from "./Header"
 import { Separator } from "@/components/ui/separator"
+import Footer from "./Footer"
 
 function MainLayout() {
     return (
@@ -21,6 +22,7 @@ function MainLayout() {
                         <main className="flex-1 overflow-y-auto p-4">
                             <Outlet />
                         </main>
+                        <Footer />
                     </SidebarInset>
                 </div>
             </SidebarProvider>

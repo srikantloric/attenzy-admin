@@ -9,7 +9,7 @@ import { Bell } from "lucide-react"
 
 function AppBar() {
     return (
-        <>
+        <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center px-6 py-2 justify-between">
                 <div className="flex items-center">
                     <SidebarTrigger className="-ml-1" />
@@ -19,35 +19,42 @@ function AppBar() {
                     />
                     <CommandSearch />
                 </div>
+
                 <div className="flex items-center gap-3">
-                    <Button variant={"outline"}>
-                        <Bell />
+                    <Button variant="outline" size="icon">
+                        <Bell className="h-5 w-5" />
                     </Button>
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" >
+                            <Button variant="ghost" size="icon">
                                 <Avatar>
-                                    <AvatarImage src="https://github.com/shadcn.png" alt="shadcn" />
+                                    <AvatarImage
+                                        src="https://github.com/shadcn.png"
+                                        alt="shadcn"
+                                    />
                                     <AvatarFallback>CN</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-32">
+
+                        <DropdownMenuContent className="w-32" align="end">
                             <DropdownMenuGroup>
                                 <DropdownMenuItem>Profile</DropdownMenuItem>
                                 <DropdownMenuItem>Billing</DropdownMenuItem>
                                 <DropdownMenuItem>Settings</DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
-                            <DropdownMenuGroup>
-                                <DropdownMenuItem variant="destructive">Log out</DropdownMenuItem>
-                            </DropdownMenuGroup>
+                            <DropdownMenuItem variant="destructive">
+                                Log out
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
             </div>
-        </>
+        </div>
     )
 }
+
 
 export default AppBar
