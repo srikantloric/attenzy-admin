@@ -53,43 +53,66 @@ const StudentsPage: React.FC = () => {
         <div className="space-y-6 p-6">
 
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className="text-2xl font-semibold tracking-tight">
-                    Students
-                </h1>
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    {/* Left: Title + Count */}
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            Students
+                        </h1>
 
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Assign RFID
-                </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Total Students
-                        </p>
-                        <p className="text-2xl font-semibold">
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
                             {TOTAL_STUDENTS}
-                            <span className="ml-2 text-sm text-green-600">+8</span>
-                        </p>
-                    </CardContent>
-                </Card>
+                        </span>
+                    </div>
 
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            RFID Cards Issued
-                        </p>
-                        <p className="text-2xl font-semibold">
+                    {/* Right: Action */}
+                    <Button className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Assign RFID
+                    </Button>
+                </div>
+
+                {/* Meta info */}
+                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                    {/* Total Students */}
+                    <div className="flex flex-row gap-2">
+                        <span>
+                            Total Students:
+                            <span className="ml-1 font-medium text-foreground">
+                                {TOTAL_STUDENTS}
+                            </span>
+                        </span>
+
+                        {/* Added / Removed */}
+                        <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1 text-green-600">
+                                +8
+                                <span className="text-muted-foreground">added</span>
+                            </span>
+
+                            <span className="flex items-center gap-1 text-red-500">
+                                -3
+                                <span className="text-muted-foreground">removed
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* RFID Issued */}
+                    <span>
+                        RFID Issued:
+                        <span className="ml-1 font-medium text-foreground">
                             {RFID_ISSUED}
-                            <span className="ml-2 text-sm text-green-600">+5</span>
-                        </p>
-                    </CardContent>
-                </Card>
+                        </span>
+                        <span className="ml-2 text-green-600">+5
+                            <span className="text-muted-foreground ml-1">added</span>
+                        </span>
+                    </span>
+                </div>
+
             </div>
+
 
             {/* Filters */}
             <div className="flex flex-wrap items-center justify-between gap-4">
