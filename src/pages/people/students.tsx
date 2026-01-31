@@ -110,9 +110,9 @@ const StudentsPage: React.FC = () => {
                         </span>
                     </span>
                 </div>
-
             </div>
 
+            <Separator />
 
             {/* Filters */}
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -184,8 +184,6 @@ const StudentsPage: React.FC = () => {
                     </DropdownMenu>
                 </div>
             </div>
-
-            <Separator />
 
             {/* Table */}
             <Card>

@@ -99,6 +99,7 @@ const RFIDMappingPage: React.FC = () => {
                 </div>
             </div>
 
+            <Separator />
 
             {/* Filters */}
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -170,8 +171,6 @@ const RFIDMappingPage: React.FC = () => {
                     </DropdownMenu>
                 </div>
             </div>
-
-            <Separator />
 
             {/* Table */}
             <Card>
