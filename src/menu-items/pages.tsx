@@ -63,22 +63,22 @@ const pages: NavItemType = {
                 {
                     id: "students",
                     title: "Students",
-                    url: "#",
+                    url: "/students",
                 },
                 {
                     id: "faculty",
                     title: "Faculty",
-                    url: "#",
+                    url: "/faculty",
                 },
                 {
                     id: "staff",
                     title: "Staff",
-                    url: "#",
+                    url: "/staff",
                 },
                 {
                     id: "id-rfid-mapping",
                     title: "Id/RFID Mapping",
-                    url: "#",
+                    url: "/rfid-mapping",
                 }
             ]
         },
