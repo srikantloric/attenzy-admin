@@ -19,6 +19,7 @@ const MainRoutes = {
                 { index: true, element: <Dashboard /> },
                 { path: 'dashboard', element: <Dashboard /> },
                 { path: 'attendance', element: <Attendance /> },
+                { path: 'manual-entry', element: <Attendance /> },
 
             ]
         },

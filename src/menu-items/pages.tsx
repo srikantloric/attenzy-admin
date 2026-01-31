@@ -1,9 +1,9 @@
 import type { NavItemType } from "@/types/menu";
-import { FingerprintPattern, Gauge, Notebook, SatelliteDish, User } from "lucide-react";
-
+import { FingerprintPattern, Notebook, SatelliteDish, User } from "lucide-react";
+import { IconLayoutDashboard } from '@tabler/icons-react';
 // icons
 const icons = {
-    dashboard: Gauge,
+    dashboard: IconLayoutDashboard,
     user: User,
     device: SatelliteDish,
     report: Notebook,
@@ -25,17 +25,17 @@ const pages: NavItemType = {
                 {
                     id: "overview",
                     title: "Overview",
-                    url: "#",
+                    url: "/overview",
                 },
                 {
                     id: "todays-summary",
                     title: "Today's Summary",
-                    url: "#",
+                    url: "todays-summary",
                 },
                 {
                     id: "alerts-errors",
                     title: "Alers & Errors",
-                    url: "#",
+                    url: "alerts-errors",
                 },
             ]
         },
@@ -49,7 +49,7 @@ const pages: NavItemType = {
                 {
                     id: "manual-entry",
                     title: "Manual Entry",
-                    url: "#",
+                    url: "manual-entry",
                 },
             ]
         },

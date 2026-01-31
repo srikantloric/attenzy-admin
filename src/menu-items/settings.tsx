@@ -1,30 +1,52 @@
 import type { NavItemType } from "@/types/menu";
-import { CircleDollarSign, Webhook } from "lucide-react";
+import { CircleDollarSign, CodeXml, Settings, Webhook } from "lucide-react";
 
 // icons
 const icons = {
     billing: CircleDollarSign,
-    webhook: Webhook
+    webhook: Webhook,
+    settings: Settings,
+    code: CodeXml
 };
 
 const settings: NavItemType = {
-    id: 'group-settings',
-    title: 'Settings',
+    id: 'group-other',
+    title: 'Other',
     type: 'group',
     children: [
         {
-            id: 'billing-plan',
-            title: 'Billing & Plan',
+            id: 'settings',
+            title: 'Settings',
             type: 'item',
             url: '/dashboard',
-            icon: icons.billing,
+            icon: icons.settings,
         },
         {
-            id: 'integrations',
-            title: 'API / Webhooks',
-            type: 'item',
-            url: '/dashboard',
-            icon: icons.webhook,
+            id: 'developers',
+            title: 'Developers',
+            type: 'collapse',
+            url: '/developers',
+            icon: icons.code,
+            children: [
+                {
+                    id: 'overview',
+                    title: 'Overview',
+                    type: 'item',
+                    url: '/overview',
+                },
+                {
+                    id: 'api-keys',
+                    title: 'API Keys',
+                    type: 'item',
+                    url: '/api-keys',
+                },
+                {
+                    id: 'webhooks',
+                    title: 'Webhooks',
+                    type: 'item',
+                    url: '/webhooks',
+                },
+            ]
         },
     ],
 
