@@ -1,4 +1,3 @@
-
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import AuthGuard from "@/utils/route-guard/AuthGuard"
 import { Outlet } from "react-router-dom"

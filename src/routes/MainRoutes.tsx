@@ -3,6 +3,10 @@ import { lazy } from 'react';
 //project-imports
 import Loadable from '@/components/Lodable';
 import DashboardLayout from '@/layout/Dashboard'
+import FacultyPage from '@/pages/people/faculty';
+import StudentsPage from '@/pages/people/students';
+import StaffPage from '@/pages/people/staff';
+import RFIDMappingPage from '@/pages/people/rfid-mapping';
 
 
 // pages routing
@@ -18,8 +22,13 @@ const MainRoutes = {
             children: [
                 { index: true, element: <Dashboard /> },
                 { path: 'dashboard', element: <Dashboard /> },
+                { path: 'overview', element: <Dashboard /> },
                 { path: 'attendance', element: <Attendance /> },
                 { path: 'manual-entry', element: <Attendance /> },
+                { path: 'students', element: <StudentsPage /> },
+                { path: 'faculty', element: <FacultyPage /> },
+                { path: 'staff', element: <StaffPage /> },
+                { path: 'rfid-mapping', element: <RFIDMappingPage /> },
 
             ]
         },
