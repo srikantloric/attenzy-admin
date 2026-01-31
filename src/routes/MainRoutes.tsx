@@ -7,6 +7,7 @@ import DashboardLayout from '@/layout/Dashboard'
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
+const Attendance = Loadable(lazy(() => import('@/pages/attendance')))
 
 // ==============================|| MAIN ROUTES ||============================== //
 const MainRoutes = {
@@ -17,7 +18,7 @@ const MainRoutes = {
             children: [
                 { index: true, element: <Dashboard /> },
                 { path: 'dashboard', element: <Dashboard /> },
-                { path: 'customers', element: <Dashboard /> },
+                { path: 'attendance', element: <Attendance /> },
 
             ]
         },

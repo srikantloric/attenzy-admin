@@ -9,7 +9,9 @@ import GuestGuard from '@/utils/route-guard/GuestGuard';
 export default function AuthLayout() {
   return (
     <GuestGuard>
-      <Outlet />
+      <>
+        <Outlet />
+      </>
     </GuestGuard>
   );
 }
