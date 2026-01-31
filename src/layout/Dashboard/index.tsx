@@ -3,7 +3,6 @@ import AuthGuard from "@/utils/route-guard/AuthGuard"
 import { Outlet } from "react-router-dom"
 import { Drawer } from "./Drawer/Drawer"
 import AppBar from "./Header"
-import { Separator } from "@/components/ui/separator"
 import Footer from "./Footer"
 
 function MainLayout() {
@@ -17,7 +16,7 @@ function MainLayout() {
                     <SidebarInset>
                         {/* App Bar */}
                         <AppBar />
-                        <Separator />
+                        {/* <Separator /> */}
                         {/* Page Content */}
                         <main className="flex-1 overflow-y-auto p-4">
                             <Outlet />

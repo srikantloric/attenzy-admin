@@ -1,19 +1,35 @@
-
-import {
-    SidebarMenu,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar"
+import { useSidebar } from "@/components/ui/sidebar"
 
 export function DrawerHeader() {
-    const { isMobile } = useSidebar()
+    const { state, isMobile } = useSidebar()
+
+    // Mobile → always minified
+    if (isMobile) {
+        return (
+            <img
+                src="/attenzy-logo-minified.png"
+                className="h-10 mx-auto"
+                alt="Attenzy"
+            />
+        )
+    }
+
+    // Desktop
     return (
-        <SidebarMenu>
-            <SidebarMenuItem>
-                {isMobile ? <img src="./attenzy-logo-minified.png" />
-                    : <img src="./attenzy-logo.png" className="h-10" />
-                }
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="h-10 flex items-center justify-center">
+            {state === "collapsed" ? (
+                <img
+                    src="/attenzy-logo-minified.png"
+                    className="h-8"
+                    alt="Attenzy"
+                />
+            ) : (
+                <img
+                    src="/attenzy-logo.png"
+                    className="h-10"
+                    alt="Attenzy"
+                />
+            )}
+        </div>
     )
 }

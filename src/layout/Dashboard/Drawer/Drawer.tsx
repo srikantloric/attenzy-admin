@@ -27,6 +27,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { Separator } from "@/components/ui/separator"
 
 export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
     const location = useLocation()
@@ -44,6 +45,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <DrawerHeader />
             </SidebarHeader>
+            <Separator />
 
             {/* ---------------- Content ---------------- */}
             <SidebarContent>

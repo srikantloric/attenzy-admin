@@ -9,7 +9,7 @@ import { Bell } from "lucide-react"
 
 function AppBar() {
     return (
-        <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div className="flex items-center px-6 py-2 justify-between">
                 <div className="flex items-center">
                     <SidebarTrigger className="-ml-1" />
