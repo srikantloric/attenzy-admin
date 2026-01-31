@@ -1,0 +1,114 @@
+import { createContext, useEffect, useReducer, type ReactElement } from 'react';
+
+// third-party
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+
+// action - state management
+import { LOGIN, LOGOUT } from './auth-reducer/actions';
+import authReducer from './auth-reducer/auth';
+
+// project-imports
+import Loader from '@/components/Loader';
+import { redirectWithBasePath } from '@/utils/axios';
+
+// types
+import type { AuthProps, FirebaseContextType } from '@/types/auth';
+
+// firebase initialize
+if (!firebase.apps.length) {
+    firebase.initializeApp({
+        apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
+        authDomain: import.meta.env.VITE_APP_FIREBASE_AUTH_DOMAIN,
+        projectId: import.meta.env.VITE_APP_FIREBASE_PROJECT_ID,
+        storageBucket: import.meta.env.VITE_APP_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: import.meta.env.VITE_APP_FIREBASE_MESSAGING_SENDER_ID,
+        appId: import.meta.env.VITE_APP_FIREBASE_APP_ID,
+        measurementId: import.meta.env.VITE_APP_FIREBASE_MEASUREMENT_ID
+    });
+}
+
+// const
+const initialState: AuthProps = {
+    isLoggedIn: false,
+    isInitialized: false,
+    user: null
+};
+
+const db = firebase.firestore();
+
+// ==============================|| FIREBASE CONTEXT & PROVIDER ||============================== //
+
+const FirebaseContext = createContext<FirebaseContextType | null>(null);
+
+export const FirebaseProvider = ({ children }: { children: ReactElement }) => {
+    const [state, dispatch] = useReducer(authReducer, initialState);
+
+    useEffect(
+        () =>
+            firebase.auth().onAuthStateChanged((user: any) => {
+                if (user) {
+                    dispatch({
+                        type: LOGIN,
+                        payload: {
+                            isLoggedIn: true,
+                            user: {
+                                id: user.uid,
+                                email: user.email!,
+                                name: user.displayName || 'Stebin Ben',
+                                role: 'UI/UX Designer'
+                            }
+                        }
+                    });
+                } else {
+                    dispatch({
+                        type: LOGOUT
+                    });
+                }
+            }),
+
+        [dispatch]
+    );
+
+    const firebaseEmailPasswordSignIn = (email: string, password: string) => firebase.auth().signInWithEmailAndPassword(email, password);
+
+    const firebaseRegister = async (email: string, password: string) => firebase.auth().createUserWithEmailAndPassword(email, password);
+
+    const logout = () =>
+        firebase
+            .auth()
+            .signOut()
+            .then(() => {
+                dispatch({ type: LOGOUT });
+                redirectWithBasePath('/login');
+            });
+
+    const resetPassword = async (email: string) => {
+        await firebase.auth().sendPasswordResetEmail(email);
+    };
+
+    const updateProfile = () => { };
+    if (state.isInitialized !== undefined && !state.isInitialized) {
+        return <Loader />;
+    }
+
+    return (
+        <FirebaseContext
+            value={{
+                ...state,
+                db,
+                firebaseRegister,
+                firebaseEmailPasswordSignIn,
+                login: () => { },
+                logout,
+                resetPassword,
+                updateProfile
+            }}
+        >
+            {children}
+        </FirebaseContext>
+    );
+};
+
+export default FirebaseContext;
