@@ -13,20 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 
-import { Calendar } from "@/components/ui/calendar";
-
-import { Search, Save, PlayCircle } from "lucide-react";
+import { Search, Save } from "lucide-react";
+import { SidebarRight } from "@/components/sidebar-right";
 
 /* ------------------------------------------------------------------ */
 /* Mock Data (replace with API later)                                  */
@@ -58,8 +49,6 @@ const STATUS_OPTIONS: AttendanceStatus[] = [
 
 const ManualAttendancePage = () => {
   const [search, setSearch] = useState("");
-  const [selectedClass, setSelectedClass] = useState("STD-1");
-  const [date, setDate] = useState<Date | undefined>(new Date());
   const [records, setRecords] = useState(initialData);
 
   const filteredRecords = useMemo(() => {
@@ -77,27 +66,26 @@ const ManualAttendancePage = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div >
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Mark Attendance Manually
+          Mark Attendance 
         </h1>
-
-        <Button variant="outline" className="gap-2">
-          <PlayCircle className="h-4 w-4" />
-          Help Video
-        </Button>
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          Mark attendance manually for students / faculty / staff
+        </div>
       </div>
+      <br />
 
       <Separator />
 
       {/* Main Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="flex justify-between gap-5">
 
         {/* LEFT SIDE */}
-        <Card>
+        <Card className="flex-1 my-6 mx-4">
           <CardContent className="space-y-4 p-4">
 
             {/* Search + Save */}
@@ -112,7 +100,7 @@ const ManualAttendancePage = () => {
                 />
               </div>
 
-              <Button className="gap-2">
+              <Button className="gap-2 bg-primary">
                 <Save className="h-4 w-4" />
                 Save
               </Button>
@@ -151,7 +139,7 @@ const ManualAttendancePage = () => {
                               variant={active ? "default" : "outline"}
                               className={
                                 active
-                                  ? "bg-green-600 text-white hover:bg-green-600"
+                                  ? "bg-primary text-white hover:bg-primary"
                                   : "px-2"
                               }
                               onClick={() =>
@@ -172,11 +160,12 @@ const ManualAttendancePage = () => {
           </CardContent>
         </Card>
 
+
+
         {/* RIGHT SIDE */}
-        <Card>
+        {/* <Card>
           <CardContent className="space-y-4 p-4">
 
-            {/* Class Select */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 Select Class
@@ -193,7 +182,6 @@ const ManualAttendancePage = () => {
               </Select>
             </div>
 
-            {/* Date Picker */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 Select Date
@@ -211,8 +199,9 @@ const ManualAttendancePage = () => {
             </Button>
 
           </CardContent>
-        </Card>
+        </Card> */}
 
+        <SidebarRight />
       </div>
     </div>
   );

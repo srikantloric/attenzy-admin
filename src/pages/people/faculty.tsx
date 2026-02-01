@@ -25,6 +25,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Search, Filter, Plus } from "lucide-react";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 const TOTAL_FACULTY = 84;
 
@@ -65,7 +68,7 @@ const FacultyPage: React.FC = () => {
                     </div>
 
                     {/* Right: Action */}
-                    <Button className="gap-2">
+                    <Button className="gap-2 bg-primary">
                         <Plus className="h-4 w-4" />
                         Add Faculty
                     </Button>
@@ -188,18 +191,39 @@ const FacultyPage: React.FC = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
+                <Separator />
+                {/* Pagination */}
+                <div className="flex items-center justify-end gap-4 mr-4">
+                    <Field orientation="horizontal" className="w-fit">
+                        <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
+                        <Select defaultValue="25">
+                            <SelectTrigger className="w-20" id="select-rows-per-page">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                                <SelectGroup>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="25">25</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="100">100</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                    <Pagination className="mx-0 w-auto">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious href="#" />
+                            </PaginationItem>
+                            <PaginationItem>
+                                <PaginationNext href="#" />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
             </Card>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <Button variant="ghost" size="sm">
-                    Previous
-                </Button>
-                <span>1 of 4</span>
-                <Button variant="ghost" size="sm">
-                    Next
-                </Button>
-            </div>
+
         </div>
     );
 };
