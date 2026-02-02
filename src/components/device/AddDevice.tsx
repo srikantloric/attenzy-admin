@@ -24,7 +24,12 @@ import { db } from "@/contexts/FirebaseContext";
 import {
   addDoc,
   collection,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc
 } from "firebase/firestore";
 
 import { toast } from "sonner";
@@ -37,6 +42,11 @@ interface AddDeviceProps {
 const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [existingDocId, setExistingDocId] = useState<string | null>(null);
+  const [serialConflict, setSerialConflict] = useState(false);
+  const [checkingSerial, setCheckingSerial] = useState(false);
+
 
   const [form, setForm] = useState({
     deviceName: "",
@@ -49,43 +59,113 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
     description: ""
   });
 
+  const resetForm = () => {
+    setForm({
+      deviceName: "",
+      serialNumber: "",
+      deviceModel: "",
+      orgId: "",
+      partnerId: "",
+      location: "",
+      ipAddress: "",
+      description: ""
+    });
+    setIsUpdateMode(false);
+    setExistingDocId(null);
+    setSerialConflict(false);
+  };
+
+
   const handleChange = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const checkSerialExists = async (serial: string) => {
+    if (!serial) return;
+
+    setCheckingSerial(true);
+
+    try {
+      const snapshot = await getDocs(collection(db, "devices"));
+
+      const existing = snapshot.docs.find(
+        (d) => d.data().serialNumber === serial
+      );
+
+      if (existing) {
+        setIsUpdateMode(true);
+        setExistingDocId(existing.id);
+        setSerialConflict(false);
+
+        setForm({
+          deviceName: existing.data().deviceName || "",
+          serialNumber: existing.data().serialNumber || "",
+          deviceModel: existing.data().deviceModel || "",
+          orgId: existing.data().orgId || "",
+          partnerId: existing.data().partnerId || "",
+          location: existing.data().location || "",
+          ipAddress: existing.data().ipAddress || "",
+          description: existing.data().description || ""
+        });
+
+        toast.info("Existing device found", {
+          description: "You can update the device details."
+        });
+      } else {
+        setIsUpdateMode(false);
+        setExistingDocId(null);
+        setSerialConflict(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCheckingSerial(false);
+    }
+  };
+
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
 
-      const deviceId = await generateDeviceId();
+      if (isUpdateMode && existingDocId) {
+        // 🔁 UPDATE
+        await updateDoc(doc(db, "devices", existingDocId), {
+          ...form,
+          updatedAt: serverTimestamp()
+        });
 
-      await addDoc(collection(db, "devices"), {
-        deviceId,
-        deviceName: form.deviceName,
-        serialNumber: form.serialNumber,
-        deviceModel: form.deviceModel,
-        orgId: form.orgId,
-        partnerId: form.partnerId,
-        location: form.location,
-        description: form.description,
-        status: "inactive",
-        createdAt: serverTimestamp()
-      });
+        toast.success("Device updated", {
+          description: "Device details updated successfully."
+        });
+      } else {
+        // ➕ ADD
+        const deviceId = await generateDeviceId();
 
-      toast.success("Device added", {
-        description: "Device registered successfully."
-      });
+        await addDoc(collection(db, "devices"), {
+          ...form,
+          deviceId,
+          status: "inactive",
+          createdAt: serverTimestamp()
+        });
 
+        toast.success("Device added", {
+          description: "Device registered successfully."
+        });
+      }
+
+      resetForm();
       onClose?.();
     } catch (error) {
       console.error(error);
-      toast.error("Failed to add device", {
-        description: "Something went wrong while saving device."
+      toast.error("Operation failed", {
+        description: "Something went wrong."
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="mt-2 space-y-6">
@@ -106,8 +186,20 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
         <Input
           placeholder="SN-00123"
           value={form.serialNumber}
-          onChange={(e) => handleChange("serialNumber", e.target.value)}
+          disabled={isUpdateMode}
+          onChange={(e) => {
+            const value = e.target.value;
+            handleChange("serialNumber", value);
+
+            if (value.length >= 4) {
+              checkSerialExists(value);
+            }
+          }}
+          className={
+            isUpdateMode ? "cursor-not-allowed opacity-70" : ""
+          }
         />
+
       </div>
 
       {/* Device Model */}
@@ -191,12 +283,34 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-4">
-        <Button variant="outline" onClick={onClose} disabled={loading}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            resetForm();
+            onClose?.();
+          }}
+          disabled={loading}
+        >
           Cancel
         </Button>
-        <Button className="bg-primary" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Saving..." : "Add Device"}
+
+
+        <Button
+          className="bg-primary"
+          onClick={handleSubmit}
+          disabled={
+            loading ||
+            !form.serialNumber ||
+            checkingSerial
+          }
+        >
+          {loading
+            ? "Saving..."
+            : isUpdateMode
+              ? "Update Device"
+              : "Add Device"}
         </Button>
+
       </div>
     </div>
   );
