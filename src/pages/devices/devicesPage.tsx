@@ -239,7 +239,7 @@ const DevicesPage: React.FC = () => {
           <SheetHeader className="-mx-4">
             <SheetTitle>Add Device</SheetTitle>
             <SheetDescription>
-                        Enter details too add a new device.
+                        Enter details to add a new device.
                     </SheetDescription>
           </SheetHeader>
 
