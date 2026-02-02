@@ -45,7 +45,7 @@ import {
   PaginationPrevious
 } from "@/components/ui/pagination";
 
-import AddDevice from "./addDevice";
+import AddDevice from "./AddDevice";
 
 const DevicesPage: React.FC = () => {
   const [search, setSearch] = useState("");
