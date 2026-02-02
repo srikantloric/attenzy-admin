@@ -1,32 +1,22 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from "@/components/ui/collapsible";
 
 import { db } from "@/contexts/FirebaseContext";
 import {
   addDoc,
   collection,
   serverTimestamp,
-  query,
-  where,
   getDocs,
   updateDoc,
   doc
@@ -40,7 +30,6 @@ interface AddDeviceProps {
 }
 
 const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [existingDocId, setExistingDocId] = useState<string | null>(null);
@@ -265,24 +254,8 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
         </div>
       </div>
 
-      <Separator />
-
-      {/* Advanced */}
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm font-medium">
-          Advanced Settings
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${advancedOpen ? "rotate-180" : ""
-              }`}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3 text-sm text-muted-foreground">
-          Additional configuration options can be added later.
-        </CollapsibleContent>
-      </Collapsible>
-
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="flex justify-end gap-3 pt-2">
         <Button
           variant="outline"
           onClick={() => {

@@ -15,6 +15,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle
 } from "@/components/ui/sheet";
@@ -237,6 +238,9 @@ const DevicesPage: React.FC = () => {
         <SheetContent side="right" className="w-full sm:max-w-md px-6 py-4">
           <SheetHeader className="-mx-4">
             <SheetTitle>Add Device</SheetTitle>
+            <SheetDescription>
+                        Enter details too add a new device.
+                    </SheetDescription>
           </SheetHeader>
 
           {/* ONLY the form is rendered */}
