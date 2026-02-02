@@ -91,8 +91,8 @@ const pages: NavItemType = {
             children: [
                 {
                     id: "devices",
-                    title: "Add Devices",
-                    url: "/add-device",
+                    title: "List Devices",
+                    url: "/list-device",
                 },
                 {
                     id: "device-health",

@@ -191,7 +191,9 @@ const FacultyPage: React.FC = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
+
                 <Separator />
+                
                 {/* Pagination */}
                 <div className="flex items-center justify-end gap-4 mr-4">
                     <Field orientation="horizontal" className="w-fit">

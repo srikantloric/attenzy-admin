@@ -26,6 +26,24 @@ import {
 
 import { Search, Filter, Plus } from "lucide-react";
 
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious
+} from "@/components/ui/pagination";
+import { Field, FieldLabel } from "@/components/ui/field";
+
 const TOTAL_STUDENTS = 1200;
 const RFID_ISSUED = 950;
 
@@ -58,7 +76,7 @@ const RFIDMappingPage: React.FC = () => {
                     RFID Device Mapping
                 </h1>
 
-                <Button className="gap-2">
+                <Button className="gap-2 bg-primary">
                     <Plus className="h-4 w-4" />
                     Assign RFID Card
                 </Button>
@@ -221,14 +239,45 @@ const RFIDMappingPage: React.FC = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-            </Card>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <Button variant="ghost" size="sm">Previous</Button>
-                <span>1 of 45</span>
-                <Button variant="ghost" size="sm">Next</Button>
-            </div>
+                <Separator />
+
+                {/* Pagination */}
+                <div className="flex items-center justify-end gap-6 px-4">
+                    <Field orientation="horizontal" className="w-fit gap-2">
+                        <FieldLabel htmlFor="select-rows-per-page">
+                            Rows per page
+                        </FieldLabel>
+
+                        <Select defaultValue="25">
+                            <SelectTrigger className="h-8 w-20" id="select-rows-per-page">
+                                <SelectValue />
+                            </SelectTrigger>
+
+                            <SelectContent align="start">
+                                <SelectGroup>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="25">25</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="100">100</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+
+                    <Pagination className="mx-0 w-auto">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious href="#" />
+                            </PaginationItem>
+                            <PaginationItem>
+                                <PaginationNext href="#" />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+
+            </Card>
 
         </div>
     );

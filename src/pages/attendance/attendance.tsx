@@ -15,12 +15,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+
+import { Calendar } from "@/components/ui/calendar";
 
 import { Search, Save } from "lucide-react";
-import { SidebarRight } from "@/components/sidebar-right";
 
 /* ------------------------------------------------------------------ */
-/* Mock Data (replace with API later)                                  */
+/* Types & Mock Data                                                   */
 /* ------------------------------------------------------------------ */
 
 interface StudentAttendance {
@@ -50,6 +58,8 @@ const STATUS_OPTIONS: AttendanceStatus[] = [
 const ManualAttendancePage = () => {
   const [search, setSearch] = useState("");
   const [records, setRecords] = useState(initialData);
+  const [selectedClass, setSelectedClass] = useState<string>("STD-1");
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) =>
@@ -66,28 +76,24 @@ const ManualAttendancePage = () => {
   };
 
   return (
-    <div >
-
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Mark Attendance 
+          Mark Attendance
         </h1>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Mark attendance manually for students / faculty / staff
-        </div>
+        </p>
       </div>
-      <br />
 
       <Separator />
 
       {/* Main Layout */}
-      <div className="flex justify-between gap-5">
-
+      <div className="flex gap-6">
         {/* LEFT SIDE */}
-        <Card className="flex-1 my-6 mx-4">
+        <Card className="flex-1">
           <CardContent className="space-y-4 p-4">
-
             {/* Search + Save */}
             <div className="flex items-center justify-between gap-3">
               <div className="relative w-full max-w-xs">
@@ -100,7 +106,7 @@ const ManualAttendancePage = () => {
                 />
               </div>
 
-              <Button className="gap-2 bg-primary">
+              <Button size="sm" className="gap-2 bg-primary">
                 <Save className="h-4 w-4" />
                 Save
               </Button>
@@ -136,41 +142,41 @@ const ManualAttendancePage = () => {
                             <Button
                               key={status}
                               size="sm"
-                              variant={active ? "default" : "outline"}
+                              variant="outline"
                               className={
                                 active
-                                  ? "bg-primary text-white hover:bg-primary"
-                                  : "px-2"
+                                  ? "bg-primary text-primary-foreground border-primary hover:bg-primary"
+                                  : ""
                               }
-                              onClick={() =>
-                                updateStatus(student.id, status)
-                              }
+                              onClick={() => updateStatus(student.id, status)}
                             >
                               {status.charAt(0).toUpperCase()}
                             </Button>
+
                           );
                         })}
                       </div>
                     </TableCell>
+
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-
           </CardContent>
         </Card>
 
-
-
         {/* RIGHT SIDE */}
-        {/* <Card>
+        <Card className="w-[300px]">
           <CardContent className="space-y-4 p-4">
-
+            {/* Class Select */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 Select Class
               </label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <Select
+                value={selectedClass}
+                onValueChange={setSelectedClass}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -182,6 +188,7 @@ const ManualAttendancePage = () => {
               </Select>
             </div>
 
+            {/* Date Picker */}
             <div className="space-y-2">
               <label className="text-sm font-medium">
                 Select Date
@@ -194,14 +201,11 @@ const ManualAttendancePage = () => {
               />
             </div>
 
-            <Button className="w-full gap-2">
+            <Button className="w-full bg-primary">
               Load Students
             </Button>
-
           </CardContent>
-        </Card> */}
-
-        <SidebarRight />
+        </Card>
       </div>
     </div>
   );

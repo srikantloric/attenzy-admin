@@ -7,9 +7,10 @@ import FacultyPage from '@/pages/people/faculty';
 import StudentsPage from '@/pages/people/students';
 import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
-import AddDevicePage from '@/pages/devices/addDevice';
+import AddDevicePage from '@/pages/devices/devicesPage';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
+import DevicesPage from '@/pages/devices/devicesPage';
 
 
 // pages routing
@@ -32,7 +33,7 @@ const MainRoutes = {
                 { path: 'faculty', element: <FacultyPage /> },
                 { path: 'staff', element: <StaffPage /> },
                 { path: 'rfid-mapping', element: <RFIDMappingPage /> },
-                { path: 'add-device', element: <AddDevicePage /> },
+                { path: 'list-device', element: <DevicesPage /> },
                 { path: 'device-health', element: <DeviceHealthPage /> },
 
             ]
