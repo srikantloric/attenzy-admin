@@ -40,7 +40,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
     }
 
     return (
-        <Sidebar collapsible="icon" {...props}>
+        <Sidebar collapsible="icon"  {...props}>
             {/* ---------------- Header ---------------- */}
             <SidebarHeader>
                 <DrawerHeader />
@@ -82,7 +82,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                         <SidebarMenuButton
                                                             tooltip={item.title}
                                                             isActive={hasActiveChild}
-                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
+                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5 hover:bg-primary/10  data-[active=true]:bg-primary/80  data-[active=true]:text-primary-foreground"
                                                         >
                                                             {Icon && <Icon className="h-5 w-5" />}
                                                             <span className="text-[16px]">
@@ -102,7 +102,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                                         <SidebarMenuSubButton
                                                                             asChild
                                                                             isActive={isSubActive}
-                                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
+                                                                            className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5 bg-transparent hover:bg-transparent text-muted-foreground hover:text-foreground data-[active=true]:text-primary data-[active=true]:bg-transparent"
                                                                         >
                                                                             <a
                                                                                 href={subItem.url}
@@ -139,7 +139,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                     tooltip={item.title}
                                                     disabled={item.disabled}
                                                     isActive={isActive}
-                                                    className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5"
+                                                    className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5 data-[active=true]:bg-primary/80 data-[active=true]:text-primary-foreground"
                                                 >
                                                     <a
                                                         href={item.url}
