@@ -219,6 +219,7 @@ export const AssignRFIDSidebar = ({
                             Cancel
                         </Button>
                         <Button
+                            className="bg-primary"
                             onClick={handleAssign}
                             disabled={loading}
                         >

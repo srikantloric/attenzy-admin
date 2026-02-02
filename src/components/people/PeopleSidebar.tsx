@@ -17,7 +17,12 @@ import { db } from "@/contexts/FirebaseContext";
 import {
     addDoc,
     collection,
-    serverTimestamp
+    serverTimestamp,
+    query,
+    where,
+    getDocs,
+    updateDoc,
+    doc
 } from "firebase/firestore";
 
 import { generatePeopleId } from "@/lib/generatePeopleId";
@@ -40,12 +45,74 @@ export const PeopleSidebar = ({
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (name: string, value: string) => {
+    const [isUpdateMode, setIsUpdateMode] = useState(false);
+    const [existingDocId, setExistingDocId] = useState<string | null>(null);
+
+    const handleChange = async (name: string, value: string) => {
         setFormData((prev) => ({
             ...prev,
             [name]: value
         }));
+
+        if (name === "rfidCode" && value.length >= 6) {
+            await checkRFIDExists(value);
+        }
     };
+
+    const checkRFIDExists = async (rfidCode: string) => {
+        if (!rfidCode) return;
+
+        const collectionsToCheck = ["students", "faculty", "staff"];
+        const currentCollection =
+            type === "student"
+                ? "students"
+                : type === "faculty"
+                    ? "faculty"
+                    : "staff";
+
+        for (const col of collectionsToCheck) {
+            const q = query(
+                collection(db, col),
+                where("rfidCode", "==", rfidCode)
+            );
+
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                const docSnap = snapshot.docs[0];
+
+                // 🚫 RFID belongs to another role
+                if (col !== currentCollection) {
+                    toast.error("RFID already assigned", {
+                        description: `This RFID is already assigned to a ${col.slice(0, -1)}.`
+                    });
+
+                    // keep only RFID, reset rest
+                    setFormData({ rfidCode });
+                    setIsUpdateMode(false);
+                    setExistingDocId(null);
+                    return;
+                }
+
+                // ✅ RFID belongs to same collection → UPDATE MODE
+                setFormData(docSnap.data() as Record<string, string>);
+                setExistingDocId(docSnap.id);
+                setIsUpdateMode(true);
+
+                toast.info("Existing record found", {
+                    description: "You can update this record."
+                });
+
+                return;
+            }
+        }
+
+        // 🆕 RFID not found anywhere → ADD MODE
+        setIsUpdateMode(false);
+        setExistingDocId(null);
+    };
+
+
 
     const handleSubmit = async () => {
         try {
@@ -58,37 +125,60 @@ export const PeopleSidebar = ({
                         ? "faculty"
                         : "staff";
 
-            const numericId = await generatePeopleId(type);
+            if (isUpdateMode && existingDocId) {
+                // 🔁 UPDATE
+                await updateDoc(
+                    doc(db, collectionName, existingDocId),
+                    {
+                        ...formData,
+                        updatedAt: serverTimestamp()
+                    }
+                );
 
-            await addDoc(collection(db, collectionName), {
-                ...formData,
-                id: numericId,
-                createdAt: serverTimestamp()
-            });
+                toast.success("Updated successfully", {
+                    description: `${type} details updated`
+                });
+            } else {
+                // ➕ ADD
+                const numericId = await generatePeopleId(type);
 
-            toast.success("Added successfully", {
-                description: `${type.charAt(0).toUpperCase() + type.slice(1)} created with ID ${numericId}`
-            });
+                await addDoc(collection(db, collectionName), {
+                    ...formData,
+                    id: numericId,
+                    createdAt: serverTimestamp()
+                });
+
+                toast.success("Added successfully", {
+                    description: `${type} created with ID ${numericId}`
+                });
+            }
 
             setFormData({});
+            setIsUpdateMode(false);
+            setExistingDocId(null);
             onOpenChange(false);
         } catch (error) {
-            console.error("Error adding document:", error);
+            console.error(error);
 
-            toast.error("Failed to add", {
-                description: "Something went wrong while saving data."
+            toast.error("Operation failed", {
+                description: "Something went wrong."
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const resetForm = () => {
+        setFormData({});
+        setIsUpdateMode(false);
+        setExistingDocId(null);
+    };
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="right"
-                className="w-full sm:max-w-lg px-8 py-6"
+                className="w-full sm:max-w-lg px-6 py-6"
             >
                 {/* Header */}
                 <SheetHeader className="-ml-4">
@@ -114,22 +204,44 @@ export const PeopleSidebar = ({
                                 onChange={(e) =>
                                     handleChange(field.name, e.target.value)
                                 }
+                                disabled={isUpdateMode && field.name === "rfidCode"}
+                                className={
+                                    isUpdateMode && field.name === "rfidCode"
+                                        ? "cursor-not-allowed opacity-70"
+                                        : ""
+                                }
                             />
+
                         </div>
                     ))}
 
                     {/* Actions */}
                     <div className="flex justify-end gap-3 pt-6">
+
                         <Button
                             variant="outline"
-                            onClick={() => onOpenChange(false)}
+                            onClick={() => {
+                                resetForm();
+                                onOpenChange(false);
+                            }}
                             disabled={loading}
                         >
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={loading}>
-                            {loading ? "Saving..." : "Add"}
+
+
+                        <Button
+                            className="bg-primary"
+                            onClick={handleSubmit}
+                            disabled={loading}
+                        >
+                            {loading
+                                ? "Saving..."
+                                : isUpdateMode
+                                    ? "Update"
+                                    : "Add"}
                         </Button>
+
                     </div>
                 </div>
             </SheetContent>

@@ -194,7 +194,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={loading}>
+        <Button className="bg-primary" onClick={handleSubmit} disabled={loading}>
           {loading ? "Saving..." : "Add Device"}
         </Button>
       </div>
