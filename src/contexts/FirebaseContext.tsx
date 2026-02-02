@@ -36,7 +36,7 @@ const initialState: AuthProps = {
     user: null
 };
 
-const db = firebase.firestore();
+export const db = firebase.firestore();
 
 // ==============================|| FIREBASE CONTEXT & PROVIDER ||============================== //
 
