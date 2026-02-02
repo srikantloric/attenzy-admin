@@ -1,5 +1,6 @@
 import { CommandSearch } from "@/components/CommandSearch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
@@ -8,6 +9,8 @@ import { Bell } from "lucide-react"
 
 
 function AppBar() {
+
+
     return (
         <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div className="flex items-center px-6 py-2 justify-between">
@@ -21,6 +24,9 @@ function AppBar() {
                 </div>
 
                 <div className="flex items-center gap-3">
+
+                    <Badge variant={"outline"}>Orginazation Account</Badge>
+
                     <Button variant="outline" size="icon">
                         <Bell className="h-5 w-5" />
                     </Button>
