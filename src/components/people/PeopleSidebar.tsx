@@ -48,6 +48,8 @@ export const PeopleSidebar = ({
     const [isUpdateMode, setIsUpdateMode] = useState(false);
     const [existingDocId, setExistingDocId] = useState<string | null>(null);
 
+    const [rfidConflict, setRfidConflict] = useState(false);
+
     const handleChange = async (name: string, value: string) => {
         setFormData((prev) => ({
             ...prev,
@@ -91,6 +93,7 @@ export const PeopleSidebar = ({
                     setFormData({ rfidCode });
                     setIsUpdateMode(false);
                     setExistingDocId(null);
+                    setRfidConflict(true);
                     return;
                 }
 
@@ -98,6 +101,7 @@ export const PeopleSidebar = ({
                 setFormData(docSnap.data() as Record<string, string>);
                 setExistingDocId(docSnap.id);
                 setIsUpdateMode(true);
+                setRfidConflict(false);
 
                 toast.info("Existing record found", {
                     description: "You can update this record."
@@ -110,8 +114,8 @@ export const PeopleSidebar = ({
         // 🆕 RFID not found anywhere → ADD MODE
         setIsUpdateMode(false);
         setExistingDocId(null);
+        setRfidConflict(false);
     };
-
 
 
     const handleSubmit = async () => {
@@ -172,6 +176,7 @@ export const PeopleSidebar = ({
         setFormData({});
         setIsUpdateMode(false);
         setExistingDocId(null);
+        setRfidConflict(false);
     };
 
     return (
@@ -233,7 +238,11 @@ export const PeopleSidebar = ({
                         <Button
                             className="bg-primary"
                             onClick={handleSubmit}
-                            disabled={loading}
+                            disabled={
+                                loading ||
+                                (!isUpdateMode && rfidConflict) ||
+                                (!formData.rfidCode)
+                            }
                         >
                             {loading
                                 ? "Saving..."

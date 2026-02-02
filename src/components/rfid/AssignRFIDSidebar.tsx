@@ -55,6 +55,9 @@ export const AssignRFIDSidebar = ({
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [loading, setLoading] = useState(false);
 
+    const [rfidConflict, setRfidConflict] = useState(false);
+    const [checkingRFID, setCheckingRFID] = useState(false);
+
     /* ---------------------------------------------
        Load people based on selected type
     --------------------------------------------- */
@@ -80,9 +83,58 @@ export const AssignRFIDSidebar = ({
         fetchPeople();
     }, [assignType]);
 
+    const resetForm = () => {
+        setAssignType("student");
+        setPeople([]);
+        setSelectedPerson("");
+        setRfidCard("");
+        setDate(new Date());
+        setRfidConflict(false);
+        setCheckingRFID(false);
+    };
+
+
     /* ---------------------------------------------
        Assign RFID
     --------------------------------------------- */
+
+    const checkRFIDGlobally = async (rfidCode: string) => {
+        if (!rfidCode) return;
+
+        setCheckingRFID(true);
+
+        const collectionsToCheck = ["students", "faculty", "staff"];
+
+        try {
+            for (const col of collectionsToCheck) {
+                const snapshot = await getDocs(collection(db, col));
+
+                const found = snapshot.docs.find(
+                    (doc) => doc.data().rfidCode === rfidCode
+                );
+
+                if (found) {
+                    setRfidConflict(true);
+
+                    toast.error("RFID already assigned", {
+                        description: `This RFID is already assigned to a ${col.slice(0, -1)}.`
+                    });
+
+                    setCheckingRFID(false);
+                    return;
+                }
+            }
+
+            // ✅ RFID is free
+            setRfidConflict(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setCheckingRFID(false);
+        }
+    };
+
+
     const handleAssign = async () => {
         if (!selectedPerson || !rfidCard || !date) {
             toast.warning("Missing information", {
@@ -188,8 +240,16 @@ export const AssignRFIDSidebar = ({
                         <Input
                             placeholder="Scan or enter RFID card number"
                             value={rfidCard}
-                            onChange={(e) => setRfidCard(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setRfidCard(value);
+
+                                if (value.length >= 6) {
+                                    checkRFIDGlobally(value);
+                                }
+                            }}
                         />
+
                     </div>
 
                     {/* Effective Date */}
@@ -213,18 +273,30 @@ export const AssignRFIDSidebar = ({
                     <div className="flex justify-end gap-3 pt-6">
                         <Button
                             variant="outline"
-                            onClick={() => onOpenChange(false)}
+                            onClick={() => {
+                                resetForm();
+                                onOpenChange(false);
+                            }}
                             disabled={loading}
                         >
                             Cancel
                         </Button>
+
+
                         <Button
                             className="bg-primary"
                             onClick={handleAssign}
-                            disabled={loading}
+                            disabled={
+                                loading ||
+                                rfidConflict ||
+                                !rfidCard ||
+                                !selectedPerson ||
+                                !date
+                            }
                         >
                             {loading ? "Assigning..." : "Assign RFID"}
                         </Button>
+
                     </div>
                 </div>
             </SheetContent>
