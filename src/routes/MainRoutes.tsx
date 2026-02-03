@@ -10,7 +10,10 @@ import RFIDMappingPage from '@/pages/people/rfid-mapping';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
 import DevicesPage from '@/pages/devices/devicesPage';
-
+import Partners from '@/pages/partners/partners';
+import Organizations from '@/pages/organizations/organizations';
+import PartnerAdmin from '@/pages/partners/PartnerAdmin';
+import OrganizationAdmin from "@/pages/organizations/OrganizationAdmin"
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
@@ -34,6 +37,10 @@ const MainRoutes = {
                 { path: 'rfid-mapping', element: <RFIDMappingPage /> },
                 { path: 'list-device', element: <DevicesPage /> },
                 { path: 'device-health', element: <DeviceHealthPage /> },
+                { path: 'partners', element: <Partners /> },
+                { path: "/partners/:partnerId/admin", element: <PartnerAdmin /> },
+                { path: 'organizations', element: <Organizations /> },
+                { path: "/organizations/:organizationId/admin", element: <OrganizationAdmin /> },
 
             ]
         },
