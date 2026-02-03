@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import useAuth from "@/hooks/useAuth"
 import { Bell } from "lucide-react"
 
 
 function AppBar() {
+    const { user, logout } = useAuth()
+    console.log(user)
+
+
 
 
     return (
@@ -25,7 +30,7 @@ function AppBar() {
 
                 <div className="flex items-center gap-3">
 
-                    <Badge variant={"outline"}>Orginazation Account</Badge>
+                    <Badge variant={"outline"}>{user?.role}</Badge>
 
                     <Button variant="outline" size="icon">
                         <Bell className="h-5 w-5" />
@@ -51,7 +56,7 @@ function AppBar() {
                                 <DropdownMenuItem>Settings</DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive">
+                            <DropdownMenuItem variant="destructive" onClick={logout}>
                                 Log out
                             </DropdownMenuItem>
                         </DropdownMenuContent>

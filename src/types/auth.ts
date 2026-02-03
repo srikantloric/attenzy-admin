@@ -13,7 +13,7 @@ type UserProfile = {
     avatar?: string;
     image?: string;
     name?: string;
-    role?: string;
+    role?: string[];
     tier?: string;
 };
 
@@ -41,3 +41,24 @@ export type FirebaseContextType = {
     resetPassword: (email: string) => Promise<void>;
     updateProfile: VoidFunction;
 };
+
+export type AWSCognitoContextType = {
+    isLoggedIn: boolean;
+    isInitialized?: boolean;
+    user?: UserProfile | null | undefined;
+    logout: () => void;
+    login: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string, firstName: string, lastName: string) => Promise<unknown>;
+    resetPassword: (verificationCode: string, newPassword: string) => Promise<any>;
+    forgotPassword: (email: string) => Promise<void>;
+    updateProfile: VoidFunction;
+    codeVerification: (verificationCode: string) => Promise<any>;
+    resendConfirmationCode: () => Promise<any>;
+};
+
+
+export interface InitialLoginContextProps {
+    isLoggedIn: boolean;
+    isInitialized?: boolean;
+    user?: UserProfile | null | undefined;
+}

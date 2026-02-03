@@ -15,6 +15,9 @@ import LiveAttendanceWithDevice from "@/components/LiveAttendanceWithDevice"
 
 
 export default function DashboardPage() {
+
+    
+
     return (
         <div className="space-y-6">
             {/* Header */}
