@@ -1,5 +1,5 @@
 import type { NavItemType } from "@/types/menu";
-import { FingerprintPattern, Notebook, SatelliteDish, User } from "lucide-react";
+import { FingerprintPattern, Hotel, Notebook, SatelliteDish, User, Users } from "lucide-react";
 import { IconLayoutDashboard } from '@tabler/icons-react';
 // icons
 const icons = {
@@ -7,7 +7,9 @@ const icons = {
     user: User,
     device: SatelliteDish,
     report: Notebook,
-    attendance: FingerprintPattern
+    attendance: FingerprintPattern,
+    orgnization: Hotel,
+    partners: Users
 };
 
 const pages: NavItemType = {
@@ -110,6 +112,22 @@ const pages: NavItemType = {
                     roles: ['ORGANIZATION']
                 },
             ]
+        },
+        {
+            id: 'organizations',
+            title: 'Organizations',
+            type: 'item',
+            url: '/organizations',
+            icon: icons.orgnization,
+            roles: ["CHANNEL_PARTNER", "PLATFORM_ADMIN"]
+        },
+        {
+            id: 'partners',
+            title: 'Partners',
+            type: 'item',
+            url: '/partners',
+            icon: icons.user,
+            roles: ["PLATFORM_ADMIN"]
         },
         {
             id: 'reports',

@@ -13,6 +13,7 @@ const settings: NavItemType = {
     id: 'group-other',
     title: 'Other',
     type: 'group',
+    roles: ["CHANNEL_PARTNER", "ORGANIZATION", "PLATFORM_ADMIN"],
     children: [
         {
             id: 'settings',
@@ -27,6 +28,7 @@ const settings: NavItemType = {
             type: 'collapse',
             url: '/developers',
             icon: icons.code,
+            roles: ["CHANNEL_PARTNER", "PLATFORM_ADMIN"],
             children: [
                 {
                     id: 'overview',
