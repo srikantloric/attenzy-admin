@@ -17,8 +17,8 @@ import AuthWrapper from "@/sections/auth/AuthWrapper"
 function Login() {
     const { login } = useAuth()
 
-    const [email, setEmail] = useState("test@attenzyiot.in")
-    const [password, setPassword] = useState("Test@123")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 

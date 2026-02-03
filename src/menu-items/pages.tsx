@@ -126,7 +126,7 @@ const pages: NavItemType = {
             title: 'Partners',
             type: 'item',
             url: '/partners',
-            icon: icons.user,
+            icon: icons.partners,
             roles: ["PLATFORM_ADMIN"]
         },
         {
