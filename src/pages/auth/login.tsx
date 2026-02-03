@@ -13,9 +13,11 @@ import { Input } from "@/components/ui/input"
 
 import useAuth from "@/hooks/useAuth"
 import AuthWrapper from "@/sections/auth/AuthWrapper"
+import { useNavigate } from "react-router-dom"
 
 function Login() {
     const { login } = useAuth()
+    const navigate = useNavigate()
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -32,6 +34,7 @@ function Login() {
             const res = await login(trimmedEmail, password)
             console.log(res)
             console.log("Login successful")
+            navigate("/")
         } catch (err: any) {
             console.error(err)
             setError(err?.message || "Login failed")
