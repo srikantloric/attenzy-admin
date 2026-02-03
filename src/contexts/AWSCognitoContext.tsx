@@ -9,6 +9,7 @@ import authReducer from '@/contexts/auth-reducer/auth';
 
 // types
 import type { AWSCognitoContextType, InitialLoginContextProps } from '@/types/auth';
+import type { Role } from '@/types/role';
 
 // constant
 const initialState: InitialLoginContextProps = {
@@ -87,7 +88,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
           const accessToken = session.getAccessToken();
           const payload = accessToken.decodePayload();
 
-          const roles = payload['cognito:groups'] ?? [];
+          const roles: Role = payload['cognito:groups'][0];
 
           setSession(accessToken.getJwtToken());
 
@@ -128,7 +129,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
       usr.authenticateUser(authData, {
         onSuccess: (session: CognitoUserSession) => {
           setSession(session.getAccessToken().getJwtToken());
-          const userRole = session.getAccessToken().decodePayload()['cognito:groups']
+          const userRole = session.getAccessToken().decodePayload()['cognito:groups'][0]
           dispatch({
             type: LOGIN,
             payload: {
@@ -136,7 +137,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
               user: {
                 email: authData.getUsername(),
                 name: 'John AWS',
-                role: userRole ? userRole : []
+                role: userRole
               }
             }
           });
@@ -148,7 +149,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
         newPasswordRequired: (userAttributes: Record<string, any>) => {
           console.log("New Password required")
           // ❌ Remove attributes Cognito does NOT accept back
-           delete userAttributes.email;
+          delete userAttributes.email;
           delete userAttributes.email_verified;
           delete userAttributes.phone_number_verified;
 
@@ -160,7 +161,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
               onSuccess: (session) => {
                 setSession(session.getAccessToken().getJwtToken());
 
-                const userRole =
+                const userRole: Role =
                   session.getAccessToken().decodePayload()["cognito:groups"] ?? [];
 
                 dispatch({

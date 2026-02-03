@@ -4,6 +4,7 @@ import { ChipProps } from '@mui/material/Chip';
 // project-imports
 import { GenericCardProps } from './root';
 import { NavActionType } from 'config';
+import type { Role } from './role';
 
 // ==============================|| TYPES - MENU  ||============================== //
 
@@ -35,6 +36,9 @@ export type NavItemType = {
   type?: string;
   url?: string | undefined;
   actions?: NavActionProps[];
+
+  // 👇 ADD THIS
+  roles?: Role[];
 };
 
 export type LinkTarget = '_blank' | '_self' | '_parent' | '_top';

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 // third-party
 import firebase from 'firebase/compat/app';
+import type { Role } from './role';
 // ==============================|| TYPES - AUTH  ||============================== //
 
 export type GuardProps = {
@@ -13,7 +14,7 @@ type UserProfile = {
     avatar?: string;
     image?: string;
     name?: string;
-    role?: string[];
+    role?: Role;
     tier?: string;
 };
 

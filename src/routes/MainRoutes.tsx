@@ -7,7 +7,6 @@ import FacultyPage from '@/pages/people/faculty';
 import StudentsPage from '@/pages/people/students';
 import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
-import AddDevicePage from '@/pages/devices/devicesPage';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
 import DevicesPage from '@/pages/devices/devicesPage';

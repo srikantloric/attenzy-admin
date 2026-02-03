@@ -28,16 +28,28 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
+import useAuth from "@/hooks/useAuth"
+import { filterMenuByRole } from "@/utils/filterMenuByRole"
 
 export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
     const location = useLocation()
     const pathname = location.pathname
+    const { user } = useAuth();
 
     // 🔹 Route matcher
     const isActiveRoute = (url?: string) => {
         if (!url) return false
         return pathname === url || pathname.startsWith(url + "/")
     }
+
+
+    const filteredMenu = filterMenuByRole(
+        menuItems.items,
+        user?.role!
+    );
+
+    console.log(user?.role)
+
 
     return (
         <Sidebar collapsible="icon"  {...props}>
@@ -49,7 +61,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
 
             {/* ---------------- Content ---------------- */}
             <SidebarContent>
-                {menuItems.items.map((group) => {
+                {filteredMenu.map((group) => {
                     if (group.type !== "group") return null
 
                     return (

@@ -14,6 +14,7 @@ const pages: NavItemType = {
     id: 'group-pages',
     title: 'Plartform',
     type: 'group',
+    roles: ['PLATFORM_ADMIN', 'CHANNEL_PARTNER', 'ORGANIZATION'],
     children: [
         {
             id: 'dashboard',
@@ -21,6 +22,7 @@ const pages: NavItemType = {
             type: 'collapse',
             url: '/dashboard',
             icon: icons.dashboard,
+            roles: ['PLATFORM_ADMIN', 'CHANNEL_PARTNER', 'ORGANIZATION'],
             children: [
                 {
                     id: "overview",
@@ -59,26 +61,31 @@ const pages: NavItemType = {
             type: "collapse",
             url: '/dashboard',
             icon: icons.user,
+            roles: ['ORGANIZATION'],
             children: [
                 {
                     id: "students",
                     title: "Students",
                     url: "/students",
+                    roles: ['ORGANIZATION']
                 },
                 {
                     id: "faculty",
                     title: "Faculty",
                     url: "/faculty",
+                    roles: ['ORGANIZATION']
                 },
                 {
                     id: "staff",
                     title: "Staff",
                     url: "/staff",
+                    roles: ['ORGANIZATION']
                 },
                 {
                     id: "id-rfid-mapping",
                     title: "Id/RFID Mapping",
                     url: "/rfid-mapping",
+                    roles: ['ORGANIZATION']
                 }
             ]
         },
@@ -88,16 +95,19 @@ const pages: NavItemType = {
             type: 'collapse',
             url: '/dashboard',
             icon: icons.device,
+            roles: ['CHANNEL_PARTNER', 'ORGANIZATION'],
             children: [
                 {
                     id: "devices",
                     title: "List Devices",
                     url: "/list-device",
+                    roles: ['CHANNEL_PARTNER']
                 },
                 {
                     id: "device-health",
                     title: "Device Health",
                     url: "/device-health",
+                    roles: ['ORGANIZATION']
                 },
             ]
         },
