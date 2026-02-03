@@ -175,7 +175,7 @@ function Partners() {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card className="px-4">
                 <Table>
                     <TableHeader>
                         <TableRow>
