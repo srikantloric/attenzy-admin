@@ -49,6 +49,7 @@ const pages: NavItemType = {
             type: 'collapse',
             url: '/dashboard',
             icon: icons.attendance,
+            roles: ["ORGANIZATION"],
             children: [
                 {
                     id: "manual-entry",
@@ -97,13 +98,13 @@ const pages: NavItemType = {
             type: 'collapse',
             url: '/dashboard',
             icon: icons.device,
-            roles: ['CHANNEL_PARTNER', 'ORGANIZATION'],
+            roles: ['CHANNEL_PARTNER', 'ORGANIZATION', "PLATFORM_ADMIN"],
             children: [
                 {
                     id: "devices",
                     title: "List Devices",
                     url: "/list-device",
-                    roles: ['CHANNEL_PARTNER']
+                    roles: ['CHANNEL_PARTNER', "ORGANIZATION", "PLATFORM_ADMIN"]
                 },
                 {
                     id: "device-health",

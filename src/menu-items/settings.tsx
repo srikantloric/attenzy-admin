@@ -19,7 +19,7 @@ const settings: NavItemType = {
             id: 'settings',
             title: 'Settings',
             type: 'item',
-            url: '/dashboard',
+            url: '/settings',
             icon: icons.settings,
         },
         {
@@ -30,12 +30,6 @@ const settings: NavItemType = {
             icon: icons.code,
             roles: ["CHANNEL_PARTNER", "PLATFORM_ADMIN"],
             children: [
-                {
-                    id: 'overview',
-                    title: 'Overview',
-                    type: 'item',
-                    url: '/overview',
-                },
                 {
                     id: 'api-keys',
                     title: 'API Keys',

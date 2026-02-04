@@ -114,14 +114,15 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
     init();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
+    console.log(username, password)
     const usr = new CognitoUser({
-      Username: email,
+      Username: username,
       Pool: userPool
     });
 
     const authData = new AuthenticationDetails({
-      Username: email,
+      Username: username,
       Password: password
     });
 
