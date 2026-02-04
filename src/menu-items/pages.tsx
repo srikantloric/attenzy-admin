@@ -140,6 +140,5 @@ const pages: NavItemType = {
 
     ],
 
-
 }
 export default pages;

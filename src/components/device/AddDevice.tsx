@@ -157,7 +157,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
 
 
   return (
-    <div className="mt-2 space-y-6">
+    <div className="mx-4 space-y-6">
 
       {/* Device Name */}
       <div className="space-y-2">
