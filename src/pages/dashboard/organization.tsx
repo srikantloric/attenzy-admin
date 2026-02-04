@@ -90,7 +90,7 @@ function OrganizationDashboard() {
                                     {attendanceByDate.map((item) => (
                                         <div key={item.label} className="flex flex-col items-center w-full">
                                             <div
-                                                className="w-[80px] rounded-md bg-primary"
+                                                className="w-full rounded-md bg-primary"
                                                style={{
                                                     height: `${(item.value / maxAttendance) * chartHeight}px`
                                                 }}
