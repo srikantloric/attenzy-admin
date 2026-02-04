@@ -192,6 +192,7 @@ function PartnerAdmin() {
                 </Button>
 
                 <Button
+                  className="bg-primary"
                   onClick={() => {
                     updatePartner({
                       ...partner,

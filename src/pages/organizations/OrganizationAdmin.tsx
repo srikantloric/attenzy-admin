@@ -185,6 +185,7 @@ function OrganizationAdmin() {
                                     Cancel
                                 </Button>
                                 <Button
+                                    className="bg-primary"
                                     onClick={() => {
                                         updateOrganization({
                                             ...organization,
