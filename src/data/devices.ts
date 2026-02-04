@@ -1,45 +1,62 @@
-export type DeviceStatus = "active" | "inactive";
+export type DeviceStatus = "active" | "inactive"
 
-export interface Device {
-  id: number;
-  name: string;
-  location: string;
-  ip: string;
-  status: DeviceStatus;
-  lastSeen: string;
+export type Device = {
+  id: string
+  name: string
+  location: string
+  organization: string   
+  status: DeviceStatus
+  lastSeen: string
 }
 
 export const devicesData: Device[] = [
   {
-    id: 1,
-    name: "Science Lab 3",
-    location: "Science Lab",
-    ip: "192.168.1.20",
-    status: "active",
-    lastSeen: "Just now"
-  },
-  {
-    id: 2,
-    name: "Main Gate",
+    id: "RF1234",
+    name: "RF1234",
     location: "Main Gate",
-    ip: "192.168.1.10",
+    organization: "Unified Tech",
     status: "active",
-    lastSeen: "1 min ago"
+    lastSeen: "3 sec ago"
   },
   {
-    id: 3,
-    name: "Block A Entrance",
-    location: "Block A",
-    ip: "192.168.1.30",
-    status: "inactive",
-    lastSeen: "10 min ago"
+    id: "RF5678",
+    name: "RF5678",
+    location: "Admin Building",
+    organization: "Connect Solutions",
+    status: "active",
+    lastSeen: "8 sec ago"
   },
-  {
-    id: 4,
-    name: "Library Gate",
+    {
+    id: "RF3412",
+    name: "RF3412",
     location: "Library",
-    ip: "192.168.1.40",
+    organization: "EduSmart Technologies",
+    status: "active",
+    lastSeen: "16 sec ago"
+  },
+  {
+    id: "RF9087",
+    name: "RF9087",
+    location: "Lab 1",
+    organization: "SafePass Services",
+    status: "active",
+    lastSeen: "28 sec ago"
+  },
+  {
+    id: "RF6523",
+    name: "RF6523",
+    location: "Gymnasium",
+    organization: "Trackify Systems",
+    status: "active",
+    lastSeen: "34 sec ago"
+  },
+  {
+    id: "RF2256",
+    name: "RF2256",
+    location: "Parking Lot",
+    organization: "Beacon Edge",
     status: "inactive",
-    lastSeen: "1 hr ago"
-  }
-];
+    lastSeen: "54 sec ago"
+  },
+]
+
