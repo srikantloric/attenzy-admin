@@ -29,6 +29,7 @@ interface AddDeviceProps {
   onClose?: () => void;
 }
 
+
 const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);

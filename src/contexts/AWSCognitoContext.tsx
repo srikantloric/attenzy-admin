@@ -10,6 +10,7 @@ import authReducer from '@/contexts/auth-reducer/auth';
 // types
 import type { AWSCognitoContextType, InitialLoginContextProps } from '@/types/auth';
 import type { Role } from '@/types/role';
+import Loader from '@/components/Loader';
 
 // constant
 const initialState: InitialLoginContextProps = {
@@ -303,7 +304,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
   const updateProfile = () => { };
 
   if (state.isInitialized !== undefined && !state.isInitialized) {
-    return <p>Loading...</p>;
+    return <Loader />;
   }
 
   return (

@@ -10,6 +10,8 @@ export interface Partner {
   partnerCompany?: string;
   partnerAddress?: string;
 
+  profileImageUrl?: string;
+
   status: PartnerStatus;
   createdAt: number;
 }

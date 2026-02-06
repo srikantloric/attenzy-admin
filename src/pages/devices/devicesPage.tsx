@@ -76,7 +76,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import AddDevice from "@/components/device/AddDevice";
 
-const DevicesPage: React.FC = () => {
+const DevicePageNew: React.FC = () => {
   const [devices, setDevices] = useState<Device[]>(devicesData);
 
   const [search, setSearch] = useState("");
@@ -644,4 +644,4 @@ const DevicesPage: React.FC = () => {
   );
 };
 
-export default DevicesPage;
+export default DevicePageNew;
