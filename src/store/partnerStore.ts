@@ -100,9 +100,9 @@ export const getPartners = () => partnersMock
 export const getPartnerById = (id: string) =>
   partnersMock.find(p => p.partnerId === id)
 
-export const updatePartner = (updated: Partner) => {
+export const updatePartner = (id: string) => {
   partnersMock = partnersMock.map(p =>
-    p.partnerId === updated.partnerId ? updated : p
+    p.partnerId === id ? { ...p, updatedAt: Date.now() } : p
   )
 }
 

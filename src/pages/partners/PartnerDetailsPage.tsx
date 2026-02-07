@@ -29,7 +29,7 @@ function PartnerDetailsPage() {
   }
 
   /* ---------- editable state ---------- */
-  const [name, setName] = useState(partner.name)
+  const [name, setName] = useState(partner.partnerName)
 
   const [permissions, setPermissions] = useState({
     partners: true,
@@ -157,13 +157,7 @@ function PartnerDetailsPage() {
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    updatePartner({
-                      ...partner,
-                      status:
-                        partner.status === "Active"
-                          ? "Inactive"
-                          : "Active"
-                    })
+
                     navigate("/partners")
                   }}
                 >
@@ -178,7 +172,7 @@ function PartnerDetailsPage() {
                   className="text-red-600"
                   onClick={() => {
                     if (!confirm("Delete this partner?")) return
-                    deletePartner(partner.id)
+                    deletePartner(partner.partnerId)
                     navigate("/partners")
                   }}
                 >
@@ -194,10 +188,9 @@ function PartnerDetailsPage() {
                 <Button
                   className="bg-primary"
                   onClick={() => {
-                    updatePartner({
-                      ...partner,
-                      name
-                    })
+                    updatePartner(
+                      partner.partnerId
+                    )
                     navigate("/partners")
                   }}
                 >

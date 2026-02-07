@@ -36,7 +36,7 @@ import {
     Trash2
 } from "lucide-react"
 import type { Partner } from "@/types/partner"
-import { getPartners, updatePartner, deletePartner } from "@/store/partnerStore"
+import { getPartners, deletePartner } from "@/store/partnerStore"
 import {
     Dialog,
     DialogContent,
@@ -47,7 +47,7 @@ import {
 import AddPartnerForm from "@/components/partners/AddPartnerForm"
 
 /* ---------------- component ---------------- */
-function PartnersSelfPage() {
+function PartnersPage() {
     const [search, setSearch] = useState("")
     const [partners, setPartners] = useState<Partner[]>(getPartners())
     const [openAddPartner, setOpenAddPartner] = useState(false)
@@ -70,14 +70,10 @@ function PartnersSelfPage() {
     })
 
     const openAdminPage = (partner: Partner) => {
-        navigate(`/partners/${partner.partnerId}/admin`)
+        navigate(`/partners/${partner.partnerId}`)
     }
 
     const handleSuspend = (partner: Partner) => {
-        updatePartner({
-            ...partner,
-            status: partner.status === "Active" ? "Inactive" : "Active"
-        })
 
         setPartners(getPartners())
     }
@@ -318,4 +314,4 @@ function PartnersSelfPage() {
 
 }
 
-export default PartnersSelfPage
+export default PartnersPage

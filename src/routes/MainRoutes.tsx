@@ -12,8 +12,8 @@ import ManualAttendancePage from '@/pages/attendance/attendance';
 import Organizations from '@/pages/organizations/organizations';
 import OrganizationAdmin from "@/pages/organizations/OrganizationAdmin"
 import DevicePageNew from '@/pages/devices/devicePageNew';
-import { PartnersPage } from '@/pages/partners';
-import PartnerDetailsPage from '@/pages/partners/details/PartnerDetailsPage';
+import PartnerDetailsPage from '@/pages/partners/PartnerDetailsPage';
+import PartnersPage from '@/pages/partners/PartnersPage';
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
@@ -38,7 +38,7 @@ const MainRoutes = {
                 { path: 'list-device', element: <DevicePageNew /> },
                 { path: 'device-health', element: <DeviceHealthPage /> },
                 { path: 'partners', element: <PartnersPage /> },
-                { path: "/partners/:partnerId/admin", element: <PartnerDetailsPage /> },
+                { path: "/partners/:partnerId", element: <PartnerDetailsPage /> },
                 { path: 'organizations', element: <Organizations /> },
                 { path: "/organizations/:organizationId/admin", element: <OrganizationAdmin /> },
 
