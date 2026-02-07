@@ -36,7 +36,7 @@ import {
     Trash2
 } from "lucide-react"
 import type { Partner } from "@/types/partner"
-import { getPartners, updatePartner, deletePartner, addPartner } from "@/store/partnerStore"
+import { getPartners, updatePartner, deletePartner } from "@/store/partnerStore"
 import {
     Dialog,
     DialogContent,
@@ -47,9 +47,9 @@ import {
 import AddPartnerForm from "@/components/partners/AddPartnerForm"
 
 /* ---------------- component ---------------- */
-function Partners() {
+function PartnersSelfPage() {
     const [search, setSearch] = useState("")
-    const [partners, setPartners] = useState(getPartners())
+    const [partners, setPartners] = useState<Partner[]>(getPartners())
     const [openAddPartner, setOpenAddPartner] = useState(false)
 
     const [statusFilter, setStatusFilter] = useState<
@@ -59,7 +59,7 @@ function Partners() {
     const navigate = useNavigate()
 
     const filteredPartners = partners.filter((p) => {
-        const matchesSearch = p.name
+        const matchesSearch = p.partnerName
             .toLowerCase()
             .includes(search.toLowerCase())
 
@@ -70,7 +70,7 @@ function Partners() {
     })
 
     const openAdminPage = (partner: Partner) => {
-        navigate(`/partners/${partner.id}/admin`)
+        navigate(`/partners/${partner.partnerId}/admin`)
     }
 
     const handleSuspend = (partner: Partner) => {
@@ -83,18 +83,17 @@ function Partners() {
     }
 
     const handleDelete = (partner: Partner) => {
-        if (!confirm(`Delete ${partner.name}?`)) return
+        if (!confirm(`Delete ${partner.partnerId}?`)) return
 
-        deletePartner(partner.id)
+        deletePartner(partner.partnerId)
         setPartners(getPartners())
     }
 
     return (
-        <div className="space-y-6 mt-4">
+        <div className="space-y-2 mt-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Partners</h1>
-
                 <Button
                     className="gap-2 bg-primary"
                     onClick={() => setOpenAddPartner(true)}
@@ -102,7 +101,6 @@ function Partners() {
                     <Plus className="h-4 w-4" />
                     Add Partner
                 </Button>
-
             </div>
 
             {/* Stats */}
@@ -126,14 +124,14 @@ function Partners() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-semibold">
-                            {partners.reduce((sum, p) => sum + p.organizations, 0)}
+                            {partners.reduce((sum, p) => sum + p.orgCount, 0)}
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Search & Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-6">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -180,20 +178,32 @@ function Partners() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Partner</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Address</TableHead>
+
                             <TableHead>Organizations</TableHead>
                             <TableHead>Devices</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Joined On</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
                         {filteredPartners.map(partner => (
-                            <TableRow key={partner.id}>
+                            <TableRow key={partner.partnerId}>
                                 <TableCell className="font-medium">
-                                    {partner.name}
+                                    {partner.partnerName}
+                                </TableCell>
+                                <TableCell >
+                                    {partner.partnerCompany}
+                                </TableCell>
+                                <TableCell>
+                                    {partner.partnerAddress}
                                 </TableCell>
 
+                                <TableCell>{partner.orgCount}</TableCell>
+                                <TableCell>{partner.deviceCount}</TableCell>
                                 <TableCell>
                                     <Badge
                                         variant="outline"
@@ -206,9 +216,8 @@ function Partners() {
                                         {partner.status}
                                     </Badge>
                                 </TableCell>
+                                <TableCell>{new Date(partner.createdAt).toDateString()}</TableCell>
 
-                                <TableCell>{partner.organizations}</TableCell>
-                                <TableCell>{partner.devices}</TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -309,4 +318,4 @@ function Partners() {
 
 }
 
-export default Partners
+export default PartnersSelfPage

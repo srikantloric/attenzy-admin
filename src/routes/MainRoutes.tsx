@@ -9,11 +9,11 @@ import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
-import Partners from '@/pages/partners/partners';
 import Organizations from '@/pages/organizations/organizations';
-import PartnerAdmin from '@/pages/partners/PartnerAdmin';
 import OrganizationAdmin from "@/pages/organizations/OrganizationAdmin"
 import DevicePageNew from '@/pages/devices/devicePageNew';
+import { PartnersPage } from '@/pages/partners';
+import PartnerDetailsPage from '@/pages/partners/details/PartnerDetailsPage';
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
@@ -37,8 +37,8 @@ const MainRoutes = {
                 { path: 'rfid-mapping', element: <RFIDMappingPage /> },
                 { path: 'list-device', element: <DevicePageNew /> },
                 { path: 'device-health', element: <DeviceHealthPage /> },
-                { path: 'partners', element: <Partners /> },
-                { path: "/partners/:partnerId/admin", element: <PartnerAdmin /> },
+                { path: 'partners', element: <PartnersPage /> },
+                { path: "/partners/:partnerId/admin", element: <PartnerDetailsPage /> },
                 { path: 'organizations', element: <Organizations /> },
                 { path: "/organizations/:organizationId/admin", element: <OrganizationAdmin /> },
 

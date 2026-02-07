@@ -12,7 +12,11 @@ export interface Partner {
 
   profileImageUrl?: string;
 
+  orgCount: number;
+  deviceCount: number;
+
   status: PartnerStatus;
   createdAt: number;
+  updatedAt: number;
 }
 

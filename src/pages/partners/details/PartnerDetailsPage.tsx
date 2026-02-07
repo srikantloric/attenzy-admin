@@ -17,7 +17,7 @@ import {
 } from "@/store/partnerStore"
 
 
-function PartnerAdmin() {
+function PartnerDetailsPage() {
   const { partnerId } = useParams()
   const navigate = useNavigate()
 
@@ -212,4 +212,4 @@ function PartnerAdmin() {
   )
 }
 
-export default PartnerAdmin
+export default PartnerDetailsPage
