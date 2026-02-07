@@ -4,197 +4,195 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera } from "lucide-react"
 
-import type { Partner } from "@/types/partner"
-import { addPartner } from "@/store/partnerStore"
+import { useFormik } from "formik"
+import { toFormikValidationSchema } from "zod-formik-adapter"
+
+import { partnerSchema, type PartnerFormValues } from "@/schemas/partner.schema"
+import { createPartner } from "@/api/partner"
+import type { CreatePartnerResponse } from "@/types/partner"
 
 interface AddPartnerFormProps {
     onSuccess: () => void
 }
 
 function AddPartnerForm({ onSuccess }: AddPartnerFormProps) {
-    const [form, setForm] = useState({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        phone: "",
-        address: "",
-        photo: ""
+    const [createdPartner, setCreatedPartner] =
+        useState<CreatePartnerResponse | null>(null)
+
+    const formik = useFormik<PartnerFormValues>({
+        initialValues: {
+            partnerName: "",
+            partnerEmail: "",
+            partnerCompany: "",
+            partnerPhone: "",
+            partnerAddress: ""
+        },
+        validationSchema: toFormikValidationSchema(partnerSchema),
+        onSubmit: async (values, { setSubmitting, setStatus }) => {
+            try {
+                const response = await createPartner(values)
+
+                // ✅ response matches backend shape
+                setCreatedPartner(response)
+            } catch (error: any) {
+                setStatus(
+                    error.response?.data?.message || "Failed to create partner"
+                )
+            } finally {
+                setSubmitting(false)
+            }
+        }
     })
 
-    const passwordsMatch =
-        form.password.length > 0 &&
-        form.password === form.confirmPassword
 
-    const canSubmit =
-        form.name &&
-        form.email &&
-        form.password &&
-        passwordsMatch
+/* -------------------------------- SUCCESS VIEW ------------------------------- */
+if (createdPartner) {
+  return (
+    <div className="space-y-6 rounded-lg border bg-muted/40 p-6">
+      <h3 className="text-lg font-semibold text-green-600">
+        ✅ Partner Created Successfully
+      </h3>
 
-    const handleSubmit = () => {
-        if (!canSubmit) return
+      <Separator />
 
-        const newPartner: Partner = {
-            id: crypto.randomUUID(),
-            name: form.name,
-            status: "Active",
-            organizations: 0,
-            devices: 0
-        }
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">Partner ID</span>
+          <span className="font-mono break-all text-right">
+            {createdPartner.partnerId}
+          </span>
+        </div>
 
-        addPartner(newPartner)
-        onSuccess()
-    }
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">Username</span>
+          <span className="font-mono break-all text-right">
+            {createdPartner.credentials.username}
+          </span>
+        </div>
 
-    return (
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">Temporary Password</span>
+          <span className="font-mono text-destructive break-all text-right">
+            {createdPartner.credentials.password}
+          </span>
+        </div>
+      </div>
+
+      <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-700">
+        ⚠️ Please copy and share these credentials securely.
+        You can change your password after first login.
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={onSuccess}>Done</Button>
+      </div>
+    </div>
+  )
+}
+
+/* -------------------------------- FORM VIEW ------------------------------- */
+const {
+    values,
+    errors,
+    touched,
+    status,
+    isSubmitting,
+    handleChange,
+    handleSubmit
+} = formik
+
+return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* Basic Info */}
         <div className="space-y-6">
-            {/* Profile */}
-            <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                    <AvatarImage src={form.photo} />
-                    <AvatarFallback>
-                        {form.name.slice(0, 2).toUpperCase() || "P"}
-                    </AvatarFallback>
-                </Avatar>
-
-                <div>
-                    <Label className="block mb-1">Profile Photo</Label>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        asChild
-                    >
-                        <label>
-                            <Camera className="h-4 w-4" />
-                            Upload
-                            <input
-                                type="file"
-                                accept="image/*"
-                                hidden
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    if (file) {
-                                        setForm({
-                                            ...form,
-                                            photo: URL.createObjectURL(file)
-                                        })
-                                    }
-                                }}
-                            />
-                        </label>
-                    </Button>
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Basic Info */}
-            <div className="space-y-4">
-                <div>
-                    <Label className="mb-2">Partner Name *</Label>
-                    <Input
-                        placeholder="e.g. Unified Tech"
-                        value={form.name}
-                        onChange={(e) =>
-                            setForm({ ...form, name: e.target.value })
-                        }
-                    />
-                </div>
-
-                <div>
-                    <Label className="mb-2">Email *</Label>
-                    <Input
-                        type="email"
-                        placeholder="admin@partner.com"
-                        value={form.email}
-                        onChange={(e) =>
-                            setForm({ ...form, email: e.target.value })
-                        }
-                    />
-                </div>
-            </div>
-
-            {/* Security */}
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <Label className="mb-2">Password *</Label>
-                        <Input
-                            type="password"
-                            value={form.password}
-                            onChange={(e) =>
-                                setForm({ ...form, password: e.target.value })
-                            }
-                        />
-                    </div>
-
-                    <div>
-                        <Label className="mb-2">Confirm Password *</Label>
-                        <Input
-                            type="password"
-                            value={form.confirmPassword}
-                            onChange={(e) =>
-                                setForm({ ...form, confirmPassword: e.target.value })
-                            }
-                        />
-                    </div>
-                </div>
-
-                {form.confirmPassword && (
-                    <p
-                        className={`text-sm ${passwordsMatch
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                    >
-                        {passwordsMatch
-                            ? "Passwords match"
-                            : "Passwords do not match"}
-                    </p>
+            <div>
+                <Label className="mb-1">Partner Name *</Label>
+                <Input
+                    type="text"
+                    name="partnerName"
+                    value={values.partnerName}
+                    onChange={handleChange}
+                />
+                {touched.partnerName && errors.partnerName && (
+                    <p className="text-sm text-destructive">{errors.partnerName}</p>
                 )}
             </div>
 
-            {/* Contact */}
-            <div className="space-y-4">
-                <div>
-                    <Label className="mb-2">Contact Number</Label>
-                    <Input
-                        placeholder="+91 98765 43210"
-                        value={form.phone}
-                        onChange={(e) =>
-                            setForm({ ...form, phone: e.target.value })
-                        }
-                    />
-                </div>
-
-                <div>
-                    <Label className="mb-2">Address</Label>
-                    <Textarea
-                        placeholder="Full address"
-                        value={form.address}
-                        onChange={(e) =>
-                            setForm({ ...form, address: e.target.value })
-                        }
-                    />
-                </div>
+            <div>
+                <Label className="mb-1">Email *</Label>
+                <Input
+                    type="email"
+                    name="partnerEmail"
+                    value={values.partnerEmail}
+                    onChange={handleChange}
+                />
+                {touched.partnerEmail && errors.partnerEmail && (
+                    <p className="text-sm text-destructive">{errors.partnerEmail}</p>
+                )}
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={onSuccess}>
-                    Cancel
-                </Button>
-                <Button className="bg-primary" disabled={!canSubmit} onClick={handleSubmit}>
-                    Add Partner
-                </Button>
+            <div>
+                <Label className="mb-1">Partner Company *</Label>
+                <Input
+                    type="text"
+                    name="partnerCompany"
+                    value={values.partnerCompany}
+                    onChange={handleChange}
+                />
+                {touched.partnerCompany && errors.partnerCompany && (
+                    <p className="text-sm text-destructive">
+                        {errors.partnerCompany}
+                    </p>
+                )}
             </div>
         </div>
-    )
+
+        {/* Contact */}
+        <div className="space-y-4">
+            <div>
+                <Label className="mb-1">Contact Number *</Label>
+                <Input
+                    type="number"
+                    name="partnerPhone"
+                    value={values.partnerPhone}
+                    onChange={handleChange}
+                />
+                {touched.partnerPhone && errors.partnerPhone && (
+                    <p className="text-sm text-destructive">{errors.partnerPhone}</p>
+                )}
+            </div>
+
+            <div>
+                <Label className="mb-1">Address *</Label>
+                <Textarea
+                    name="partnerAddress"
+                    value={values.partnerAddress}
+                    onChange={handleChange}
+                />
+                {touched.partnerAddress && errors.partnerAddress && (
+                    <p className="text-sm text-destructive">
+                        {errors.partnerAddress}
+                    </p>
+                )}
+            </div>
+        </div>
+
+        {status && (
+            <p className="text-sm text-destructive">{status}</p>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onSuccess}>
+                Cancel
+            </Button>
+            <Button className="bg-primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Adding..." : "Add Partner"}
+            </Button>
+        </div>
+    </form>
+)
 }
 
 export default AddPartnerForm

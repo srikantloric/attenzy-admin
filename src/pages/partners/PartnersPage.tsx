@@ -36,10 +36,10 @@ import {
     Trash2
 } from "lucide-react"
 import type { Partner } from "@/types/partner"
-import { getPartners, deletePartner } from "@/store/partnerStore"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle
 } from "@/components/ui/dialog"
@@ -53,8 +53,10 @@ function PartnersPage() {
     const [partners, setPartners] = useState<Partner[]>([])
     const [openAddPartner, setOpenAddPartner] = useState(false)
 
+    const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
     const fetchPartners = async () => {
-        const res = await axios.get("https://gd14o4mjv8.execute-api.ap-south-1.amazonaws.com/v1/partners")
+        const res = await axios.get(`${BACKEND_BASE_URL}/partners`)
         setPartners(res.data.items)
     }
 
@@ -64,7 +66,7 @@ function PartnersPage() {
 
 
     const [statusFilter, setStatusFilter] = useState<
-        "All" | "Active" | "Inactive"
+        "All" | "ACTIVE" | "INACTIVE"
     >("All")
 
     const navigate = useNavigate()
@@ -84,20 +86,36 @@ function PartnersPage() {
         navigate(`/partners/${partner.partnerId}`)
     }
 
-    const handleSuspend = (partner: Partner) => {
+    const handleSuspend = async (partner: Partner) => {
+        try {
+            await axios.patch(
+                `${BACKEND_BASE_URL}/partners/${partner.partnerId}`,
+                { status: "INACTIVE" }
+            )
 
-        setPartners(getPartners())
+            fetchPartners()
+        } catch (err) {
+            console.error("Failed to suspend partner", err)
+        }
     }
 
-    const handleDelete = (partner: Partner) => {
-        if (!confirm(`Delete ${partner.partnerId}?`)) return
+    const handleDelete = async (partner: Partner) => {
+        if (!confirm(`Delete ${partner.partnerName}?`)) return
 
-        deletePartner(partner.partnerId)
-        setPartners(getPartners())
+        try {
+            await axios.delete(
+                `${BACKEND_BASE_URL}/partners/${partner.partnerId}`
+            )
+
+            fetchPartners()
+        } catch (err) {
+            console.error("Failed to delete partner", err)
+        }
     }
 
     return (
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2 mt-4 min-w-0">
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Partners</h1>
@@ -138,8 +156,8 @@ function PartnersPage() {
             </div>
 
             {/* Search & Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mt-6">
-                <div className="relative w-full max-w-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-6 min-w-0">
+                <div className="relative w-full max-w-sm min-w-0">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search Partners..."
@@ -162,10 +180,10 @@ function PartnersPage() {
                             <DropdownMenuItem onClick={() => setStatusFilter("All")}>
                                 All
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setStatusFilter("Active")}>
+                            <DropdownMenuItem onClick={() => setStatusFilter("ACTIVE")}>
                                 Active
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setStatusFilter("Inactive")}>
+                            <DropdownMenuItem onClick={() => setStatusFilter("INACTIVE")}>
                                 Inactive
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -215,7 +233,7 @@ function PartnersPage() {
                                     <Badge
                                         variant="outline"
                                         className={
-                                            partner.status === "Active"
+                                            partner.status === "ACTIVE"
                                                 ? "border-green-600 text-green-600"
                                                 : "border-red-500 text-red-500"
                                         }
@@ -308,11 +326,12 @@ function PartnersPage() {
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Add Partner</DialogTitle>
+                        <DialogDescription className="mb-2">Enter details to add a new partner here.</DialogDescription>
                     </DialogHeader>
 
                     <AddPartnerForm
                         onSuccess={() => {
-                            setPartners(getPartners())
+                            fetchPartners()
                             setOpenAddPartner(false)
                         }}
                     />

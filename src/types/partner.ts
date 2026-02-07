@@ -1,4 +1,4 @@
-export type PartnerStatus = "Active" | "Inactive"
+export type PartnerStatus = "ACTIVE" | "INACTIVE"
 
 export interface Partner {
   partnerId: string;
@@ -20,3 +20,10 @@ export interface Partner {
   updatedAt: number;
 }
 
+export interface CreatePartnerResponse {
+  partnerId: string
+  credentials: {
+    username: string
+    password: string
+  }
+}
