@@ -23,7 +23,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { Plus, Filter, ChevronDown, Search } from "lucide-react"
+import { Plus, Filter, ChevronDown, Search, } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +46,7 @@ import {
 
 import AddPartnerForm from "@/components/partners/AddPartnerForm"
 import axios from "axios"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 /* ---------------- component ---------------- */
 function PartnersPage() {
@@ -202,6 +203,9 @@ function PartnersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
+
+                            <TableHead>#</TableHead>
+                            <TableHead>ID</TableHead>
                             <TableHead>Partner</TableHead>
                             <TableHead>Company</TableHead>
                             <TableHead>Address</TableHead>
@@ -217,6 +221,22 @@ function PartnersPage() {
                     <TableBody>
                         {filteredPartners.map(partner => (
                             <TableRow key={partner.partnerId}>
+                                <TableCell className="w-18">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={partner.profileImageUrl} />
+                                        <AvatarFallback className="bg-muted text-primary text-md font-semibold">
+                                            {partner.partnerName
+                                                ?.split(" ")
+                                                .filter(Boolean)
+                                                .slice(0, 2)
+                                                .map(word => word.charAt(0).toUpperCase())
+                                                .join("") || "?"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                    {partner.partnerId}
+                                </TableCell>
                                 <TableCell className="font-medium">
                                     {partner.partnerName}
                                 </TableCell>
