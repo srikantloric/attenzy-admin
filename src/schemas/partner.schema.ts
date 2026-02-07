@@ -15,7 +15,7 @@ export const partnerSchema = z.object({
 
   partnerPhone: z
     .string()
-    .max(10, "Phone number must be at least 10 digits"),
+    .regex(/^[0-9]{10}$/, "Phone number must be exactly 10 digits"),
 
   partnerAddress: z
     .string()
