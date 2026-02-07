@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
     Card,
@@ -45,12 +45,23 @@ import {
 } from "@/components/ui/dialog"
 
 import AddPartnerForm from "@/components/partners/AddPartnerForm"
+import axios from "axios"
 
 /* ---------------- component ---------------- */
 function PartnersPage() {
     const [search, setSearch] = useState("")
-    const [partners, setPartners] = useState<Partner[]>(getPartners())
+    const [partners, setPartners] = useState<Partner[]>([])
     const [openAddPartner, setOpenAddPartner] = useState(false)
+
+    const fetchPartners = async () => {
+        const res = await axios.get("https://gd14o4mjv8.execute-api.ap-south-1.amazonaws.com/v1/partners")
+        setPartners(res.data.items)
+    }
+
+    useEffect(() => {
+        fetchPartners()
+    }, [])
+
 
     const [statusFilter, setStatusFilter] = useState<
         "All" | "Active" | "Inactive"
