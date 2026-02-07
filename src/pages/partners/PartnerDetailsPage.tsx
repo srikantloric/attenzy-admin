@@ -13,6 +13,9 @@ import { Separator } from "@/components/ui/separator"
 import { Camera } from "lucide-react"
 
 import type { Partner } from "@/types/partner"
+import { toast } from "sonner"
+
+import ConfirmDialog from "@/components/common/ConfirmDialog"
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
@@ -29,6 +32,8 @@ function PartnerDetailsPage() {
   const [partnerPhone, setPartnerPhone] = useState("")
   const [partnerAddress, setPartnerAddress] = useState("")
 
+  const [openConfirm, setOpenConfirm] = useState(false)
+
   const [permissions, setPermissions] = useState({
     partners: true,
     devices: true,
@@ -37,6 +42,12 @@ function PartnerDetailsPage() {
     billing: true,
     audit: true
   })
+
+  const isDirty =
+    partnerName !== (partner?.partnerName ?? "") ||
+    partnerCompany !== (partner?.partnerCompany ?? "") ||
+    partnerPhone !== (partner?.partnerPhone ?? "") ||
+    partnerAddress !== (partner?.partnerAddress ?? "")
 
   /* ---------------- FETCH PARTNER ---------------- */
   useEffect(() => {
@@ -76,37 +87,82 @@ function PartnerDetailsPage() {
   /* ---------------- ACTIONS ---------------- */
 
   const handleSave = async () => {
+    if (!partner) return
+
+    setPartner(prev =>
+      prev
+        ? {
+          ...prev,
+          partnerName,
+          partnerCompany,
+          partnerPhone,
+          partnerAddress
+        }
+        : prev
+    )
+
     try {
-      await axios.patch(`${BASE_URL}/partners/${partner.partnerId}`, {
+      await axios.put(`${BASE_URL}/partners`, {
+        partnerId: partner.partnerId,
         partnerName,
         partnerCompany,
         partnerPhone,
-        partnerAddress
+        partnerAddress,
+        status: partner.status
       })
+
+      toast.success("Partner updated successfully")
+
       navigate("/partners")
     } catch (err) {
-      console.error("Failed to update partner", err)
+      toast.error("Failed to update partner details")
+
+      // rollback
+      try {
+        const res = await axios.get(`${BASE_URL}/partners`)
+        const fresh = res.data.items.find(
+          (p: Partner) => p.partnerId === partner.partnerId
+        )
+        if (fresh) setPartner(fresh)
+      } catch { }
     }
   }
+
 
   const handleToggleStatus = async () => {
-    try {
-      await axios.patch(`${BASE_URL}/partners/${partner.partnerId}`, {
-        status: partner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
-      })
-      navigate("/partners")
-    } catch (err) {
-      console.error("Failed to update status", err)
-    }
-  }
+    if (!partner) return
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this partner?")) return
+    const newStatus =
+      partner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+
+    setPartner(prev =>
+      prev ? { ...prev, status: newStatus } : prev
+    )
+
     try {
-      await axios.delete(`${BASE_URL}/partners/${partner.partnerId}`)
-      navigate("/partners")
+      await axios.put(`${BASE_URL}/partners`, {
+        partnerId: partner.partnerId,
+        partnerName: partner.partnerName,
+        status: newStatus
+      })
+
+      toast.success(
+        newStatus === "ACTIVE"
+          ? "Partner activated successfully"
+          : "Partner suspended successfully"
+      )
     } catch (err) {
-      console.error("Failed to delete partner", err)
+      toast.error("Failed to update partner status")
+
+      // rollback
+      setPartner(prev =>
+        prev
+          ? {
+            ...prev,
+            status: newStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE"
+          }
+          : prev
+      )
     }
   }
 
@@ -201,7 +257,7 @@ function PartnerDetailsPage() {
         </Card>
 
         {/* RIGHT PANEL */}
-        <Card className="lg:col-span-2 py-8">
+        <Card className="lg:col-span-2 py-14 ">
           <CardHeader>
             <CardTitle>Overview & Permissions</CardTitle>
           </CardHeader>
@@ -249,31 +305,58 @@ function PartnerDetailsPage() {
             {/* Actions */}
             <div className="flex justify-between">
               <div className="space-y-2">
-                <Button variant="destructive" onClick={handleToggleStatus}>
+                <Button
+                  variant="destructive"
+                  onClick={() => setOpenConfirm(true)}
+                >
                   {partner.status === "ACTIVE" ? "Suspend Account" : "Activate Account"}
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  className="text-red-600 ml-1"
-                  onClick={handleDelete}
-                >
-                  Delete Partner
-                </Button>
               </div>
 
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => navigate("/partners")}>
                   Cancel
                 </Button>
-                <Button className="bg-primary" onClick={handleSave}>
+                <Button
+                  className="bg-primary"
+                  onClick={handleSave}
+                  disabled={!isDirty}
+                >
                   Save
                 </Button>
+
               </div>
             </div>
+
+
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={openConfirm}
+        title={
+          partner.status === "ACTIVE"
+            ? "Suspend Partner Account?"
+            : "Activate Partner Account?"
+        }
+        description={
+          partner.status === "ACTIVE"
+            ? "This partner will lose access to the platform until reactivated."
+            : "This partner will regain access to the platform."
+        }
+        confirmText="Yes, Continue"
+        variant={partner.status === "ACTIVE" ? "destructive" : "default"}
+        onCancel={() => {
+          setOpenConfirm(false)
+        }}
+        onConfirm={() => {
+          handleToggleStatus()
+          setOpenConfirm(false)
+        }}
+      />
+
     </div>
   )
 }

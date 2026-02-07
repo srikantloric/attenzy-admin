@@ -32,8 +32,7 @@ import {
     MoreHorizontal,
     Eye,
     Pencil,
-    Ban,
-    Trash2
+    Ban
 } from "lucide-react"
 import type { Partner } from "@/types/partner"
 import {
@@ -48,11 +47,16 @@ import AddPartnerForm from "@/components/partners/AddPartnerForm"
 import axios from "axios"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+import ConfirmDialog from "@/components/common/ConfirmDialog"
+import { toast } from "sonner"
+
 /* ---------------- component ---------------- */
 function PartnersPage() {
     const [search, setSearch] = useState("")
     const [partners, setPartners] = useState<Partner[]>([])
     const [openAddPartner, setOpenAddPartner] = useState(false)
+
+    const [partnerToSuspend, setPartnerToSuspend] = useState<Partner | null>(null)
 
     const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -88,31 +92,29 @@ function PartnersPage() {
     }
 
     const handleSuspend = async (partner: Partner) => {
-        try {
-            await axios.patch(
-                `${BACKEND_BASE_URL}/partners/${partner.partnerId}`,
-                { status: "INACTIVE" }
-            )
+        const newStatus =
+            partner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
 
-            fetchPartners()
+        setPartners(prev =>
+            prev.map(p =>
+                p.partnerId === partner.partnerId
+                    ? { ...p, status: newStatus }
+                    : p
+            )
+        )
+
+        try {
+            await axios.put(`${BACKEND_BASE_URL}/partners`, {
+                partnerId: partner.partnerId,
+                partnerName: partner.partnerName,
+                status: newStatus
+            })
         } catch (err) {
-            console.error("Failed to suspend partner", err)
+            console.error("Failed to update partner status", err)
+            fetchPartners()
         }
     }
 
-    const handleDelete = async (partner: Partner) => {
-        if (!confirm(`Delete ${partner.partnerName}?`)) return
-
-        try {
-            await axios.delete(
-                `${BACKEND_BASE_URL}/partners/${partner.partnerId}`
-            )
-
-            fetchPartners()
-        } catch (err) {
-            console.error("Failed to delete partner", err)
-        }
-    }
 
     return (
         <div className="space-y-2 mt-4 min-w-0">
@@ -286,17 +288,13 @@ function PartnersPage() {
                                                 Edit
                                             </DropdownMenuItem>
 
-                                            <DropdownMenuItem onClick={() => handleSuspend(partner)}>
-                                                <Ban className="mr-2 h-4 w-4" />
-                                                Suspend
-                                            </DropdownMenuItem>
-
                                             <DropdownMenuItem
-                                                onClick={() => handleDelete(partner)}
+                                                disabled={partner.status === "INACTIVE"}
+                                                onClick={() => setPartnerToSuspend(partner)}
                                                 className="text-red-600 focus:text-red-600"
                                             >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
+                                                <Ban className="mr-2 h-4 w-4" />
+                                                Suspend
                                             </DropdownMenuItem>
 
                                         </DropdownMenuContent>
@@ -357,6 +355,25 @@ function PartnersPage() {
                     />
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={!!partnerToSuspend}
+                title="Suspend Partner?"
+                description="This action will deactivate the partner account and prevent access until it is reactivated."
+                confirmText="Yes, Suspend"
+                variant="destructive"
+                onCancel={() => {
+                    setPartnerToSuspend(null)
+                }}
+                onConfirm={() => {
+                    if (partnerToSuspend) {
+                        handleSuspend(partnerToSuspend)
+                        toast.success("Partner suspended successfully")
+                    }
+                    setPartnerToSuspend(null)
+                }}
+            />
+
 
         </div>
 
