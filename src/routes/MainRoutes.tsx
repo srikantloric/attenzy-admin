@@ -9,7 +9,7 @@ import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
-import DevicePageNew from '@/pages/devices/devicePageNew';
+import DevicePageNew from '@/pages/devices/devicePage';
 
 import PartnerDetailsPage from '@/pages/partners/PartnerDetailsPage';
 import PartnersPage from '@/pages/partners/PartnersPage';
