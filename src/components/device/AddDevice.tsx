@@ -1,289 +1,299 @@
-import { useState } from "react";
+import { useState } from "react"
 
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
-import { db } from "@/contexts/FirebaseContext";
+import { useEffect } from "react"
 import {
-    addDoc,
-    collection,
-    serverTimestamp,
-    getDocs,
-    updateDoc,
-    doc
-} from "firebase/firestore";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
 
-import { toast } from "sonner";
-import { generateDeviceId } from "@/lib/generateDeviceId";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../ui/sheet";
+import { getOrganizationsByPartner } from "@/api/organization"
+
+import useAuth from "@/hooks/useAuth"
+import { toast } from "sonner"
 
 interface AddDeviceProps {
-    open: boolean
-    setOpen: (status: boolean) => void
-    onClose?: () => void;
+  open: boolean
+  setOpen: (status: boolean) => void
+  onClose?: () => void
 }
 
+type OrgOption = {
+  orgId: string
+  orgName: string
+}
 
-const AddDevice: React.FC<AddDeviceProps> = ({ open, setOpen, onClose }) => {
-    const [loading, setLoading] = useState(false);
-    const [isUpdateMode, setIsUpdateMode] = useState(false);
-    const [existingDocId, setExistingDocId] = useState<string | null>(null);
-    const [_, setSerialConflict] = useState(false);
-    const [checkingSerial, setCheckingSerial] = useState(false);
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+
+const AddDevice: React.FC<AddDeviceProps> = ({
+  open,
+  setOpen,
+  onClose,
+}) => {
+  const { user } = useAuth()
+  const partnerId = user?.partnerId
+
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  const [organizations, setOrganizations] = useState<OrgOption[]>([])
+  const [selectedOrg, setSelectedOrg] = useState<OrgOption | null>(null)
+
+  const [form, setForm] = useState({
+    deviceId: "",
+    serialNumber: "",
+    orgId: "",
+    location: "",
+    description: "",
+  })
+
+  const resetForm = () => {
+    setForm({
+      deviceId: "",
+      serialNumber: "",
+      orgId: "",
+      location: "",
+      description: "",
+    })
+    setSuccess(false)
+  }
+
+  const handleChange = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleSubmit = async () => {
+    if (!partnerId) {
+      toast.error("Partner information missing. Please login again.")
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      const res = await fetch(`${BACKEND_BASE_URL}/devices`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...form,
+          partnerId,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Failed to add device")
+      }
+
+      setSuccess(true)
+
+      toast.success("Device added successfully", {
+        description: `Device ${form.deviceId} has been registered.`,
+      })
+    } catch (err: any) {
+      console.error(err)
+      toast.error("Failed to add device", {
+        description: err.message || "Something went wrong",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!partnerId) return
+
+    const loadOrgs = async () => {
+      try {
+        const res = await getOrganizationsByPartner(partnerId)
+
+        const mapped = res.items.map((o) => ({
+          orgId: o.orgId,
+          orgName: o.orgName,
+        }))
+
+        setOrganizations(mapped)
+      } catch (err) {
+        console.error("Failed to load organizations", err)
+        toast.error("Failed to load organizations")
+      }
+    }
+
+    loadOrgs()
+  }, [partnerId])
 
 
-    const [form, setForm] = useState({
-        deviceName: "",
-        serialNumber: "",
-        deviceModel: "",
-        orgId: "",
-        partnerId: "",
-        location: "",
-        ipAddress: "",
-        description: ""
-    });
-
-    const resetForm = () => {
-        setForm({
-            deviceName: "",
-            serialNumber: "",
-            deviceModel: "",
-            orgId: "",
-            partnerId: "",
-            location: "",
-            ipAddress: "",
-            description: ""
-        });
-        setIsUpdateMode(false);
-        setExistingDocId(null);
-        setSerialConflict(false);
-    };
-
-
-    const handleChange = (key: string, value: string) => {
-        setForm((prev) => ({ ...prev, [key]: value }));
-    };
-
-    const checkSerialExists = async (serial: string) => {
-        if (!serial) return;
-
-        setCheckingSerial(true);
-
-        try {
-            const snapshot = await getDocs(collection(db, "devices"));
-
-            const existing = snapshot.docs.find(
-                (d) => d.data().serialNumber === serial
-            );
-
-            if (existing) {
-                setIsUpdateMode(true);
-                setExistingDocId(existing.id);
-                setSerialConflict(false);
-
-                setForm({
-                    deviceName: existing.data().deviceName || "",
-                    serialNumber: existing.data().serialNumber || "",
-                    deviceModel: existing.data().deviceModel || "",
-                    orgId: existing.data().orgId || "",
-                    partnerId: existing.data().partnerId || "",
-                    location: existing.data().location || "",
-                    ipAddress: existing.data().ipAddress || "",
-                    description: existing.data().description || ""
-                });
-
-                toast.info("Existing device found", {
-                    description: "You can update the device details."
-                });
-            } else {
-                setIsUpdateMode(false);
-                setExistingDocId(null);
-                setSerialConflict(false);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setCheckingSerial(false);
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          resetForm()
+          onClose?.()
         }
-    };
+        setOpen(v)
+      }}
+    >
+      <SheetContent side="right" className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="mt-4">Add Device</SheetTitle>
+          <SheetDescription>
+            Register a new device to an organization
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="mx-4 space-y-5">
+          {success ? (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+              ✅ Device added successfully.
+              <div className="mt-3 flex justify-end">
+                <Button
+                  onClick={() => {
+                    resetForm()
+                    setOpen(false)
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Device ID */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Device ID</label>
+                <Input
+                  placeholder="dev003"
+                  value={form.deviceId}
+                  onChange={(e) =>
+                    handleChange("deviceId", e.target.value)
+                  }
+                />
+              </div>
+
+              {/* Serial Number */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Serial Number</label>
+                <Input
+                  placeholder="SN003"
+                  value={form.serialNumber}
+                  onChange={(e) =>
+                    handleChange("serialNumber", e.target.value)
+                  }
+                />
+              </div>
+
+              {/* Organization Combobox */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Organization</label>
+
+                <Combobox<OrgOption>
+                  items={organizations}
+                  onValueChange={(org) => {
+                    if (!org) return
+                    handleChange("orgId", org.orgId)
+                  }}
+                >
+                  <ComboboxInput placeholder="Search organization by name or ID" />
+
+                  <ComboboxContent>
+                    <ComboboxEmpty>No organization found.</ComboboxEmpty>
+
+                    <ComboboxList>
+                      {(org) => (
+                        <ComboboxItem key={org.orgId} value={org}>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">
+                              {org.orgName}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {org.orgId}
+                            </span>
+                          </div>
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </div>
 
 
-    const handleSubmit = async () => {
-        try {
-            setLoading(true);
+              {/* Location */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Location</label>
+                <Input
+                  placeholder="Class 5A"
+                  value={form.location}
+                  onChange={(e) =>
+                    handleChange("location", e.target.value)
+                  }
+                />
+              </div>
 
-            if (isUpdateMode && existingDocId) {
-                // 🔁 UPDATE
-                await updateDoc(doc(db, "devices", existingDocId), {
-                    ...form,
-                    updatedAt: serverTimestamp()
-                });
-
-                toast.success("Device updated", {
-                    description: "Device details updated successfully."
-                });
-            } else {
-                // ➕ ADD
-                const deviceId = await generateDeviceId();
-
-                await addDoc(collection(db, "devices"), {
-                    ...form,
-                    deviceId,
-                    status: "inactive",
-                    createdAt: serverTimestamp()
-                });
-
-                toast.success("Device added", {
-                    description: "Device registered successfully."
-                });
-            }
-
-            resetForm();
-            onClose?.();
-        } catch (error) {
-            console.error(error);
-            toast.error("Operation failed", {
-                description: "Something went wrong."
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    return (
-        <Sheet open={open} onOpenChange={setOpen}>
-            <SheetContent side="right" className="sm:max-w-md">
-                <SheetHeader>
-                    <SheetTitle>Add Device</SheetTitle>
-                    <SheetDescription>Enter device details</SheetDescription>
-                </SheetHeader>
-
-                <div className="mx-4 space-y-6">
-
-                    {/* Device Name */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Device Id</label>
-                        <Input
-                            placeholder="dev001"
-                            value={form.deviceName}
-                            onChange={(e) => handleChange("deviceName", e.target.value)}
-                        />
-                    </div>
-
-                    {/* Serial Number */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Serial Number</label>
-                        <Input
-                            placeholder="SN-00123"
-                            value={form.serialNumber}
-                            disabled={isUpdateMode}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                handleChange("serialNumber", value);
-
-                                if (value.length >= 4) {
-                                    checkSerialExists(value);
-                                }
-                            }}
-                            className={
-                                isUpdateMode ? "cursor-not-allowed opacity-70" : ""
-                            }
-                        />
-
-                    </div>
-
-                    {/* Org + Partner */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Org ID</label>
-                            <Input
-                                placeholder="ORG-1001"
-                                value={form.orgId}
-                                onChange={(e) => handleChange("orgId", e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Location */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Location</label>
-                        <Select
-                            value={form.location}
-                            onValueChange={(v) => handleChange("location", v)}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Science Lab">Science Lab</SelectItem>
-                                <SelectItem value="Block A">Block A</SelectItem>
-                                <SelectItem value="Block B">Block B</SelectItem>
-                                <SelectItem value="Main Gate">Main Gate</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea
-                            maxLength={150}
-                            value={form.description}
-                            onChange={(e) => handleChange("description", e.target.value)}
-                        />
-                        <div className="text-right text-xs text-muted-foreground">
-                            {form.description.length} / 150
-                        </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex justify-end gap-3 pt-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                resetForm();
-                                onClose?.();
-                            }}
-                            disabled={loading}
-                        >
-                            Cancel
-                        </Button>
-
-
-                        <Button
-                            className="bg-primary"
-                            onClick={handleSubmit}
-                            disabled={
-                                loading ||
-                                !form.serialNumber ||
-                                checkingSerial
-                            }
-                        >
-                            {loading
-                                ? "Saving..."
-                                : isUpdateMode
-                                    ? "Update Device"
-                                    : "Add Device"}
-                        </Button>
-
-                    </div>
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  maxLength={150}
+                  value={form.description}
+                  onChange={(e) =>
+                    handleChange("description", e.target.value)
+                  }
+                />
+                <div className="text-right text-xs text-muted-foreground">
+                  {form.description.length} / 150
                 </div>
+              </div>
 
-            </SheetContent>
-        </Sheet>
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetForm()
+                    setOpen(false)
+                  }}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
 
+                <Button
+                  className="bg-primary"
+                  onClick={handleSubmit}
+                  disabled={
+                    loading ||
+                    !form.deviceId ||
+                    !form.serialNumber ||
+                    !form.orgId ||
+                    !form.location
+                  }
+                >
+                  {loading ? "Saving..." : "Add Device"}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
 
-    );
-};
-
-export default AddDevice;
+export default AddDevice
