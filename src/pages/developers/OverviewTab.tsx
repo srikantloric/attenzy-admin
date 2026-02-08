@@ -1,10 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import MetricCard from "@/components/MetricCard"
 import TopEndpoint from "@/components/TopEndpoint"
+import { ApiRequestsChart } from "@/components/charts/ApiRequestsChart"
+import { WebhookRequestsChart } from "@/components/charts/WebhookRequestChart"
 
 function OverviewTab() {
   return (
     <div className="space-y-4">
+      {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <MetricCard title="Requests (30d)" value="1.24M" />
         <MetricCard title="Error Rate" value="0.38%" />
@@ -12,16 +15,15 @@ function OverviewTab() {
         <MetricCard title="Webhooks" value="2" />
       </div>
 
+      {/* Charts + Top Endpoints */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>API Requests</CardTitle>
-          </CardHeader>
-          <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
-            Requests chart
-          </CardContent>
-        </Card>
+        {/* Charts take 2 columns */}
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ApiRequestsChart />
+          <WebhookRequestsChart />
+        </div>
 
+        {/* Top Endpoints */}
         <Card>
           <CardHeader>
             <CardTitle>Top Endpoints</CardTitle>

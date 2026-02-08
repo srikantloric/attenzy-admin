@@ -1,4 +1,3 @@
-import { BreadcrumbNew } from "@/components/BreadCrumbNew"
 import {
   Tabs,
   TabsContent,
@@ -10,11 +9,22 @@ import OverviewTab from "./OverviewTab"
 import ApiKeysTab from "./ApiKeysTab"
 import WebhooksTab from "./WebhooksTab"
 import ApiReferenceTab from "./ApiReferenceTab"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 
 function DevelopersPage() {
   return (
     <div className="p-4 space-y-4">
-      <BreadcrumbNew />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="#">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Developers</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div>
         <h1 className="text-xl font-semibold">Developers</h1>
