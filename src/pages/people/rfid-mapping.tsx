@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter, Plus } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
 import {
     Select,

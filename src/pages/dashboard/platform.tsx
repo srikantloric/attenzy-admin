@@ -1,4 +1,4 @@
-import { Cpu, Building2, Users, Activity } from "lucide-react"
+import { Cpu, Building2, Users } from "lucide-react"
 
 import StatCard from "@/components/StatCard"
 import {
