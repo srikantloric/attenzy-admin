@@ -213,22 +213,13 @@ const AddDeviceSheet: React.FC<AddDeviceProps> = ({ open, setOpen, onClose }) =>
                     </div>
 
                     {/* Org + Partner */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Org ID</label>
                             <Input
                                 placeholder="ORG-1001"
                                 value={form.orgId}
                                 onChange={(e) => handleChange("orgId", e.target.value)}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Partner ID</label>
-                            <Input
-                                placeholder="PARTNER-01"
-                                value={form.partnerId}
-                                onChange={(e) => handleChange("partnerId", e.target.value)}
                             />
                         </div>
                     </div>

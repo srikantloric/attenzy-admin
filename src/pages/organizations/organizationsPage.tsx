@@ -220,9 +220,8 @@ function Organizations() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Organization</TableHead>
-                            <TableHead>Partner</TableHead>
+                            <TableHead>Devices</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Devices Managed</TableHead>
                             <TableHead>Joined</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -234,7 +233,7 @@ function Organizations() {
                                 <TableCell className="font-medium">
                                     {org.name}
                                 </TableCell>
-                                <TableCell>{org.partner}</TableCell>
+                                <TableCell>{org.devices}</TableCell>
                                 <TableCell>
                                     <Badge
                                         variant="outline"
@@ -247,7 +246,7 @@ function Organizations() {
                                         {org.status}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{org.devices}</TableCell>
+
                                 <TableCell>{org.joined}</TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>

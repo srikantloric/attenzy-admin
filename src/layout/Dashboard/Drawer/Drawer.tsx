@@ -48,7 +48,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
         user?.role!
     );
 
-    console.log(user?.role)
+
 
 
     return (
@@ -179,8 +179,8 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarFooter>
                 <NavUser
                     user={{
-                        name: "Wave International School",
-                        email: "srikantloric@gmail.com",
+                        name: user?.name ?? "",
+                        email: user?.email ?? "",
                         avatar:
                             "https://www.waveinternationalschool.org/_next/image/?url=%2Fwave-logo.png&w=64&q=75",
                     }}

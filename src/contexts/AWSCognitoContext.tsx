@@ -39,37 +39,6 @@ const AWSCognitoContext = createContext<AWSCognitoContextType | null>(null);
 export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     try {
-  //       const serviceToken = window.localStorage.getItem('serviceToken');
-  //       if (serviceToken) {
-  //         setSession(serviceToken);
-  //         dispatch({
-  //           type: LOGIN,
-  //           payload: {
-  //             isLoggedIn: true,
-  //             user: {
-  //               name: 'Betty'
-  //             }
-  //           }
-  //         });
-  //       } else {
-  //         dispatch({
-  //           type: LOGOUT
-  //         });
-  //       }
-  //     } catch (err) {
-  //       console.error(err);
-  //       dispatch({
-  //         type: LOGOUT
-  //       });
-  //     }
-  //   };
-
-  //   init();
-  // }, []);
-
   useEffect(() => {
     const init = async () => {
       try {
@@ -86,10 +55,13 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
             return;
           }
 
-          const accessToken = session.getAccessToken();
+
+          const accessToken = session.getIdToken();
           const payload = accessToken.decodePayload();
 
           const roles: Role = payload['cognito:groups'][0];
+          const partnerId = payload['custom:partnerId']
+          const orgId = payload['custom:orgId']
 
           setSession(accessToken.getJwtToken());
 
@@ -99,9 +71,12 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
               isLoggedIn: true,
               isInitialized: true,
               user: {
+                userId: payload.sub,
                 email: payload.email,
-                name: payload.username || payload.email,
-                role: roles
+                name: payload.name || payload.email?.split("@")[0],
+                role: roles,
+                partnerId: partnerId,
+                orgId: orgId,
               }
             }
           });
@@ -116,7 +91,6 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
   }, []);
 
   const login = async (username: string, password: string) => {
-    console.log(username, password)
     const usr = new CognitoUser({
       Username: username,
       Pool: userPool
@@ -131,12 +105,14 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
       usr.authenticateUser(authData, {
         onSuccess: (session: CognitoUserSession) => {
           setSession(session.getAccessToken().getJwtToken());
+
           const userRole = session.getAccessToken().decodePayload()['cognito:groups'][0]
           dispatch({
             type: LOGIN,
             payload: {
               isLoggedIn: true,
               user: {
+                userId: authData.getUsername(),
                 email: authData.getUsername(),
                 name: 'John AWS',
                 role: userRole
@@ -171,6 +147,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
                   payload: {
                     isLoggedIn: true,
                     user: {
+                      userId: authData.getUsername(),
                       email: authData.getUsername(),
                       name: "John AWS",
                       role: userRole,

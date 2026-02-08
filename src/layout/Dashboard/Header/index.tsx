@@ -13,9 +13,6 @@ function AppBar() {
     const { user, logout } = useAuth()
     console.log(user)
 
-
-
-
     return (
         <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
             <div className="flex items-center px-6 py-2 justify-between">

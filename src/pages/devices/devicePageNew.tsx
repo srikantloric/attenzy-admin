@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { devices as deviceMock } from "./device-mock"
-import { Eye, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Activity, Eye,  MoreVertical, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import AddDeviceSheet from "@/components/sheet/AddDeviceSheet"
 import { Card } from "@/components/ui/card"
@@ -12,7 +12,6 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -113,9 +112,7 @@ function DevicePageNew() {
                         <TableRow>
                             <TableHead>Device ID</TableHead>
                             <TableHead>Serial No</TableHead>
-                            <TableHead>Model</TableHead>
                             <TableHead>Organization</TableHead>
-                            <TableHead>Partner</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -127,17 +124,17 @@ function DevicePageNew() {
                                     {device.deviceId}
                                 </TableCell>
                                 <TableCell>{device.serialNumber}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline">{device.deviceModal}</Badge>
-                                </TableCell>
+
                                 <TableCell>{device.orgId}</TableCell>
-                                <TableCell>{device.partnerId}</TableCell>
 
                                 <TableCell className="text-right">
+
+                                    <Button variant={"ghost"}><Activity /></Button>
+
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <MoreHorizontal className="h-4 w-4" />
+                                                <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
 

@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
 // third-party
-import firebase from 'firebase/compat/app';
 import type { Role } from './role';
 // ==============================|| TYPES - AUTH  ||============================== //
 
@@ -9,13 +8,22 @@ export type GuardProps = {
 };
 
 type UserProfile = {
-    id?: string;
+    /** Auth identity (Cognito sub) */
+    userId: string;
+
+    /** Business context */
+    partnerId?: string;
+    orgId?: string;
+
+    /** Display info */
     email?: string;
+    name?: string;
     avatar?: string;
     image?: string;
-    name?: string;
-    role?: Role;
-    tier?: string;
+
+    /** Authorization */
+    role?: Role;   
+    tier?: string; 
 };
 
 export interface AuthProps {
@@ -29,19 +37,6 @@ export interface AuthActionProps {
     type: string;
     payload?: AuthProps;
 }
-
-export type FirebaseContextType = {
-    isLoggedIn: boolean;
-    isInitialized?: boolean;
-    user?: UserProfile | null | undefined;
-    db: firebase.firestore.Firestore;
-    logout: () => Promise<void>;
-    login: () => void;
-    firebaseRegister: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-    firebaseEmailPasswordSignIn: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-    resetPassword: (email: string) => Promise<void>;
-    updateProfile: VoidFunction;
-};
 
 export type AWSCognitoContextType = {
     isLoggedIn: boolean;

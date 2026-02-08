@@ -110,7 +110,7 @@ const pages: NavItemType = {
                     id: "device-health",
                     title: "Device Health",
                     url: "/device-health",
-                    roles: ['ORGANIZATION']
+                    roles: ['ORGANIZATION',"CHANNEL_PARTNER"]
                 },
             ]
         },
