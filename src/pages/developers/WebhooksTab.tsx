@@ -8,6 +8,7 @@ import type { Webhook } from "@/types/webhook"
 import WebhookRow from "@/components/webhooks/WebhookRow"
 import AddWebhookModal from "@/components/webhooks/AddWebhookModal"
 import EditWebhookModal from "@/components/webhooks/EditWebhookModal"
+import useAuth from "@/hooks/useAuth"
 
 function WebhooksTab() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
@@ -16,6 +17,8 @@ function WebhooksTab() {
   const [addOpen, setAddOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null)
+
+  const { user } = useAuth()
 
   /* ---------------- Fetch webhooks ---------------- */
 
@@ -82,8 +85,8 @@ function WebhooksTab() {
       <AddWebhookModal
         open={addOpen}
         onOpenChange={setAddOpen}
-        ownerType="CHANNEL_PARTNER"       
-        ownerId="CURRENT_ORG_ID" // replace with real orgId
+        ownerType={"CHANNEL_PARTNER"}
+        ownerId={user?.partnerId!}
         onCreated={fetchWebhooks}
       />
 
