@@ -1,31 +1,29 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
-const axiosServices = axios.create({ baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/' });
+const axiosServices = axios.create({ baseURL: import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:3010/' });
 
-// ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
+// axiosServices.interceptors.request.use(
+//     async (config) => {
+//         const accessToken = localStorage.getItem('serviceToken');
+//         if (accessToken) {
+//             config.headers['Authorization'] = `Bearer ${accessToken}`;
+//         }
+//         return config;
+//     },
+//     (error) => {
+//         return Promise.reject(error);
+//     }
+// );
 
-axiosServices.interceptors.request.use(
-    async (config) => {
-        const accessToken = localStorage.getItem('serviceToken');
-        if (accessToken) {
-            config.headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-axiosServices.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response.status === 401 && !window.location.href.includes('/login')) {
-            redirectWithBasePath('/maintenance/500');
-        }
-        return Promise.reject((error.response && error.response.data) || 'Wrong Services');
-    }
-);
+// axiosServices.interceptors.response.use(
+//     (response) => response,
+//     (error) => {
+//         if (error.response.status === 401 && !window.location.href.includes('/login')) {
+//             redirectWithBasePath('/maintenance/500');
+//         }
+//         return Promise.reject((error.response && error.response.data) || 'Wrong Services');
+//     }
+// );
 
 export default axiosServices;
 
@@ -38,6 +36,6 @@ export const fetcher = async (args: string | [string, AxiosRequestConfig]) => {
 };
 
 export function redirectWithBasePath(path: string) {
-    const basePath = import.meta.env.VITE_APP_BASE_NAME ||  ''; // adjust for Vite, CRA, etc.
+    const basePath = import.meta.env.VITE_APP_BASE_NAME ||  '';
     window.location.pathname = `${basePath.replace(/\/$/, '')}${path}`;
 }
