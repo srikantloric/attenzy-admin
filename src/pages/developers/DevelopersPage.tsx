@@ -10,6 +10,11 @@ import ApiKeysTab from "./ApiKeysTab"
 import WebhooksTab from "./WebhooksTab"
 import ApiReferenceTab from "./ApiReferenceTab"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { TvMinimalPlay, Youtube } from "lucide-react"
+import { Tooltip } from "@radix-ui/react-tooltip"
+import { IconBrandYoutube } from "@tabler/icons-react"
+import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 function DevelopersPage() {
   return (
@@ -26,11 +31,24 @@ function DevelopersPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div>
-        <h1 className="text-xl font-semibold">Developers</h1>
-        <p className="text-sm text-muted-foreground">
-          Monitor usage, manage API keys, configure webhooks, and explore APIs
-        </p>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-semibold">Developers</h1>
+          <p className="text-sm text-muted-foreground">
+            Monitor usage, manage API keys, configure webhooks, and explore APIs
+          </p>
+        </div>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button variant={"outline"} size={"icon"} className="border-red-400 cursor-pointer"><TvMinimalPlay className="text-red-400" /></Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Video Tutorial
+          </TooltipContent>
+        </Tooltip>
+
+
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
@@ -57,7 +75,7 @@ function DevelopersPage() {
           <ApiReferenceTab />
         </TabsContent>
       </Tabs>
-    </div>
+    </div >
   )
 }
 
