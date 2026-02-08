@@ -25,16 +25,12 @@ import { getOrganizationsByPartner } from "@/api/organization"
 
 import useAuth from "@/hooks/useAuth"
 import { toast } from "sonner"
+import type { Organization } from "@/types/organization"
 
 interface AddDeviceProps {
   open: boolean
   setOpen: (status: boolean) => void
   onClose?: () => void
-}
-
-type OrgOption = {
-  orgId: string
-  orgName: string
 }
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
@@ -50,8 +46,12 @@ const AddDevice: React.FC<AddDeviceProps> = ({
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  const [organizations, setOrganizations] = useState<OrgOption[]>([])
-  const [selectedOrg, setSelectedOrg] = useState<OrgOption | null>(null)
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+
+  const selectedOrg = organizations.find((o) => o.orgId === selectedOrgId)
+
+
 
   const [form, setForm] = useState({
     deviceId: "",
@@ -123,12 +123,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
       try {
         const res = await getOrganizationsByPartner(partnerId)
 
-        const mapped = res.items.map((o) => ({
-          orgId: o.orgId,
-          orgName: o.orgName,
-        }))
-
-        setOrganizations(mapped)
+        setOrganizations(res.items as Organization[])
       } catch (err) {
         console.error("Failed to load organizations", err)
         toast.error("Failed to load organizations")
@@ -141,6 +136,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
   return (
     <Sheet
+      modal={true}
       open={open}
       onOpenChange={(v) => {
         if (!v) {
@@ -200,34 +196,27 @@ const AddDevice: React.FC<AddDeviceProps> = ({
               </div>
 
               {/* Organization Combobox */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Organization</label>
+              <div className="space-y-2 z-9999">
+                <label className="text-sm font-medium z-50">Organization</label>
 
-                <Combobox<OrgOption>
-                  items={organizations}
-                  onValueChange={(org) => {
-                    if (!org) return
-                    handleChange("orgId", org.orgId)
-                  }}
-                >
-                  <ComboboxInput placeholder="Search organization by name or ID" />
+                <Combobox items={organizations.map((o) => o.orgId)} value={selectedOrgId} onValueChange={setSelectedOrgId} >
+                  <ComboboxInput
+                    placeholder="Select organization"
+                    value={selectedOrg?.orgName ?? ""}
+                  />
 
                   <ComboboxContent>
-                    <ComboboxEmpty>No organization found.</ComboboxEmpty>
+                    <ComboboxEmpty>No organizations found.</ComboboxEmpty>
 
                     <ComboboxList>
-                      {(org) => (
-                        <ComboboxItem key={org.orgId} value={org}>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              {org.orgName}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {org.orgId}
-                            </span>
-                          </div>
-                        </ComboboxItem>
-                      )}
+                      {(id) => {
+                        const org = organizations.find((o) => o.orgId === id)!
+                        return (
+                          <ComboboxItem key={org.orgId} value={org.orgId}>
+                            {org.orgName}
+                          </ComboboxItem>
+                        )
+                      }}
                     </ComboboxList>
                   </ComboboxContent>
                 </Combobox>
