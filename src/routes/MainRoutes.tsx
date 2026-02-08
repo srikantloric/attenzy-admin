@@ -15,6 +15,8 @@ import DevicePageNew from '@/pages/devices/devicePageNew';
 import PartnerDetailsPage from '@/pages/partners/PartnerDetailsPage';
 import PartnersPage from '@/pages/partners/PartnersPage';
 
+import DevelopersPage from '@/pages/developers/DevelopersPage';
+
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
 const Attendance = Loadable(lazy(() => import('@/pages/attendance/attendance')))
@@ -41,6 +43,7 @@ const MainRoutes = {
                 { path: "/partners/:partnerId", element: <PartnerDetailsPage /> },
                 { path: 'organizations', element: <Organizations /> },
                 { path: "/organizations/:organizationId/admin", element: <OrganizationAdmin /> },
+                { path: "/developers", element: <DevelopersPage /> },
 
             ]
         },

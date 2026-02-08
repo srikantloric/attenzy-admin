@@ -16,33 +16,19 @@ const settings: NavItemType = {
     roles: ["CHANNEL_PARTNER", "ORGANIZATION", "PLATFORM_ADMIN"],
     children: [
         {
+            id: 'developers',
+            title: 'Developers',
+            type: 'item',
+            url: '/developers',
+            icon: icons.code,
+            roles: ["CHANNEL_PARTNER", "PLATFORM_ADMIN"],
+        },
+        {
             id: 'settings',
             title: 'Settings',
             type: 'item',
             url: '/settings',
             icon: icons.settings,
-        },
-        {
-            id: 'developers',
-            title: 'Developers',
-            type: 'collapse',
-            url: '/developers',
-            icon: icons.code,
-            roles: ["CHANNEL_PARTNER", "PLATFORM_ADMIN"],
-            children: [
-                {
-                    id: 'api-keys',
-                    title: 'API Keys',
-                    type: 'item',
-                    url: '/api-keys',
-                },
-                {
-                    id: 'webhooks',
-                    title: 'Webhooks',
-                    type: 'item',
-                    url: '/webhooks',
-                },
-            ]
         },
     ],
 
