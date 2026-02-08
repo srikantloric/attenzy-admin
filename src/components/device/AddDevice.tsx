@@ -136,7 +136,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
   return (
     <Sheet
-      modal={true}
+      modal={false}
       open={open}
       onOpenChange={(v) => {
         if (!v) {
