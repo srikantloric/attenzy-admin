@@ -26,7 +26,7 @@ export function DrawerHeader() {
             ) : (
                 <img
                     src="/attenzy-logo.png"
-                    className="h-10"
+                    className="h-12"
                     alt="Attenzy"
                 />
             )}

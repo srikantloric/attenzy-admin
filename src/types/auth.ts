@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 // third-party
-import firebase from 'firebase/compat/app';
+import type { Role } from './role';
 // ==============================|| TYPES - AUTH  ||============================== //
 
 export type GuardProps = {
@@ -8,13 +8,22 @@ export type GuardProps = {
 };
 
 type UserProfile = {
-    id?: string;
+    /** Auth identity (Cognito sub) */
+    userId: string;
+
+    /** Business context */
+    partnerId?: string;
+    orgId?: string;
+
+    /** Display info */
     email?: string;
+    name?: string;
     avatar?: string;
     image?: string;
-    name?: string;
-    role?: string;
-    tier?: string;
+
+    /** Authorization */
+    role?: Role;   
+    tier?: string; 
 };
 
 export interface AuthProps {
@@ -29,15 +38,23 @@ export interface AuthActionProps {
     payload?: AuthProps;
 }
 
-export type FirebaseContextType = {
+export type AWSCognitoContextType = {
     isLoggedIn: boolean;
     isInitialized?: boolean;
     user?: UserProfile | null | undefined;
-    db: firebase.firestore.Firestore;
-    logout: () => Promise<void>;
-    login: () => void;
-    firebaseRegister: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-    firebaseEmailPasswordSignIn: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-    resetPassword: (email: string) => Promise<void>;
+    logout: () => void;
+    login: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string, firstName: string, lastName: string) => Promise<unknown>;
+    resetPassword: (verificationCode: string, newPassword: string) => Promise<any>;
+    forgotPassword: (email: string) => Promise<void>;
     updateProfile: VoidFunction;
+    codeVerification: (verificationCode: string) => Promise<any>;
+    resendConfirmationCode: () => Promise<any>;
 };
+
+
+export interface InitialLoginContextProps {
+    isLoggedIn: boolean;
+    isInitialized?: boolean;
+    user?: UserProfile | null | undefined;
+}

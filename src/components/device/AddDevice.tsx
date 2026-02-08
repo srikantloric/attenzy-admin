@@ -29,11 +29,12 @@ interface AddDeviceProps {
   onClose?: () => void;
 }
 
+
 const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [existingDocId, setExistingDocId] = useState<string | null>(null);
-  const [serialConflict, setSerialConflict] = useState(false);
+  const [_, setSerialConflict] = useState(false);
   const [checkingSerial, setCheckingSerial] = useState(false);
 
 
@@ -157,7 +158,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({ onClose }) => {
 
 
   return (
-    <div className="mt-2 space-y-6">
+    <div className="mx-4 space-y-6">
 
       {/* Device Name */}
       <div className="space-y-2">

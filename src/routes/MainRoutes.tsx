@@ -7,11 +7,17 @@ import FacultyPage from '@/pages/people/faculty';
 import StudentsPage from '@/pages/people/students';
 import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
-import AddDevicePage from '@/pages/devices/devicesPage';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
-import DevicesPage from '@/pages/devices/devicesPage';
+import DevicePageNew from '@/pages/devices/devicePageNew';
 
+import PartnerDetailsPage from '@/pages/partners/PartnerDetailsPage';
+import PartnersPage from '@/pages/partners/PartnersPage';
+
+import Organizations from '@/pages/organizations/organizationsPage';
+import OrganizationDetailsPage from '@/pages/organizations/OrganizationDetailsPage';
+
+import DevelopersPage from '@/pages/developers/DevelopersPage';
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
@@ -33,8 +39,13 @@ const MainRoutes = {
                 { path: 'faculty', element: <FacultyPage /> },
                 { path: 'staff', element: <StaffPage /> },
                 { path: 'rfid-mapping', element: <RFIDMappingPage /> },
-                { path: 'list-device', element: <DevicesPage /> },
+                { path: 'list-device', element: <DevicePageNew /> },
                 { path: 'device-health', element: <DeviceHealthPage /> },
+                { path: 'partners', element: <PartnersPage /> },
+                { path: "/partners/:partnerId", element: <PartnerDetailsPage /> },
+                { path: 'organizations', element: <Organizations /> },
+                { path: "/organizations/:organizationId", element: <OrganizationDetailsPage /> },
+                { path: "/developers", element: <DevelopersPage /> },
 
             ]
         },

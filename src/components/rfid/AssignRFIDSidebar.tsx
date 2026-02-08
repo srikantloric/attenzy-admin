@@ -56,7 +56,7 @@ export const AssignRFIDSidebar = ({
     const [loading, setLoading] = useState(false);
 
     const [rfidConflict, setRfidConflict] = useState(false);
-    const [checkingRFID, setCheckingRFID] = useState(false);
+    const [_, setCheckingRFID] = useState(false);
 
     /* ---------------------------------------------
        Load people based on selected type
