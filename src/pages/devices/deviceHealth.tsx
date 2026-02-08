@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { deviceHealthData } from "@/data/deviceHealth";
-import type { DeviceHealth, DeviceStatus } from "@/data/deviceHealth";
+import type { DeviceHealth } from "@/data/deviceHealth";
 
 import {
     Table,
@@ -24,7 +24,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import SignalBars from "@/components/SignalBars";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {

@@ -14,7 +14,7 @@ import Loader from '@/components/Loader';
 import { redirectWithBasePath } from '@/utils/axios';
 
 // types
-import type { AuthProps, FirebaseContextType } from '@/types/auth';
+import type { AuthProps } from '@/types/auth';
 
 // firebase initialize
 if (!firebase.apps.length) {
@@ -40,7 +40,7 @@ export const db = firebase.firestore();
 
 // ==============================|| FIREBASE CONTEXT & PROVIDER ||============================== //
 
-const FirebaseContext = createContext<FirebaseContextType | null>(null);
+const FirebaseContext = createContext<any | null>(null);
 
 export const FirebaseProvider = ({ children }: { children: ReactElement }) => {
     const [state, dispatch] = useReducer(authReducer, initialState);
@@ -54,10 +54,10 @@ export const FirebaseProvider = ({ children }: { children: ReactElement }) => {
                         payload: {
                             isLoggedIn: true,
                             user: {
-                                id: user.uid,
+                                userId: user.uid,
                                 email: user.email!,
                                 name: user.displayName || 'Stebin Ben',
-                                role: 'UI/UX Designer'
+                                role: "CHANNEL_PARTNER"
                             }
                         }
                     });
