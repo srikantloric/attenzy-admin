@@ -11,9 +11,8 @@ import WebhooksTab from "./WebhooksTab"
 import ApiReferenceTab from "./ApiReferenceTab"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
-import { TvMinimalPlay, Youtube } from "lucide-react"
+import { TvMinimalPlay } from "lucide-react"
 import { Tooltip } from "@radix-ui/react-tooltip"
-import { IconBrandYoutube } from "@tabler/icons-react"
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 function DevelopersPage() {

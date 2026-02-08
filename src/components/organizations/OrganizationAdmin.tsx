@@ -14,7 +14,6 @@ import {
     deleteOrganization
 } from "@/store/organizationStore"
 
-import type { Organization } from "@/types/organization"
 import { AvatarImage } from "@radix-ui/react-avatar"
 import { Camera } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

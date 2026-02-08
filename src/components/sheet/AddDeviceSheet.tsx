@@ -37,7 +37,7 @@ const AddDeviceSheet: React.FC<AddDeviceProps> = ({ open, setOpen, onClose }) =>
     const [loading, setLoading] = useState(false);
     const [isUpdateMode, setIsUpdateMode] = useState(false);
     const [existingDocId, setExistingDocId] = useState<string | null>(null);
-    const [serialConflict, setSerialConflict] = useState(false);
+    const [_, setSerialConflict] = useState(false);
     const [checkingSerial, setCheckingSerial] = useState(false);
 
 
