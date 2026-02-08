@@ -1,10 +1,19 @@
 export type OrganizationStatus = "Active" | "Inactive"
 
 export interface Organization {
-  id: string
-  name: string
-  partner: string
-  status: OrganizationStatus
-  devices: number
-  joined: string
+  username: string;
+  
+  orgId: string;
+  orgName: string;
+  orgEmail: string;
+  orgPhone: string;
+  orgAddress: string;
+
+  profileImageUrl?: string;
+
+  deviceCount: number;
+
+  status: OrganizationStatus;
+  createdAt: number;
+  updatedAt: number;
 }
