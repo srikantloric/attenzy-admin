@@ -1,182 +1,181 @@
 import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera } from "lucide-react"
+
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+import {
+  organizationSchema,
+  type OrganizationFormValues,
+} from "@/schemas/organization.schema"
+
+import { toast } from "sonner"
+import { createOrganization } from "@/api/organization"
+import useAuth from "@/hooks/useAuth"
 
 interface AddOrganizationFormProps {
   onSuccess: () => void
 }
 
 function AddOrganizationForm({ onSuccess }: AddOrganizationFormProps) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    address: "",
-    photo: ""
+  const [isSuccess, setIsSuccess] = useState(false)
+
+  // ✅ get logged-in user from auth context
+  const { user } = useAuth()
+  const partnerId = user?.partnerId
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<OrganizationFormValues>({
+    resolver: zodResolver(organizationSchema),
+    defaultValues: {
+      orgName: "",
+      orgEmail: "",
+      orgPhone: "",
+      orgAddress: "",
+    },
   })
 
-  const passwordsMatch =
-    form.password &&
-    form.password === form.confirmPassword
+  const onSubmit = async (data: OrganizationFormValues) => {
+    if (!partnerId) return
 
-  const canSubmit =
-    form.name &&
-    form.email &&
-    form.password &&
-    passwordsMatch
+    try {
+      await createOrganization(partnerId, {
+        orgName: data.orgName,
+        orgEmail: data.orgEmail,
+        orgPhone: data.orgPhone,
+        orgAddress: data.orgAddress,
+      })
 
-  const handleSubmit = () => {
-    if (!canSubmit) return
+      toast.success("Organization added successfully")
 
-    // 🔥 Later: Firestore + Auth logic here
-    console.log("New organization:", form)
+      reset()
+      setIsSuccess(true)
+      onSuccess()
+    } catch (error: any) {
+      console.error("Failed to add organization", error)
 
-    onSuccess()
+      toast.error(
+        error?.message || "Failed to add organization. Please try again."
+      )
+    }
+  }
+
+  if (!partnerId) {
+    return (
+      <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+        Partner information not available. Please login again.
+      </div>
+    )
+  }
+
+
+  if (isSuccess) {
+    return (
+      <div className="space-y-4 rounded-lg border bg-muted/40 p-6 text-center">
+        <h3 className="text-lg font-semibold text-green-600">
+          ✅ Organization added successfully
+        </h3>
+
+        <Separator />
+
+        <p className="text-sm text-muted-foreground">
+          The organization has been created and linked to this partner.
+        </p>
+
+        <div className="flex justify-center pt-2">
+          <Button onClick={onSuccess}>Close</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Profile Photo */}
-      <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={form.photo} />
-          <AvatarFallback>
-            {form.name.slice(0, 2).toUpperCase() || "O"}
-          </AvatarFallback>
-        </Avatar>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-        <div>
-          <Label className="block mb-1">Profile Photo</Label>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            asChild
-          >
-            <label>
-              <Camera className="h-4 w-4" />
-              Upload
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    setForm({
-                      ...form,
-                      photo: URL.createObjectURL(file)
-                    })
-                  }
-                }}
-              />
-            </label>
-          </Button>
-        </div>
+      {/* Organization Name */}
+      <div className="space-y-1.5">
+        <Label>Organization Name *</Label>
+        <Input
+          className="h-11"
+          placeholder="e.g. Wave International School"
+          {...register("orgName")}
+        />
+        {errors.orgName && (
+          <p className="text-sm text-destructive">
+            {errors.orgName.message}
+          </p>
+        )}
       </div>
 
-      <Separator />
-
-      {/* Basic Info */}
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Organization Name *</Label>
-          <Input
-            className="h-11"
-            placeholder="e.g. Greenfield High School"
-            value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Email *</Label>
-          <Input
-            className="h-11"
-            type="email"
-            placeholder="admin@organization.com"
-            value={form.email}
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
-        </div>
+      {/* Organization Email */}
+      <div className="space-y-1.5">
+        <Label>Organization Email *</Label>
+        <Input
+          className="h-11"
+          type="email"
+          placeholder="admin@organization.com"
+          {...register("orgEmail")}
+        />
+        {errors.orgEmail && (
+          <p className="text-sm text-destructive">
+            {errors.orgEmail.message}
+          </p>
+        )}
       </div>
 
-      {/* Security */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-5">
-          <div className="space-y-1.5">
-            <Label>Password *</Label>
-            <Input
-              className="h-11"
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Confirm Password *</Label>
-            <Input
-              className="h-11"
-              type="password"
-              value={form.confirmPassword}
-              onChange={(e) =>
-                setForm({ ...form, confirmPassword: e.target.value })
-              }
-            />
-          </div>
-        </div>
-
-        {form.confirmPassword && (
-          <p
-            className={`text-sm ${
-              passwordsMatch
-                ? "text-green-600"
-                : "text-red-600"
-            }`}
-          >
-            {passwordsMatch
-              ? "Passwords match"
-              : "Passwords do not match"}
+      {/* Organization Phone */}
+      <div className="space-y-1.5">
+        <Label>Organization Phone *</Label>
+        <Input
+          className="h-11"
+          placeholder="9931085816"
+          maxLength={10}
+          inputMode="numeric"
+          {...register("orgPhone")}
+        />
+        {errors.orgPhone && (
+          <p className="text-sm text-destructive">
+            {errors.orgPhone.message}
           </p>
         )}
       </div>
 
       {/* Address */}
       <div className="space-y-1.5">
-        <Label>Address</Label>
+        <Label>Address *</Label>
         <Textarea
           className="min-h-[90px]"
           placeholder="Full address"
-          value={form.address}
-          onChange={(e) =>
-            setForm({ ...form, address: e.target.value })
-          }
+          {...register("orgAddress")}
         />
+        {errors.orgAddress && (
+          <p className="text-sm text-destructive">
+            {errors.orgAddress.message}
+          </p>
+        )}
       </div>
 
+      <Separator />
+
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={onSuccess}>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onSuccess}>
           Cancel
         </Button>
-        <Button className="bg-primary" disabled={!canSubmit} onClick={handleSubmit}>
-          Add Organization
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Adding..." : "Add Organization"}
         </Button>
       </div>
-    </div>
+    </form>
   )
 }
 

@@ -34,7 +34,7 @@ import {
     Pencil,
     Ban
 } from "lucide-react"
-import type { Partner } from "@/types/partner"
+import type { Partner } from "@/types/partner" 
 import {
     Dialog,
     DialogContent,

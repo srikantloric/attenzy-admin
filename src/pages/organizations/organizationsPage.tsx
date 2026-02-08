@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
+
 import {
     Card,
     CardContent,
     CardHeader,
-    CardTitle
+    CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,57 +15,156 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { Plus, ChevronDown, Search, Filter } from "lucide-react"
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import {
+    Plus,
+    ChevronDown,
+    Search,
+    Filter,
     MoreHorizontal,
     Eye,
     Pencil,
-    Ban,
-    Trash2
+    Ban
 } from "lucide-react"
+
 import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog"
 
-import AddOrganizationForm from "@/components/organizations/AddOrganizationForm"
-import { useNavigate } from "react-router-dom"
-import type { Organization, OrganizationStatus } from "@/types/organization"
+import { Field, FieldLabel } from "@/components/ui/field"
 import {
-    getOrganizations,
-    updateOrganization,
-    deleteOrganization
-} from "@/store/organizationStore"
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
 
+import AddOrganizationForm from "@/components/organizations/AddOrganizationForm"
+import type {
+    OrganizationUI,
+    OrganizationStatus,
+} from "@/types/organization"
 
-/* ---------------- component ---------------- */
+import { getOrganizationsByPartner } from "@/api/organization"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import useAuth from "@/hooks/useAuth"
+
+import ConfirmDialog from "@/components/common/ConfirmDialog"
+import { toast } from "sonner"
+import axios from "axios"
+
 function Organizations() {
-    const [search, setSearch] = useState("")
-    const [statusFilter, setStatusFilter] = useState<"All" | OrganizationStatus>("All")
-    const [partnerFilter, setPartnerFilter] = useState<string>("All")
-    const [openAddOrg, setOpenAddOrg] = useState(false)
-    const [organizations, setOrganizations] = useState<Organization[]>(getOrganizations())
-
-
     const navigate = useNavigate()
+    const { user } = useAuth()
+    const partnerId = user?.partnerId
 
-    const openOrganizationAdmin = (org: Organization) => {
-        navigate(`/organizations/${org.id}/admin`)
+    const [search, setSearch] = useState("")
+    const [statusFilter, setStatusFilter] =
+        useState<"All" | OrganizationStatus>("All")
+    const [openAddOrg, setOpenAddOrg] = useState(false)
+    const [organizations, setOrganizations] = useState<OrganizationUI[]>([])
+    const [loading, setLoading] = useState(false)
+
+    const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+
+    const [orgToSuspend, setOrgToSuspend] = useState<OrganizationUI | null>(null)
+    const [openConfirm, setOpenConfirm] = useState(false)
+
+    const fetchOrganizations = useCallback(async () => {
+        if (!partnerId) return
+        setLoading(true)
+
+        try {
+            const res = await getOrganizationsByPartner(partnerId)
+
+            const mapped: OrganizationUI[] = res.items.map((o) => ({
+                id: o.orgId,
+                name: o.orgName,
+                email: o.orgEmail,
+                phone: o.orgPhone,
+                address: o.orgAddress,
+                partnerId: o.partnerId,
+                devices: o.deviceCount,
+                status: o.status,
+                joined: new Date(o.createdAt).toLocaleDateString(),
+            }))
+
+            setOrganizations(mapped)
+        } catch (error) {
+            console.error("Failed to load organizations", error)
+        } finally {
+            setLoading(false)
+        }
+    }, [partnerId])
+
+    const handleSuspendOrganization = async () => {
+        if (!orgToSuspend) return
+
+        const newStatus =
+            orgToSuspend.status === "Active" ? "Inactive" : "Active"
+
+        try {
+            await axios.put(`${BASE_URL}/organizations`, {
+                orgId: orgToSuspend.id,
+                status: newStatus,
+            })
+
+            toast.success(
+                newStatus === "Active"
+                    ? "Organization activated successfully"
+                    : "Organization suspended successfully"
+            )
+
+            fetchOrganizations()
+        } catch (err) {
+            toast.error("Failed to update organization status")
+        } finally {
+            setOpenConfirm(false)
+            setOrgToSuspend(null)
+        }
+    }
+
+
+    const openOrganizationAdmin = (org: OrganizationUI) => {
+        navigate(`/organizations/${org.id}`, {
+            state: { organization: org },
+        })
+    }
+
+
+    useEffect(() => {
+        fetchOrganizations()
+    }, [partnerId])
+
+
+    if (!partnerId) {
+        return (
+            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                Partner information not available. Please login again.
+            </div>
+        )
     }
 
     const filteredOrganizations = organizations.filter((o) => {
@@ -74,27 +175,9 @@ function Organizations() {
         const matchesStatus =
             statusFilter === "All" || o.status === statusFilter
 
-        const matchesPartner =
-            partnerFilter === "All" || o.partner === partnerFilter
-
-        return matchesSearch && matchesStatus && matchesPartner
+        return matchesSearch && matchesStatus
     })
 
-    const handleSuspend = (org: Organization) => {
-        updateOrganization({
-            ...org,
-            status: org.status === "Active" ? "Inactive" : "Active"
-        })
-
-        setOrganizations(getOrganizations())
-    }
-
-    const handleDelete = (org: Organization) => {
-        if (!confirm(`Delete ${org.name}?`)) return
-
-        deleteOrganization(org.id)
-        setOrganizations(getOrganizations())
-    }
 
     return (
         <div className="space-y-6 mt-4">
@@ -109,7 +192,6 @@ function Organizations() {
                     <Plus className="h-4 w-4" />
                     Add Organization
                 </Button>
-
             </div>
 
             {/* Stats */}
@@ -126,67 +208,23 @@ function Organizations() {
                         </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm text-muted-foreground">
-                            Total Devices
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-semibold">
-                            372 <span className="text-muted-foreground">/ 400</span>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
 
-            <Separator className="my-2" />
+            <Separator />
 
-            {/* Search & Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="relative w-full max-w-sm">
+            {/* Search & Filter */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-6 min-w-0">
+                <div className="relative w-full max-w-sm min-w-0">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search Organizations..."
                         className="pl-9"
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2">
-                                {partnerFilter === "All" ? "Partner" : partnerFilter}
-                                <ChevronDown className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setPartnerFilter("All")}>
-                                All Partners
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPartnerFilter("Unified Tech")}>
-                                Unified Tech
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPartnerFilter("Connect Solutions")}>
-                                Connect Solutions
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPartnerFilter("EduSmart Technologies")}>
-                                EduSmart Technologies
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPartnerFilter("SafePass Services")}>
-                                SafePass Services
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPartnerFilter("Trackify Systems")}>
-                                Trackify Systems
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-
+                <div className="flex items-end gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="gap-2">
@@ -216,82 +254,100 @@ function Organizations() {
 
             {/* Table */}
             <Card className="px-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Organization</TableHead>
-                            <TableHead>Devices</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Joined</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
-                        {filteredOrganizations.map(org => (
-                            <TableRow key={org.id}>
-                                <TableCell className="font-medium">
-                                    {org.name}
-                                </TableCell>
-                                <TableCell>{org.devices}</TableCell>
-                                <TableCell>
-                                    <Badge
-                                        variant="outline"
-                                        className={
-                                            org.status === "Active"
-                                                ? "border-green-600 text-green-600"
-                                                : "border-red-500 text-red-500"
-                                        }
-                                    >
-                                        {org.status}
-                                    </Badge>
-                                </TableCell>
-
-                                <TableCell>{org.joined}</TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-
-                                        <DropdownMenuContent align="end" className="w-40">
-                                            <DropdownMenuItem onClick={() => openOrganizationAdmin(org)}>
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                View
-                                            </DropdownMenuItem>
-
-                                            <DropdownMenuItem onClick={() => openOrganizationAdmin(org)}>
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-
-
-                                            <DropdownMenuItem onClick={() => handleSuspend(org)}>
-                                                <Ban className="mr-2 h-4 w-4" />
-                                                Suspend
-                                            </DropdownMenuItem>
-
-                                            <DropdownMenuItem
-                                                onClick={() => handleDelete(org)}
-                                                className="text-red-600 focus:text-red-600"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-
+                {loading ? (
+                    <p className="p-6 text-center text-sm text-muted-foreground">
+                        Loading organizations...
+                    </p>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>#</TableHead>
+                                <TableHead>ID</TableHead>
+                                <TableHead>Organization</TableHead>
+                                <TableHead>Devices</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Joined</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+
+                        <TableBody>
+                            {filteredOrganizations.map((org) => (
+                                <TableRow key={org.id}>
+
+                                    <TableCell className="w-18">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={org.profileImageUrl} />
+                                            <AvatarFallback className="bg-muted text-primary text-md font-semibold">
+                                                {org.name
+                                                    ?.split(" ")
+                                                    .filter(Boolean)
+                                                    .slice(0, 2)
+                                                    .map(word => word.charAt(0).toUpperCase())
+                                                    .join("") || "?"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </TableCell>
+
+                                    <TableCell className="font-medium">{org.id}</TableCell>
+                                    <TableCell className="font-medium">{org.name}</TableCell>
+                                    <TableCell>{org.devices}</TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant="outline"
+                                            className={
+                                                org.status === "Active"
+                                                    ? "border-green-600 text-green-600"
+                                                    : "border-red-500 text-red-500"
+                                            }
+                                        >
+                                            {org.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{org.joined}</TableCell>
+
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+
+                                            <DropdownMenuContent align="end" className="w-40">
+                                                <DropdownMenuItem onClick={() => openOrganizationAdmin(org)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    View
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem onClick={() => openOrganizationAdmin(org)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem
+                                                    className="text-red-600 focus:text-red-600"
+                                                    onClick={() => {
+                                                        setOrgToSuspend(org)
+                                                        setOpenConfirm(true)
+                                                    }}
+                                                >
+                                                    <Ban className="mr-2 h-4 w-4" />
+                                                    {org.status === "Active" ? "Suspend" : "Activate"}
+                                                </DropdownMenuItem>
+
+                                            </DropdownMenuContent>
+
+
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+
+                )}
 
                 <Separator />
 
@@ -325,24 +381,50 @@ function Organizations() {
                     </Pagination>
                 </div>
 
-                <Dialog open={openAddOrg} onOpenChange={setOpenAddOrg}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Add Organization</DialogTitle>
-                        </DialogHeader>
-
-                        <AddOrganizationForm
-                            onSuccess={() => {
-                                setOrganizations(getOrganizations())
-                                setOpenAddOrg(false)
-                            }}
-                        />
-
-                    </DialogContent>
-                </Dialog>
-
-
             </Card>
+
+            {/* Add Organization Dialog */}
+            <Dialog open={openAddOrg} onOpenChange={setOpenAddOrg}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Add Organization</DialogTitle>
+                        <DialogDescription>
+                            Enter details to add a new organization.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <AddOrganizationForm
+                        onSuccess={() => {
+                            fetchOrganizations()
+                            setOpenAddOrg(false)
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmDialog
+                open={openConfirm}
+                title={
+                    orgToSuspend?.status === "Active"
+                        ? "Suspend Organization?"
+                        : "Activate Organization?"
+                }
+                description={
+                    orgToSuspend?.status === "Active"
+                        ? "This organization will lose access until reactivated."
+                        : "This organization will regain access to the platform."
+                }
+                confirmText="Yes, Continue"
+                variant={
+                    orgToSuspend?.status === "Active" ? "destructive" : "default"
+                }
+                onCancel={() => {
+                    setOpenConfirm(false)
+                    setOrgToSuspend(null)
+                }}
+                onConfirm={handleSuspendOrganization}
+            />
+
         </div>
     )
 }

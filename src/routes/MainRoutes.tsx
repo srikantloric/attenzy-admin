@@ -9,11 +9,13 @@ import StaffPage from '@/pages/people/staff';
 import RFIDMappingPage from '@/pages/people/rfid-mapping';
 import DeviceHealthPage from '@/pages/devices/deviceHealth';
 import ManualAttendancePage from '@/pages/attendance/attendance';
-import Organizations from '@/pages/organizations/organizationsPage';
-import OrganizationAdmin from "@/pages/organizations/OrganizationAdmin"
 import DevicePageNew from '@/pages/devices/devicePageNew';
+
 import PartnerDetailsPage from '@/pages/partners/PartnerDetailsPage';
 import PartnersPage from '@/pages/partners/PartnersPage';
+
+import Organizations from '@/pages/organizations/organizationsPage';
+import OrganizationDetailsPage from '@/pages/organizations/OrganizationDetailsPage';
 
 import DevelopersPage from '@/pages/developers/DevelopersPage';
 
@@ -42,7 +44,7 @@ const MainRoutes = {
                 { path: 'partners', element: <PartnersPage /> },
                 { path: "/partners/:partnerId", element: <PartnerDetailsPage /> },
                 { path: 'organizations', element: <Organizations /> },
-                { path: "/organizations/:organizationId/admin", element: <OrganizationAdmin /> },
+                { path: "/organizations/:organizationId", element: <OrganizationDetailsPage /> },
                 { path: "/developers", element: <DevelopersPage /> },
 
             ]
