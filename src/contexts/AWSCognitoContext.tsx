@@ -39,6 +39,21 @@ const AWSCognitoContext = createContext<AWSCognitoContextType | null>(null);
 export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const buildUserFromSession = (session: CognitoUserSession) => {
+    const idToken = session.getIdToken();
+    const payload = idToken.decodePayload();
+
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      name: payload.name || payload.email?.split("@")[0],
+      role: payload["cognito:groups"]?.[0],
+      partnerId: payload["custom:partnerId"],
+      orgId: payload["custom:orgId"],
+    };
+  };
+
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -55,31 +70,19 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
             return;
           }
 
+          const user = buildUserFromSession(session);
 
-          const accessToken = session.getIdToken();
-          const payload = accessToken.decodePayload();
-
-          const roles: Role = payload['cognito:groups'][0];
-          const partnerId = payload['custom:partnerId']
-          const orgId = payload['custom:orgId']
-
-          setSession(accessToken.getJwtToken());
+          setSession(session.getAccessToken().getJwtToken());
 
           dispatch({
             type: LOGIN,
             payload: {
               isLoggedIn: true,
               isInitialized: true,
-              user: {
-                userId: payload.sub,
-                email: payload.email,
-                name: payload.name || payload.email?.split("@")[0],
-                role: roles,
-                partnerId: partnerId,
-                orgId: orgId,
-              }
-            }
+              user,
+            },
           });
+
         });
       } catch (error) {
         console.error(error);
@@ -106,21 +109,21 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
         onSuccess: (session: CognitoUserSession) => {
           setSession(session.getAccessToken().getJwtToken());
 
-          const userRole = session.getAccessToken().decodePayload()['cognito:groups'][0]
+          const user = buildUserFromSession(session);
+
           dispatch({
             type: LOGIN,
             payload: {
               isLoggedIn: true,
-              user: {
-                userId: authData.getUsername(),
-                email: authData.getUsername(),
-                name: 'John AWS',
-                role: userRole
-              }
-            }
+              isInitialized: true,
+              user,
+            },
           });
+
+
           success(session);
         },
+
         onFailure: (err) => {
           rej(err);
         },
@@ -139,21 +142,17 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
               onSuccess: (session) => {
                 setSession(session.getAccessToken().getJwtToken());
 
-                const userRole: Role =
-                  session.getAccessToken().decodePayload()["cognito:groups"] ?? [];
+                const user = buildUserFromSession(session);
 
                 dispatch({
                   type: LOGIN,
                   payload: {
                     isLoggedIn: true,
-                    user: {
-                      userId: authData.getUsername(),
-                      email: authData.getUsername(),
-                      name: "John AWS",
-                      role: userRole,
-                    },
+                    isInitialized: true,
+                    user,
                   },
                 });
+
 
                 success(session);
               },
