@@ -16,17 +16,17 @@ export type WebhookEvent =
 export interface Webhook {
   webhookId: string
   url: string
-
-  events: WebhookEvent[]
+  events: string[]
 
   isActive: boolean
+  verificationStatus: "PENDING" | "VERIFIED" | "FAILED"
 
-  ownerType: WebhookOwnerType
-  ownerId: string
+  lastVerificationError?: string
 
   createdAt: number
   updatedAt: number
 }
+
 
 /* ---------------------------------------------
  * Create Webhook

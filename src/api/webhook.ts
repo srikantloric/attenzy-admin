@@ -43,3 +43,11 @@ export async function deleteWebhook(
     })
     return res.data
 }
+
+
+export async function verifyWebhook(webhookId: string) {
+    const res = await axiosServices.post(
+        `/webhooks/${webhookId}/verify`
+    )
+    return res.data
+}
