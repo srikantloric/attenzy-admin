@@ -7,8 +7,13 @@ export type DeviceStatus =
 export interface Device {
   deviceId: string
   serialNumber: string
+
   orgId: string
+  orgName: string
+
   partnerId: string
+  partnerCompany: string
+
   location: string
   description?: string
 

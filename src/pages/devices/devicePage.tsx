@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import {
     Activity,
     Eye,
@@ -8,7 +8,8 @@ import {
     Search,
     Trash2,
 } from "lucide-react"
-import { useEffect, useMemo, useState, useCallback } from "react"
+
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -32,11 +33,9 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-    SelectGroup
+    SelectGroup,
 } from "@/components/ui/select"
-
 import { Field, FieldLabel } from "@/components/ui/field"
-
 import {
     Pagination,
     PaginationContent,
@@ -45,28 +44,22 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 
-import { type Device } from "@/types/device"
+import type { Device, DeviceStatus } from "@/types/device"
 import AddDevice from "@/components/device/AddDevice"
-
-import { getOrganizationsByPartner } from "@/api/organization"
-import { getDevicesByOrgs } from "@/api/device"
-
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
-
-type OrgMap = Record<string, string>
+import { getDevicesByPartner } from "@/api/device"
 
 function DevicePage() {
     const { user } = useAuth()
     const partnerId = user?.partnerId
 
-    const [addDeviceOpen, setDeviceOpen] = useState(false)
+    const [addDeviceOpen, setAddDeviceOpen] = useState(false)
     const [searchString, setSearchString] = useState("")
-    const [selectedDeviceStatus, setSelectedDeviceStatus] = useState("all")
+    const [selectedDeviceStatus, setSelectedDeviceStatus] =
+        useState<DeviceStatus | "all">("all")
 
     const [allDevices, setAllDevices] = useState<Device[]>([])
-    const [orgMap, setOrgMap] = useState<OrgMap>({})
-
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -77,26 +70,8 @@ function DevicePage() {
             setLoading(true)
             setError(null)
 
-            // 1️⃣ fetch organizations for partner
-            const orgRes = await getOrganizationsByPartner(partnerId)
-
-            const orgIds = orgRes.items.map((org) => org.orgId)
-
-            // build orgId → orgName map
-            const map: OrgMap = {}
-            orgRes.items.forEach((org) => {
-                map[org.orgId] = org.orgName
-            })
-            setOrgMap(map)
-
-            if (orgIds.length === 0) {
-                setAllDevices([])
-                return
-            }
-
-            // 2️⃣ fetch devices across orgs
-            const devices = await getDevicesByOrgs(orgIds)
-            setAllDevices(devices)
+            const data = await getDevicesByPartner(partnerId)
+            setAllDevices(data.items ?? [])
         } catch (err: any) {
             console.error(err)
             setError(err.message || "Failed to load devices")
@@ -109,33 +84,25 @@ function DevicePage() {
         fetchDevices()
     }, [fetchDevices])
 
-    if (!partnerId) {
-        return (
-            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
-                Partner information not available. Please login again.
-            </div>
-        )
-    }
-
     const filteredDevices = useMemo(() => {
+        const search = searchString.toLowerCase()
+
         return allDevices.filter((device) => {
             const matchesSearch =
-                device.deviceId.toLowerCase().includes(searchString.toLowerCase()) ||
-                device.serialNumber.toLowerCase().includes(searchString.toLowerCase()) ||
-                device.location.toLowerCase().includes(searchString.toLowerCase()) ||
-                (orgMap[device.orgId]?.toLowerCase() ?? "").includes(
-                    searchString.toLowerCase()
-                )
+                device.deviceId.toLowerCase().includes(search) ||
+                device.serialNumber.toLowerCase().includes(search) ||
+                device.location.toLowerCase().includes(search) ||
+                device.orgName.toLowerCase().includes(search)
 
             const matchesStatus =
                 selectedDeviceStatus === "all" ||
-                device.status.toLowerCase() === selectedDeviceStatus
+                device.status === selectedDeviceStatus
 
             return matchesSearch && matchesStatus
         })
-    }, [allDevices, searchString, selectedDeviceStatus, orgMap])
+    }, [allDevices, searchString, selectedDeviceStatus])
 
-    const statusBadge = (status: string) => {
+    const statusBadge = (status: DeviceStatus) => {
         switch (status) {
             case "ONLINE":
                 return "bg-green-100 text-green-700"
@@ -143,9 +110,19 @@ function DevicePage() {
                 return "bg-yellow-100 text-yellow-700"
             case "OFFLINE":
                 return "bg-red-100 text-red-700"
+            case "INACTIVE":
+                return "bg-gray-200 text-gray-700"
             default:
                 return "bg-muted text-muted-foreground"
         }
+    }
+
+    if (!partnerId) {
+        return (
+            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                Partner information not available. Please login again.
+            </div>
+        )
     }
 
     return (
@@ -161,7 +138,7 @@ function DevicePage() {
                     </span>
                 </div>
 
-                <Button className="bg-primary" onClick={() => setDeviceOpen(true)}>
+                <Button className="bg-primary" onClick={() => setAddDeviceOpen(true)}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add Device
                 </Button>
@@ -181,16 +158,19 @@ function DevicePage() {
 
                 <Select
                     value={selectedDeviceStatus}
-                    onValueChange={setSelectedDeviceStatus}
+                    onValueChange={(value) =>
+                        setSelectedDeviceStatus(value as DeviceStatus | "all")
+                    }
                 >
-                    <SelectTrigger className="w-36">
+                    <SelectTrigger className="w-40">
                         <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="idle">Idle</SelectItem>
-                        <SelectItem value="offline">Offline</SelectItem>
+                        <SelectItem value="ONLINE">Online</SelectItem>
+                        <SelectItem value="IDLE">Idle</SelectItem>
+                        <SelectItem value="OFFLINE">Offline</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -235,9 +215,7 @@ function DevicePage() {
                                         {device.deviceId}
                                     </TableCell>
                                     <TableCell>{device.serialNumber}</TableCell>
-                                    <TableCell>
-                                        {orgMap[device.orgId] ?? device.orgId}
-                                    </TableCell>
+                                    <TableCell>{device.orgName}</TableCell>
                                     <TableCell>{device.location}</TableCell>
                                     <TableCell>
                                         <span
@@ -256,7 +234,11 @@ function DevicePage() {
 
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                >
                                                     <MoreVertical className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
@@ -282,12 +264,12 @@ function DevicePage() {
 
                 <Separator />
 
-                {/* Pagination */}
-                <div className="flex items-center justify-end gap-4 mr-4">
+                {/* PAGINATION (UI only for now) */}
+                <div className="flex items-center justify-end gap-4 mr-4 py-3">
                     <Field orientation="horizontal" className="w-fit">
-                        <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
+                        <FieldLabel>Rows per page</FieldLabel>
                         <Select defaultValue="25">
-                            <SelectTrigger className="w-20" id="select-rows-per-page">
+                            <SelectTrigger className="w-20">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent align="start">
@@ -300,6 +282,7 @@ function DevicePage() {
                             </SelectContent>
                         </Select>
                     </Field>
+
                     <Pagination className="mx-0 w-auto">
                         <PaginationContent>
                             <PaginationItem>
@@ -311,16 +294,14 @@ function DevicePage() {
                         </PaginationContent>
                     </Pagination>
                 </div>
-
             </Card>
 
             <AddDevice
                 open={addDeviceOpen}
-                setOpen={setDeviceOpen}
-                onClose={() => setDeviceOpen(false)}
+                setOpen={setAddDeviceOpen}
+                onClose={() => setAddDeviceOpen(false)}
                 existingDevices={allDevices}
             />
-
         </div>
     )
 }

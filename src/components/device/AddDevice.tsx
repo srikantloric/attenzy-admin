@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/combobox"
 
 import { getOrganizationsByPartner } from "@/api/organization"
+import { addDevice, getDeviceById } from "@/api/device"
 import useAuth from "@/hooks/useAuth"
 import { toast } from "sonner"
 
@@ -33,8 +34,6 @@ interface AddDeviceProps {
   onClose?: () => void
   existingDevices: Device[]
 }
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
 const AddDevice: React.FC<AddDeviceProps> = ({
   open,
@@ -91,24 +90,24 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     try {
       setLoading(true)
 
-      const res = await fetch(`${BACKEND_BASE_URL}/devices`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, partnerId }),
-      })
-
-      if (res.status === 409) {
+      // 🔍 Backend check (authoritative)
+      const existing = await getDeviceById(form.deviceId)
+      if (existing) {
         toast.error("Device already assigned", {
-          description:
-            "This device ID or serial number is already assigned.",
+          description: "This device ID already exists in the system.",
         })
         return
       }
 
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || "Failed to add device")
-      }
+      // ✅ Add device
+      await addDevice({
+        deviceId: form.deviceId,
+        serialNumber: form.serialNumber,
+        location: form.location,
+        description: form.description,
+        orgId: form.orgId,
+        partnerId,
+      })
 
       setSuccess(true)
       toast.success("Device added successfully")
@@ -133,6 +132,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
     loadOrgs()
   }, [partnerId])
+
 
   return (
     <Sheet
