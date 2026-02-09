@@ -46,15 +46,15 @@ import {
 import SignalBars from "@/components/SignalBars"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
-import { getDevicesByPartner } from "@/api/device"
+import {  listOrgDevices } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
 import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
 
 
-const DeviceHealthPage: React.FC = () => {
+const OrgDeviceHealth: React.FC = () => {
     const { user } = useAuth()
-    const partnerId = user?.partnerId
+    const orgId = user?.orgId
 
     const [devices, setDevices] = useState<Device[]>([])
     const [loading, setLoading] = useState(false)
@@ -66,14 +66,14 @@ const DeviceHealthPage: React.FC = () => {
 
 
     useEffect(() => {
-        if (!partnerId) return
+        if (!orgId) return
 
         const fetchDevices = async () => {
             try {
                 setLoading(true)
                 setError(null)
 
-                const res = await getDevicesByPartner(partnerId)
+                const res = await listOrgDevices(orgId)
                 setDevices(res.items ?? [])
             } catch (err: any) {
                 setError(err.message || "Failed to load device health")
@@ -83,7 +83,7 @@ const DeviceHealthPage: React.FC = () => {
         }
 
         fetchDevices()
-    }, [partnerId])
+    }, [orgId])
 
 
     const deviceHealthData = useMemo(() => {
@@ -139,13 +139,10 @@ const DeviceHealthPage: React.FC = () => {
     const idleCount = deviceHealthData.filter(d => d.uiStatus === "idle").length
     const offlineCount = deviceHealthData.filter(d => d.uiStatus === "offline").length
 
-
-
-
-    if (!partnerId) {
+    if (!orgId) {
         return (
             <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
-                Partner information not available. Please login again.
+                Organization information not available. Please login again.
             </div>
         )
     }
@@ -404,4 +401,4 @@ const DeviceHealthPage: React.FC = () => {
     )
 }
 
-export default DeviceHealthPage
+export default OrgDeviceHealth
