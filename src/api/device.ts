@@ -1,3 +1,5 @@
+import axiosServices from "@/utils/axios"
+
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
 export async function getDevicesByPartner(partnerId: string) {
@@ -61,4 +63,15 @@ export async function getDeviceById(deviceId: string) {
   if (!res.ok) throw new Error(data?.message || "Failed to check device")
 
   return data.item ?? data
+}
+
+
+// For organization users to list devices under their organization
+export async function listOrgDevices(orgId: string) {
+  const res = axiosServices.get("/devices", {
+    params: {
+      orgId,
+    },
+  });
+  return res.then((response) => response.data);
 }

@@ -50,7 +50,7 @@ import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
 
-function DevicePage() {
+function PartnerDevice() {
     const { user } = useAuth()
     const partnerId = user?.partnerId
 
@@ -311,4 +311,4 @@ function DevicePage() {
     )
 }
 
-export default DevicePage
+export default PartnerDevice

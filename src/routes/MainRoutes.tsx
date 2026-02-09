@@ -10,7 +10,6 @@ import StaffPage from "@/pages/people/staff"
 import RFIDMappingPage from "@/pages/people/rfid-mapping"
 
 import DeviceHealthPage from "@/pages/devices/deviceHealth"
-import DevicePageNew from "@/pages/devices/devicePage"
 
 import ManualAttendancePage from "@/pages/attendance/attendance"
 
@@ -25,7 +24,7 @@ import OverviewTab from "@/pages/developers/OverviewTab"
 import ApiKeysTab from "@/pages/developers/ApiKeysTab"
 import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
-import DevicePage from "@/pages/devices/devicePage"
+import DevicePage from "@/pages/devices"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
