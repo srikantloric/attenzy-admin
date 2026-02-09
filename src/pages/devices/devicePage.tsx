@@ -270,7 +270,9 @@ function DevicePage() {
                 open={addDeviceOpen}
                 setOpen={setDeviceOpen}
                 onClose={() => setDeviceOpen(false)}
+                existingDevices={allDevices}
             />
+
         </div>
     )
 }

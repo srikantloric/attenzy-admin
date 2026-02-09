@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 
-import { useEffect } from "react"
 import {
   Combobox,
   ComboboxContent,
@@ -22,15 +21,17 @@ import {
 } from "@/components/ui/combobox"
 
 import { getOrganizationsByPartner } from "@/api/organization"
-
 import useAuth from "@/hooks/useAuth"
 import { toast } from "sonner"
+
 import type { Organization } from "@/types/organization"
+import type { Device } from "@/types/device"
 
 interface AddDeviceProps {
   open: boolean
   setOpen: (status: boolean) => void
   onClose?: () => void
+  existingDevices: Device[]
 }
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
@@ -39,6 +40,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
   open,
   setOpen,
   onClose,
+  existingDevices,
 }) => {
   const { user } = useAuth()
   const partnerId = user?.partnerId
@@ -51,8 +53,6 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
   const selectedOrg = organizations.find((o) => o.orgId === selectedOrgId)
 
-
-
   const [form, setForm] = useState({
     deviceId: "",
     serialNumber: "",
@@ -60,6 +60,9 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     location: "",
     description: "",
   })
+
+  const [deviceIdError, setDeviceIdError] = useState<string | null>(null)
+  const [serialError, setSerialError] = useState<string | null>(null)
 
   const resetForm = () => {
     setForm({
@@ -69,6 +72,9 @@ const AddDevice: React.FC<AddDeviceProps> = ({
       location: "",
       description: "",
     })
+    setSelectedOrgId(null)
+    setDeviceIdError(null)
+    setSerialError(null)
     setSuccess(false)
   }
 
@@ -87,14 +93,17 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
       const res = await fetch(`${BACKEND_BASE_URL}/devices`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...form,
-          partnerId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, partnerId }),
       })
+
+      if (res.status === 409) {
+        toast.error("Device already assigned", {
+          description:
+            "This device ID or serial number is already assigned.",
+        })
+        return
+      }
 
       if (!res.ok) {
         const error = await res.json()
@@ -102,15 +111,9 @@ const AddDevice: React.FC<AddDeviceProps> = ({
       }
 
       setSuccess(true)
-
-      toast.success("Device added successfully", {
-        description: `Device ${form.deviceId} has been registered.`,
-      })
+      toast.success("Device added successfully")
     } catch (err: any) {
-      console.error(err)
-      toast.error("Failed to add device", {
-        description: err.message || "Something went wrong",
-      })
+      toast.error(err.message || "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -122,17 +125,14 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     const loadOrgs = async () => {
       try {
         const res = await getOrganizationsByPartner(partnerId)
-
         setOrganizations(res.items as Organization[])
-      } catch (err) {
-        console.error("Failed to load organizations", err)
+      } catch {
         toast.error("Failed to load organizations")
       }
     }
 
     loadOrgs()
   }, [partnerId])
-
 
   return (
     <Sheet
@@ -176,29 +176,56 @@ const AddDevice: React.FC<AddDeviceProps> = ({
               <div className="space-y-2">
                 <label className="text-sm font-medium">Device ID</label>
                 <Input
-                  placeholder="dev003"
+                  placeholder="attenzy001"
                   value={form.deviceId}
-                  onChange={(e) =>
-                    handleChange("deviceId", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value
+                    handleChange("deviceId", value)
+
+                    const exists = existingDevices.some(
+                      (d) =>
+                        d.deviceId.toLowerCase() === value.toLowerCase()
+                    )
+
+                    setDeviceIdError(
+                      exists ? "Device ID already exists" : null
+                    )
+                  }}
                 />
+                {deviceIdError && (
+                  <p className="text-xs text-red-600">{deviceIdError}</p>
+                )}
               </div>
 
               {/* Serial Number */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Serial Number</label>
                 <Input
-                  placeholder="SN003"
+                  placeholder="SN001"
                   value={form.serialNumber}
-                  onChange={(e) =>
-                    handleChange("serialNumber", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value
+                    handleChange("serialNumber", value)
+
+                    const exists = existingDevices.some(
+                      (d) =>
+                        d.serialNumber.toLowerCase() ===
+                        value.toLowerCase()
+                    )
+
+                    setSerialError(
+                      exists ? "Serial number already exists" : null
+                    )
+                  }}
                 />
+                {serialError && (
+                  <p className="text-xs text-red-600">{serialError}</p>
+                )}
               </div>
 
-              {/* Organization Combobox */}
-              <div className="space-y-2 z-9999">
-                <label className="text-sm font-medium z-50">Organization</label>
+              {/* Organization */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Organization</label>
 
                 <Combobox
                   items={organizations.map((o) => o.orgId)}
@@ -209,7 +236,6 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                     handleChange("orgId", value)
                   }}
                 >
-
                   <ComboboxInput
                     placeholder="Select organization"
                     value={selectedOrg?.orgName ?? ""}
@@ -220,9 +246,14 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
                     <ComboboxList>
                       {(id) => {
-                        const org = organizations.find((o) => o.orgId === id)!
+                        const org = organizations.find(
+                          (o) => o.orgId === id
+                        )!
                         return (
-                          <ComboboxItem key={org.orgId} value={org.orgId}>
+                          <ComboboxItem
+                            key={org.orgId}
+                            value={org.orgId}
+                          >
                             {org.orgName}
                           </ComboboxItem>
                         )
@@ -232,12 +263,11 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                 </Combobox>
               </div>
 
-
               {/* Location */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Location</label>
                 <Input
-                  placeholder="Class 5A"
+                  placeholder="Main Gate"
                   value={form.location}
                   onChange={(e) =>
                     handleChange("location", e.target.value)
@@ -278,6 +308,8 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                   onClick={handleSubmit}
                   disabled={
                     loading ||
+                    !!deviceIdError ||
+                    !!serialError ||
                     !form.deviceId ||
                     !form.serialNumber ||
                     !form.orgId ||
