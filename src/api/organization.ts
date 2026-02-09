@@ -2,6 +2,7 @@ import type {
   CreateOrganizationResponse,
   GetOrganizationsResponse,
 } from "@/types/organization"
+import axiosServices from "@/utils/axios"
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
@@ -15,7 +16,7 @@ export async function createOrganization(
   }
 ): Promise<CreateOrganizationResponse> {
   const res = await fetch(
-    `${BACKEND_BASE_URL}/organizations?partnerId=${partnerId}`, 
+    `${BACKEND_BASE_URL}/organizations?partnerId=${partnerId}`,
     {
       method: "POST",
       headers: {
@@ -56,4 +57,10 @@ export async function getOrganizationsByPartner(
   }
 
   return res.json()
+}
+
+export async function getOrganizationById(
+  orgId: string
+): Promise<CreateOrganizationResponse> {
+  return (await axiosServices.get("/organizations/" + orgId)).data;
 }

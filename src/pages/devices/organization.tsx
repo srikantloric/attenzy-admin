@@ -45,10 +45,10 @@ import {
 } from "@/components/ui/pagination"
 
 import type { Device, DeviceStatus } from "@/types/device"
-import AddDevice from "@/components/device/AddDevice"
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { listOrgDevices } from "@/api/device"
+import OrgAddDevice from "@/components/device/OrgAddDevice"
 
 function OrganizationDevice() {
   const { user } = useAuth()
@@ -298,7 +298,7 @@ function OrganizationDevice() {
         </div>
       </Card>
 
-      <AddDevice
+      <OrgAddDevice
         open={addDeviceOpen}
         setOpen={setAddDeviceOpen}
         onClose={() => {
