@@ -74,6 +74,7 @@ import useAuth from "@/hooks/useAuth"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import { toast } from "sonner"
 import axios from "axios"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 function Organizations() {
     const navigate = useNavigate()
@@ -181,6 +182,8 @@ function Organizations() {
 
     return (
         <div className="space-y-6 mt-4">
+            <AppBreadcrumb />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Organizations</h1>

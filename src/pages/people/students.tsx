@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
 const TOTAL_STUDENTS = 1200;
 const RFID_ISSUED = 950;
@@ -65,6 +66,7 @@ const StudentsPage: React.FC = () => {
     return (
         <>
             <div className="space-y-6 p-6">
+                <AppBreadcrumb />
 
                 {/* Header */}
                 <div className="flex flex-col gap-2">

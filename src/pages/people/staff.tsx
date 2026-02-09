@@ -44,6 +44,7 @@ import {
     PaginationPrevious
 } from "@/components/ui/pagination";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
 const TOTAL_STAFF = 56;
 
@@ -72,6 +73,7 @@ const StaffPage: React.FC = () => {
     return (
         <>
             <div className="space-y-6 p-6">
+                <AppBreadcrumb />
 
                 {/* Header */}
                 <div className="flex flex-col gap-2">

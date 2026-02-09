@@ -51,3 +51,29 @@ export async function verifyWebhook(webhookId: string) {
     )
     return res.data
 }
+
+
+export async function testWebhook(
+  webhookId: string,
+  payload: {
+    orgId: string
+    deviceId: string
+    eventType: string
+  }
+) {
+  const res = await fetch(
+    `${import.meta.env.VITE_BACKEND_BASE_URL}/webhooks/${webhookId}/test`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  )
+
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.message || "Test failed")
+  }
+
+  return res.json()
+}
