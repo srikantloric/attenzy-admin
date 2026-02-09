@@ -1,28 +1,13 @@
-import type { GetDevicesResponse, Device } from "@/types/device"
-
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
-
-export async function getDevicesByPartner(
-  partnerId: string
-): Promise<GetDevicesResponse> {
+export async function getDevicesByPartner(partnerId: string) {
   const res = await fetch(
-    `${BACKEND_BASE_URL}/devices?partnerId=${partnerId}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    `${BACKEND_BASE_URL}/devices?partnerId=${partnerId}`
   )
 
   if (!res.ok) {
-    let message = "Failed to fetch devices"
-    try {
-      const error = await res.json()
-      message = error.message || message
-    } catch {}
-    throw new Error(message)
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || "Failed to fetch devices")
   }
 
   return res.json()
@@ -55,7 +40,7 @@ export async function addDevice(
     try {
       const error = await res.json()
       message = error.message || message
-    } catch {}
+    } catch { }
     throw new Error(message)
   }
 
@@ -63,33 +48,17 @@ export async function addDevice(
 }
 
 
-export async function getDeviceById(
-  deviceId: string
-): Promise<Device | null> {
+export async function getDeviceById(deviceId: string) {
   const res = await fetch(
-    `${import.meta.env.VITE_BACKEND_BASE_URL}/devices/${deviceId}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+    `${BACKEND_BASE_URL}/devices/${deviceId}`
   )
 
-  if (res.status === 404) {
-    return null
-  }
+  if (res.status === 404) return null
 
   const data = await res.json()
 
-  if (data?.message === "Device not found") {
-    return null
-  }
-
-  if (!res.ok) {
-    throw new Error(data?.message || "Failed to check device")
-  }
+  if (data?.message === "Device not found") return null
+  if (!res.ok) throw new Error(data?.message || "Failed to check device")
 
   return data.item ?? data
 }
-
