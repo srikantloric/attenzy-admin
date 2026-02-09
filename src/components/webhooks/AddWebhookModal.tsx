@@ -85,12 +85,14 @@ export default function AddWebhookModal({
         try {
             setLoading(true)
 
-            await createWebhook({
+            const res = await createWebhook({
                 url,
                 events: selectedEvents,
                 ownerType,
                 ownerId
             })
+
+            console.log("Webhook Created:",res)
 
             onOpenChange(false)
             onCreated()

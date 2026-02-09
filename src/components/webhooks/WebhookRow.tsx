@@ -1,10 +1,12 @@
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, CheckCircle, RotateCcw } from "lucide-react"
+import { Pencil, Trash2, CheckCircle, RotateCcw, FlaskConical } from "lucide-react"
 import { deleteWebhook, updateWebhook, verifyWebhook } from "@/api/webhook"
 import type { Webhook } from "@/types/webhook"
 import { useState } from "react"
 import { toast } from "sonner"
+import TestWebhookModal from "./TestWebhookModal"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 interface Props {
     webhook: Webhook
@@ -28,7 +30,7 @@ function VerificationBadge({ status }: { status: Webhook["verificationStatus"] }
 
 export default function WebhookRow({ webhook, onEdit, onUpdated }: Props) {
     const [loading, setLoading] = useState(false)
-
+    const [testOpen, setTestOpen] = useState(false)
     /* ---------------- Toggle Active ---------------- */
     const toggleActive = async (checked: boolean) => {
         if (webhook.verificationStatus !== "VERIFIED") return
@@ -109,6 +111,23 @@ export default function WebhookRow({ webhook, onEdit, onUpdated }: Props) {
                     disabled={webhook.verificationStatus !== "VERIFIED"}
                     onCheckedChange={toggleActive}
                 />
+                {webhook.isActive && webhook.verificationStatus === "VERIFIED" && (
+                    <Tooltip >
+                        <TooltipTrigger>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setTestOpen(true)}
+                                title="Test Webhook"
+                            >
+                                <FlaskConical className="h-4 w-4 text-blue-600" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Test Webhook
+                        </TooltipContent>
+                    </Tooltip>
+                )}
 
                 {/* Edit */}
                 <Button
@@ -128,6 +147,11 @@ export default function WebhookRow({ webhook, onEdit, onUpdated }: Props) {
                     <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
             </div>
+            <TestWebhookModal
+                open={testOpen}
+                onOpenChange={setTestOpen}
+                webhookId={webhook.webhookId}
+            />
         </div>
     )
 }

@@ -26,6 +26,7 @@ function WebhooksTab() {
     try {
       setLoading(true)
       const res = await listWebhooks()
+      console.log(res)
       setWebhooks(res.items)
     } catch (err) {
       console.error("Failed to load webhooks", err)
