@@ -299,9 +299,12 @@ function DevicePage() {
             <AddDevice
                 open={addDeviceOpen}
                 setOpen={setAddDeviceOpen}
-                onClose={() => setAddDeviceOpen(false)}
-                existingDevices={allDevices}
+                onClose={() => {
+                    setAddDeviceOpen(false)
+                    fetchDevices() 
+                }}
             />
+
         </div>
     )
 }
