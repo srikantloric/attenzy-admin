@@ -18,6 +18,10 @@ import Organizations from '@/pages/organizations/organizationsPage';
 import OrganizationDetailsPage from '@/pages/organizations/OrganizationDetailsPage';
 
 import DevelopersPage from '@/pages/developers/DevelopersPage';
+import OverviewTab from '@/pages/developers/OverviewTab';
+import ApiKeysTab from '@/pages/developers/ApiKeysTab';
+import WebhooksTab from '@/pages/developers/WebhooksTab';
+import ApiReferenceTab from '@/pages/developers/ApiReferenceTab';
 
 // pages routing
 const Dashboard = Loadable(lazy(() => import('@/pages/dashboard')))
@@ -45,7 +49,33 @@ const MainRoutes = {
                 { path: "/partners/:partnerId", element: <PartnerDetailsPage /> },
                 { path: 'organizations', element: <Organizations /> },
                 { path: "/organizations/:organizationId", element: <OrganizationDetailsPage /> },
-                { path: "/developers", element: <DevelopersPage /> },
+                {
+                    path: "/developers",
+                    element: <DevelopersPage />,
+                    handle: { breadcrumb: 'Developers' },
+                    children: [
+                        {
+                            index: true,
+                            element: <OverviewTab />,
+                            handle: { breadcrumb: "Overview" },
+                        },
+                        {
+                            path: "keys",
+                            element: <ApiKeysTab />,
+                            handle: { breadcrumb: "API Keys" },
+                        },
+                        {
+                            path: "webhooks",
+                            element: <WebhooksTab />,
+                            handle: { breadcrumb: "Webhooks" },
+                        },
+                        {
+                            path: "apis",
+                            element: <ApiReferenceTab />,
+                            handle: { breadcrumb: "API Reference" },
+                        },
+                    ]
+                },
 
             ]
         },

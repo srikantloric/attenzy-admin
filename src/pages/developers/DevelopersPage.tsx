@@ -1,36 +1,27 @@
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import OverviewTab from "./OverviewTab"
-import ApiKeysTab from "./ApiKeysTab"
-import WebhooksTab from "./WebhooksTab"
-import ApiReferenceTab from "./ApiReferenceTab"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { TvMinimalPlay } from "lucide-react"
-import { Tooltip } from "@radix-ui/react-tooltip"
-import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
+
+import { Outlet, useLocation, useNavigate } from "react-router-dom"
 
 function DevelopersPage() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  const tab = pathname.split("/")[2] ?? "overview"
+
   return (
     <div className="p-4 space-y-4">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="#">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Developers</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <AppBreadcrumb />
 
-
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl font-semibold">Developers</h1>
@@ -38,19 +29,29 @@ function DevelopersPage() {
             Monitor usage, manage API keys, configure webhooks, and explore APIs
           </p>
         </div>
+
         <Tooltip>
-          <TooltipTrigger>
-            <Button variant={"outline"} size={"icon"} className="border-red-400 cursor-pointer"><TvMinimalPlay className="text-red-400" /></Button>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-red-400"
+            >
+              <TvMinimalPlay className="text-red-400" />
+            </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            Video Tutorial
-          </TooltipContent>
+          <TooltipContent>Video Tutorial</TooltipContent>
         </Tooltip>
-
-
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
+      {/* Tabs */}
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          navigate(value === "overview" ? "." : value)
+        }
+        className="space-y-4"
+      >
         <TabsList variant="line">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
@@ -58,23 +59,9 @@ function DevelopersPage() {
           <TabsTrigger value="apis">API Reference</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <OverviewTab />
-        </TabsContent>
-
-        <TabsContent value="keys">
-          <ApiKeysTab />
-        </TabsContent>
-
-        <TabsContent value="webhooks">
-          <WebhooksTab />
-        </TabsContent>
-
-        <TabsContent value="apis">
-          <ApiReferenceTab />
-        </TabsContent>
+        <Outlet />
       </Tabs>
-    </div >
+    </div>
   )
 }
 
