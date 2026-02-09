@@ -19,6 +19,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 function PlatformDashboard() {
 
@@ -38,6 +39,8 @@ function PlatformDashboard() {
 
     return (
         <div className="space-y-6">
+            <AppBreadcrumb />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Platform Admin</h1>

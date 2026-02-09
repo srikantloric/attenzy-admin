@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import LiveAttendance from "@/components/LiveAttendance"
 import LiveAttendanceWithDevice from "@/components/LiveAttendanceWithDevice"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 function OrganizationDashboard() {
 
@@ -31,6 +32,8 @@ function OrganizationDashboard() {
 
     return (
         <div className="space-y-6">
+            <AppBreadcrumb />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Orgnization Dashboard</h1>

@@ -16,6 +16,7 @@ import type { Partner } from "@/types/partner"
 import { toast } from "sonner"
 
 import ConfirmDialog from "@/components/common/ConfirmDialog"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
 
@@ -169,6 +170,8 @@ function PartnerDetailsPage() {
   /* ---------------- UI ---------------- */
   return (
     <div className="space-y-6 mt-6">
+      <AppBreadcrumb />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useState, useCallback } from "react"
 import { Card } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import {
     Table,
     TableBody,
@@ -31,7 +32,18 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SelectGroup
 } from "@/components/ui/select"
+
+import { Field, FieldLabel } from "@/components/ui/field"
+
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
 
 import { type Device } from "@/types/device"
 import AddDevice from "@/components/device/AddDevice"
@@ -40,6 +52,7 @@ import { getOrganizationsByPartner } from "@/api/organization"
 import { getDevicesByOrgs } from "@/api/device"
 
 import useAuth from "@/hooks/useAuth"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 type OrgMap = Record<string, string>
 
@@ -137,6 +150,8 @@ function DevicePage() {
 
     return (
         <div className="space-y-4 mt-4">
+            <AppBreadcrumb />
+
             {/* HEADER */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -264,6 +279,39 @@ function DevicePage() {
                         </TableBody>
                     </Table>
                 )}
+
+                <Separator />
+
+                {/* Pagination */}
+                <div className="flex items-center justify-end gap-4 mr-4">
+                    <Field orientation="horizontal" className="w-fit">
+                        <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
+                        <Select defaultValue="25">
+                            <SelectTrigger className="w-20" id="select-rows-per-page">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                                <SelectGroup>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="25">25</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="100">100</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                    <Pagination className="mx-0 w-auto">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious href="#" />
+                            </PaginationItem>
+                            <PaginationItem>
+                                <PaginationNext href="#" />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+
             </Card>
 
             <AddDevice

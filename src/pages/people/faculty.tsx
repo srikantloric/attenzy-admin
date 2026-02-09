@@ -29,6 +29,7 @@ import { Search, Filter, Plus } from "lucide-react";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
 const TOTAL_FACULTY = 84;
 
@@ -55,6 +56,7 @@ const FacultyPage: React.FC = () => {
     return (
         <>
             <div className="space-y-6 p-6">
+                <AppBreadcrumb />
 
                 {/* Header */}
                 <div className="flex flex-col gap-2">

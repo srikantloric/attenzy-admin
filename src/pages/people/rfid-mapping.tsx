@@ -44,6 +44,7 @@ import {
     PaginationPrevious
 } from "@/components/ui/pagination";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
 const TOTAL_STUDENTS = 1200;
 const RFID_ISSUED = 950;
@@ -72,6 +73,7 @@ const RFIDMappingPage: React.FC = () => {
     return (
         <>
             <div className="space-y-6 p-6">
+                <AppBreadcrumb />
 
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4">

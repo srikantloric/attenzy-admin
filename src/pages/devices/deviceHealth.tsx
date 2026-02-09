@@ -36,6 +36,7 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
 const TOTAL_DEVICES = 20;
 
@@ -75,6 +76,7 @@ const DeviceHealthPage: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6">
+            <AppBreadcrumb />
 
             {/* Header */}
             <h1 className="text-2xl font-semibold tracking-tight">

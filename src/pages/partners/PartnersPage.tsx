@@ -49,6 +49,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import { toast } from "sonner"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 /* ---------------- component ---------------- */
 function PartnersPage() {
@@ -118,6 +119,7 @@ function PartnersPage() {
 
     return (
         <div className="space-y-2 mt-4 min-w-0">
+            <AppBreadcrumb />
 
             {/* Header */}
             <div className="flex items-center justify-between">
