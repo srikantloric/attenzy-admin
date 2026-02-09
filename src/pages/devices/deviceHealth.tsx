@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
-import { deviceHealthData } from "@/data/deviceHealth";
-import type { DeviceHealth } from "@/data/deviceHealth";
+import { useEffect, useMemo, useState } from "react"
+import { Search } from "lucide-react"
 
 import {
     Table,
@@ -8,77 +7,177 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
-} from "@/components/ui/table";
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-
+    TableRow,
+} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-
-import { Search } from "lucide-react";
-import SignalBars from "@/components/SignalBars";
-import { Field, FieldLabel } from "@/components/ui/field";
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Field, FieldLabel } from "@/components/ui/field"
 import {
     Select,
     SelectContent,
     SelectGroup,
     SelectItem,
     SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+    MoreVertical,
+    Eye,
+    Pencil,
+    RotateCw
+} from "lucide-react"
 
-const TOTAL_DEVICES = 20;
+import SignalBars from "@/components/SignalBars"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb"
+
+import { getDevicesByPartner } from "@/api/device"
+import type { Device } from "@/types/device"
+import useAuth from "@/hooks/useAuth"
+
+type DeviceHealthStatus = "online" | "idle" | "offline"
+
+type DeviceHealth = {
+    id: string
+    name: string
+    location: string
+    status: DeviceHealthStatus
+    signalBars: number
+    alerts: number
+    lastActivity: string
+}
 
 const DeviceHealthPage: React.FC = () => {
-    const [search, setSearch] = useState("");
-    const [filter, setFilter] =
-        useState<"all" | "online" | "offline" | "alerts">("all");
+    const { user } = useAuth()
+    const partnerId = user?.partnerId
 
-    const filteredDevices = useMemo<DeviceHealth[]>(() => {
+    const [devices, setDevices] = useState<Device[]>([])
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const [search, setSearch] = useState("")
+    const [filter, setFilter] =
+        useState<"all" | "online" | "idle" | "offline" | "alerts">("all")
+
+
+    useEffect(() => {
+        if (!partnerId) return
+
+        const fetchDevices = async () => {
+            try {
+                setLoading(true)
+                setError(null)
+
+                const res = await getDevicesByPartner(partnerId)
+                setDevices(res.items ?? [])
+            } catch (err: any) {
+                setError(err.message || "Failed to load device health")
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchDevices()
+    }, [partnerId])
+
+
+    const deviceHealthData: DeviceHealth[] = useMemo(() => {
+        return devices.map((device) => {
+            let signalBars = 0
+            let alerts = 0
+            let status: DeviceHealthStatus = "offline"
+
+            switch (device.status) {
+                case "ONLINE":
+                    status = "online"
+                    signalBars = 4
+                    break
+
+                case "IDLE":
+                    status = "idle"
+                    signalBars = 2
+                    break
+
+                case "OFFLINE":
+                    status = "offline"
+                    alerts = 1
+                    break
+
+                case "INACTIVE":
+                    status = "offline"
+                    break
+            }
+
+            return {
+                id: device.deviceId,
+                name: device.deviceId,
+                location: device.location,
+                status,
+                signalBars,
+                alerts,
+                lastActivity: new Date(device.updatedAt).toLocaleString(),
+            }
+        })
+    }, [devices])
+
+
+    const filteredDevices = useMemo(() => {
+        const q = search.trim().toLowerCase()
+
         return deviceHealthData.filter((device) => {
-            const matchesSearch = device.name
-                .toLowerCase()
-                .includes(search.toLowerCase());
+            const matchesSearch =
+                !q ||
+                device.name.toLowerCase().includes(q) ||
+                device.location.toLowerCase().includes(q)
 
             const matchesFilter =
                 filter === "all"
                     ? true
                     : filter === "alerts"
                         ? device.alerts > 0
-                        : device.status === filter;
+                        : device.status === filter
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [search, filter]);
+            return matchesSearch && matchesFilter
+        })
+    }, [deviceHealthData, search, filter])
 
-    const onlineCount = deviceHealthData.filter(
-        (d) => d.status === "online"
-    ).length;
 
-    const offlineCount = deviceHealthData.filter(
-        (d) => d.status === "offline"
-    ).length;
+    const totalDevices = deviceHealthData.length
+    const onlineCount = deviceHealthData.filter(d => d.status === "online").length
+    const offlineCount = deviceHealthData.filter(d => d.status === "offline").length
+    const idleCount = deviceHealthData.filter(
+        d => d.status === "idle"
+    ).length
 
-    const alertCount = deviceHealthData.filter(
-        (d) => d.alerts > 0
-    ).length;
+
+
+    if (!partnerId) {
+        return (
+            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                Partner information not available. Please login again.
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 mt-4">
             <AppBreadcrumb />
 
-            {/* Header */}
             <h1 className="text-2xl font-semibold tracking-tight">
                 Device Health
             </h1>
@@ -87,45 +186,34 @@ const DeviceHealthPage: React.FC = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Total Devices
-                        </p>
-                        <p className="text-2xl font-semibold">{TOTAL_DEVICES}</p>
+                        <p className="text-sm text-muted-foreground">Total Devices</p>
+                        <p className="text-2xl font-semibold">{totalDevices}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Online Devices
-                        </p>
+                        <p className="text-sm text-muted-foreground">Online Devices</p>
                         <p className="text-2xl font-semibold text-green-600">
                             {onlineCount}
-                            <span className="ml-2 text-sm">+1</span>
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Offline Devices
-                        </p>
+                        <p className="text-sm text-muted-foreground">Offline Devices</p>
                         <p className="text-2xl font-semibold text-red-500">
                             {offlineCount}
-                            <span className="ml-2 text-sm">-1</span>
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Alerts
-                        </p>
+                        <p className="text-sm text-muted-foreground">Idle</p>
                         <p className="text-2xl font-semibold text-yellow-600">
-                            {alertCount}
-                            <span className="ml-2 text-sm">+2</span>
+                            {idleCount}
                         </p>
                     </CardContent>
                 </Card>
@@ -155,6 +243,17 @@ const DeviceHealthPage: React.FC = () => {
 
                     <Button
                         size="sm"
+                        variant={filter === "idle" ? "default" : "outline"}
+                        onClick={() => setFilter("idle")}
+                    >
+                        Idle
+                        <Badge className="ml-2 bg-yellow-100 text-yellow-700">
+                            {idleCount}
+                        </Badge>
+                    </Button>
+
+                    <Button
+                        size="sm"
                         variant={filter === "offline" ? "default" : "outline"}
                         onClick={() => setFilter("offline")}
                     >
@@ -164,17 +263,8 @@ const DeviceHealthPage: React.FC = () => {
                         </Badge>
                     </Button>
 
-                    <Button
-                        size="sm"
-                        variant={filter === "alerts" ? "default" : "outline"}
-                        onClick={() => setFilter("alerts")}
-                    >
-                        Alerts
-                        <Badge className="ml-2 bg-yellow-100 text-yellow-700">
-                            {alertCount}
-                        </Badge>
-                    </Button>
                 </div>
+
 
                 <div className="flex items-center gap-2">
                     <div className="relative">
@@ -189,11 +279,8 @@ const DeviceHealthPage: React.FC = () => {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                                Location
-                            </Button>
+                            <Button variant="outline">Location</Button>
                         </DropdownMenuTrigger>
-
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem>Main Entrance</DropdownMenuItem>
                             <DropdownMenuItem>Building A</DropdownMenuItem>
@@ -205,87 +292,116 @@ const DeviceHealthPage: React.FC = () => {
 
             <Separator />
 
-            {/* Table */}
             <Card>
-                <CardContent className="">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Status</TableHead>
-                                {/* <TableHead>Sensor</TableHead> */}
-                                <TableHead>Signal</TableHead>
-                                <TableHead>Alerts</TableHead>
-                                <TableHead className="text-right">
-                                    Last Activity
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
+                <CardContent>
+                    {loading && (
+                        <div className="py-10 text-center text-sm text-muted-foreground">
+                            Loading device health...
+                        </div>
+                    )}
 
-                        <TableBody>
-                            {filteredDevices.map((device) => (
-                                <TableRow key={device.id}>
-                                    <TableCell>{device.id}</TableCell>
-                                    <TableCell className="font-medium">
-                                        {device.name}
-                                    </TableCell>
-                                    <TableCell>{device.location}</TableCell>
+                    {!loading && error && (
+                        <div className="py-10 text-center text-sm text-red-600">
+                            {error}
+                        </div>
+                    )}
 
-                                    <TableCell>
-                                        <Badge
-                                            className={
-                                                device.status === "online"
-                                                    ? "bg-primary"
-                                                    : "bg-destructive"
-                                            }
-                                        >
-                                            {device.status}
-                                        </Badge>
-                                    </TableCell>
-
-                                    <TableCell>
-                                        {device.signalBars === 0 ? (
-                                            <span className="text-muted-foreground">—</span>
-                                        ) : (
-                                            <SignalBars strength={device.signalBars} />
-                                        )}
-                                    </TableCell>
-
-
-                                    <TableCell>
-                                        {device.alerts > 0 ? (
-                                            <Badge className="bg-yellow-100 text-yellow-700">
-                                                {device.alerts} Alerts
-                                            </Badge>
-                                        ) : (
-                                            "0"
-                                        )}
-                                    </TableCell>
-
-                                    <TableCell className="text-right text-muted-foreground">
-                                        {device.lastActivity}
-                                    </TableCell>
+                    {!loading && !error && (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Location</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Signal</TableHead>
+                                    <TableHead className="text-center">
+                                        Last Activity
+                                    </TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+
+                            <TableBody>
+                                {filteredDevices.map((device) => (
+                                    <TableRow key={device.id}>
+                                        <TableCell>{device.id}</TableCell>
+                                        <TableCell className="font-medium">
+                                            {device.name}
+                                        </TableCell>
+                                        <TableCell>{device.location}</TableCell>
+
+                                        <TableCell>
+                                            <Badge
+                                                className={
+                                                    device.status === "online"
+                                                        ? "bg-primary"
+                                                        : device.status === "idle"
+                                                            ? "bg-yellow-100 text-yellow-700"
+                                                            : "bg-destructive"
+                                                }
+                                            >
+                                                {device.status}
+                                            </Badge>
+
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {device.signalBars === 0 ? (
+                                                <span className="text-muted-foreground">—</span>
+                                            ) : (
+                                                <SignalBars strength={device.signalBars} />
+                                            )}
+                                        </TableCell>
+
+
+                                        <TableCell className="text-center text-muted-foreground">
+                                            {device.lastActivity}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => console.log("View", device.id)}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        View
+                                                    </DropdownMenuItem>
+
+                                                    <DropdownMenuItem onClick={() => console.log("Edit", device.id)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+
+                                                    <DropdownMenuItem onClick={() => console.log("Restart", device.id)}>
+                                                        <RotateCw className="mr-2 h-4 w-4" />
+                                                        Restart
+                                                    </DropdownMenuItem>
+
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
+
                 <Separator />
 
-                {/* Pagination */}
                 <div className="flex items-center justify-end gap-6 px-4">
                     <Field orientation="horizontal" className="w-fit gap-2">
-                        <FieldLabel htmlFor="select-rows-per-page">
-                            Rows per page
-                        </FieldLabel>
-
+                        <FieldLabel>Rows per page</FieldLabel>
                         <Select defaultValue="25">
-                            <SelectTrigger className="h-8 w-20" id="select-rows-per-page">
+                            <SelectTrigger className="h-8 w-20">
                                 <SelectValue />
                             </SelectTrigger>
-
                             <SelectContent align="start">
                                 <SelectGroup>
                                     <SelectItem value="10">10</SelectItem>
@@ -309,9 +425,8 @@ const DeviceHealthPage: React.FC = () => {
                     </Pagination>
                 </div>
             </Card>
-
         </div>
-    );
-};
+    )
+}
 
-export default DeviceHealthPage;
+export default DeviceHealthPage
