@@ -25,6 +25,7 @@ import OverviewTab from "@/pages/developers/OverviewTab"
 import ApiKeysTab from "@/pages/developers/ApiKeysTab"
 import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
+import DevicePage from "@/pages/devices/devicePage"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -89,7 +90,7 @@ const MainRoutes = {
         // Devices
         {
             path: "list-device",
-            element: <DevicePageNew />,
+            element: <DevicePage />,
             handle: { breadcrumb: "Devices" },
         },
         {
