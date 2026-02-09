@@ -1,23 +1,56 @@
-interface SignalBarsProps {
-  strength: number; // 0 to 4
+import {
+  Wifi,
+  WifiHigh,
+  WifiLow,
+  WifiOff,
+} from "lucide-react"
+
+type SignalBarsProps = {
+  strength: number // 0–4
+  className?: string
 }
 
-const SignalBars: React.FC<SignalBarsProps> = ({ strength }) => {
-  return (
-    <div className="flex items-end gap-1">
-      {[1, 2, 3, 4].map((bar) => (
-        <div
-          key={bar}
-          className={`w-1 rounded-sm transition-colors ${
-            bar <= strength
-              ? "bg-green-600"
-              : "bg-muted"
-          }`}
-          style={{ height: `${bar * 6}px` }}
-        />
-      ))}
-    </div>
-  );
-};
+const SignalBars: React.FC<SignalBarsProps> = ({
+  strength,
+  className = "",
+}) => {
+  if (strength <= 0) {
+    return (
+      <WifiOff
+        className={`h-5 w-5 text-muted-foreground ${className}`}
+      />
+    )
+  }
 
-export default SignalBars;
+  if (strength === 1) {
+    return (
+      <WifiLow
+        className={`h-5 w-5 text-red-500 ${className}`}
+      />
+    )
+  }
+
+  if (strength === 2) {
+    return (
+      <WifiHigh
+        className={`h-5 w-5 text-yellow-500 ${className}`}
+      />
+    )
+  }
+
+  if (strength === 3) {
+    return (
+      <WifiHigh
+        className={`h-5 w-5 text-green-500 ${className}`}
+      />
+    )
+  }
+
+  return (
+    <Wifi
+      className={`h-5 w-5 text-green-600 ${className}`}
+    />
+  )
+}
+
+export default SignalBars

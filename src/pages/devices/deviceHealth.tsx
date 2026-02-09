@@ -49,18 +49,8 @@ import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
+import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
 
-type DeviceHealthStatus = "online" | "idle" | "offline"
-
-type DeviceHealth = {
-    id: string
-    name: string
-    location: string
-    status: DeviceHealthStatus
-    signalBars: number
-    alerts: number
-    lastActivity: string
-}
 
 const DeviceHealthPage: React.FC = () => {
     const { user } = useAuth()
@@ -96,44 +86,31 @@ const DeviceHealthPage: React.FC = () => {
     }, [partnerId])
 
 
-    const deviceHealthData: DeviceHealth[] = useMemo(() => {
+    const deviceHealthData = useMemo(() => {
         return devices.map((device) => {
-            let signalBars = 0
-            let alerts = 0
-            let status: DeviceHealthStatus = "offline"
+            const uiStatus = mapStatusToUi(device.status)
 
-            switch (device.status) {
-                case "ONLINE":
-                    status = "online"
-                    signalBars = 4
-                    break
+            const signalBars =
+                device.status === "ONLINE"
+                    ? rssiToBars(device.wifi?.rssi)
+                    : 0
 
-                case "IDLE":
-                    status = "idle"
-                    signalBars = 2
-                    break
-
-                case "OFFLINE":
-                    status = "offline"
-                    alerts = 1
-                    break
-
-                case "INACTIVE":
-                    status = "offline"
-                    break
-            }
+            const alerts =
+                device.status === "OFFLINE" ||
+                    device.status === "INACTIVE" ||
+                    device.status === "MAINTENANCE"
+                    ? 1
+                    : 0
 
             return {
-                id: device.deviceId,
-                name: device.deviceId,
-                location: device.location,
-                status,
+                ...device,
+                uiStatus,
                 signalBars,
                 alerts,
-                lastActivity: new Date(device.updatedAt).toLocaleString(),
             }
         })
     }, [devices])
+
 
 
     const filteredDevices = useMemo(() => {
@@ -142,7 +119,7 @@ const DeviceHealthPage: React.FC = () => {
         return deviceHealthData.filter((device) => {
             const matchesSearch =
                 !q ||
-                device.name.toLowerCase().includes(q) ||
+                device.deviceId.toLowerCase().includes(q) ||
                 device.location.toLowerCase().includes(q)
 
             const matchesFilter =
@@ -150,7 +127,7 @@ const DeviceHealthPage: React.FC = () => {
                     ? true
                     : filter === "alerts"
                         ? device.alerts > 0
-                        : device.status === filter
+                        : device.uiStatus === filter
 
             return matchesSearch && matchesFilter
         })
@@ -158,11 +135,10 @@ const DeviceHealthPage: React.FC = () => {
 
 
     const totalDevices = deviceHealthData.length
-    const onlineCount = deviceHealthData.filter(d => d.status === "online").length
-    const offlineCount = deviceHealthData.filter(d => d.status === "offline").length
-    const idleCount = deviceHealthData.filter(
-        d => d.status === "idle"
-    ).length
+    const onlineCount = deviceHealthData.filter(d => d.uiStatus === "online").length
+    const idleCount = deviceHealthData.filter(d => d.uiStatus === "idle").length
+    const offlineCount = deviceHealthData.filter(d => d.uiStatus === "offline").length
+
 
 
 
@@ -311,7 +287,6 @@ const DeviceHealthPage: React.FC = () => {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>ID</TableHead>
-                                    <TableHead>Name</TableHead>
                                     <TableHead>Location</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Signal</TableHead>
@@ -324,39 +299,39 @@ const DeviceHealthPage: React.FC = () => {
 
                             <TableBody>
                                 {filteredDevices.map((device) => (
-                                    <TableRow key={device.id}>
-                                        <TableCell>{device.id}</TableCell>
-                                        <TableCell className="font-medium">
-                                            {device.name}
-                                        </TableCell>
+                                    <TableRow key={device.deviceId}>
+                                        <TableCell>{device.deviceId}</TableCell>
+
                                         <TableCell>{device.location}</TableCell>
 
                                         <TableCell>
                                             <Badge
                                                 className={
-                                                    device.status === "online"
+                                                    device.uiStatus === "online"
                                                         ? "bg-primary"
-                                                        : device.status === "idle"
+                                                        : device.uiStatus === "idle"
                                                             ? "bg-yellow-100 text-yellow-700"
                                                             : "bg-destructive"
                                                 }
                                             >
-                                                {device.status}
+                                                {device.uiStatus}
                                             </Badge>
 
                                         </TableCell>
 
                                         <TableCell>
-                                            {device.signalBars === 0 ? (
-                                                <span className="text-muted-foreground">—</span>
-                                            ) : (
-                                                <SignalBars strength={device.signalBars} />
-                                            )}
+                                            <TableCell>
+                                                {device.signalBars === 0 ? (
+                                                    <SignalBars strength={0} />
+                                                ) : (
+                                                    <SignalBars
+                                                        strength={device.signalBars}
+                                                    />
+                                                )}
+                                            </TableCell>
                                         </TableCell>
-
-
                                         <TableCell className="text-center text-muted-foreground">
-                                            {device.lastActivity}
+                                            {formatLastActivity(device.updatedAt)}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -367,17 +342,17 @@ const DeviceHealthPage: React.FC = () => {
                                                 </DropdownMenuTrigger>
 
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => console.log("View", device.id)}>
+                                                    <DropdownMenuItem onClick={() => console.log("View", device.deviceId)}>
                                                         <Eye className="mr-2 h-4 w-4" />
                                                         View
                                                     </DropdownMenuItem>
 
-                                                    <DropdownMenuItem onClick={() => console.log("Edit", device.id)}>
+                                                    <DropdownMenuItem onClick={() => console.log("Edit", device.deviceId)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Edit
                                                     </DropdownMenuItem>
 
-                                                    <DropdownMenuItem onClick={() => console.log("Restart", device.id)}>
+                                                    <DropdownMenuItem onClick={() => console.log("Restart", device.deviceId)}>
                                                         <RotateCw className="mr-2 h-4 w-4" />
                                                         Restart
                                                     </DropdownMenuItem>
