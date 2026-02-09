@@ -1,5 +1,14 @@
 export type OrganizationStatus = "Active" | "Inactive"
 
+export type Organization = {
+  orgId: string
+  orgName: string
+  orgEmail: string
+  orgAddress: string,
+  orgPhone: string,
+  partnerId: string
+}
+
 export interface OrganizationApi  {
   orgId: string
   orgName: string

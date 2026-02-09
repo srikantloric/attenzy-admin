@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useLocation } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import { NavUser } from "@/components/nav-user"
@@ -116,8 +116,8 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                                             isActive={isSubActive}
                                                                             className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5 bg-transparent hover:bg-transparent text-muted-foreground hover:text-foreground data-[active=true]:text-primary data-[active=true]:bg-transparent"
                                                                         >
-                                                                            <a
-                                                                                href={subItem.url}
+                                                                            <Link
+                                                                                to={subItem.url!}
                                                                                 target={
                                                                                     subItem.target ? "_blank" : "_self"
                                                                                 }
@@ -125,7 +125,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                                                 <span className="text-[16px]">
                                                                                     {subItem.title}
                                                                                 </span>
-                                                                            </a>
+                                                                            </Link>
                                                                         </SidebarMenuSubButton>
                                                                     </SidebarMenuSubItem>
                                                                 )
@@ -153,15 +153,15 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                     isActive={isActive}
                                                     className="cursor-pointer [&>svg]:h-5 [&>svg]:w-5 data-[active=true]:bg-primary/80 data-[active=true]:text-primary-foreground"
                                                 >
-                                                    <a
-                                                        href={item.url}
+                                                    <Link
+                                                        to={item.url!}
                                                         target={item.target ? "_blank" : "_self"}
                                                     >
                                                         {Icon && <Icon />}
                                                         <span className="text-[16px]">
                                                             {item.title}
                                                         </span>
-                                                    </a>
+                                                    </Link>
                                                 </SidebarMenuButton>
                                             </SidebarMenuItem>
                                         )
