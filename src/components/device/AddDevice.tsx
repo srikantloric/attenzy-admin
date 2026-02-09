@@ -160,6 +160,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
               ✅ Device added successfully.
               <div className="mt-3 flex justify-end">
                 <Button
+                  className="bg-primary"
                   onClick={() => {
                     resetForm()
                     setOpen(false)
@@ -199,7 +200,16 @@ const AddDevice: React.FC<AddDeviceProps> = ({
               <div className="space-y-2 z-9999">
                 <label className="text-sm font-medium z-50">Organization</label>
 
-                <Combobox items={organizations.map((o) => o.orgId)} value={selectedOrgId} onValueChange={setSelectedOrgId} >
+                <Combobox
+                  items={organizations.map((o) => o.orgId)}
+                  value={selectedOrgId}
+                  onValueChange={(value) => {
+                    if (!value) return
+                    setSelectedOrgId(value)
+                    handleChange("orgId", value)
+                  }}
+                >
+
                   <ComboboxInput
                     placeholder="Select organization"
                     value={selectedOrg?.orgName ?? ""}
