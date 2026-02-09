@@ -27,7 +27,7 @@ export default function EditWebhookModal({
     onUpdated
 }: Props) {
     const [url, setUrl] = useState("")
-    const [selectedEvents, setSelectedEvents] = useState<WebhookEvent[]>([])
+    const [selectedEvents, setSelectedEvents] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
     const [urlError, setUrlError] = useState<string | null>(null)
