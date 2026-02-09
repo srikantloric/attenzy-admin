@@ -85,14 +85,15 @@ function DevicePage() {
     }, [fetchDevices])
 
     const filteredDevices = useMemo(() => {
-        const search = searchString.toLowerCase()
+        const search = searchString.trim().toLowerCase()
 
         return allDevices.filter((device) => {
             const matchesSearch =
-                device.deviceId.toLowerCase().includes(search) ||
-                device.serialNumber.toLowerCase().includes(search) ||
-                device.location.toLowerCase().includes(search) ||
-                device.orgName.toLowerCase().includes(search)
+                !search ||
+                device.deviceId?.toLowerCase().includes(search) ||
+                device.serialNumber?.toLowerCase().includes(search) ||
+                device.location?.toLowerCase().includes(search) ||
+                device.orgName?.toLowerCase().includes(search)
 
             const matchesStatus =
                 selectedDeviceStatus === "all" ||
@@ -101,6 +102,7 @@ function DevicePage() {
             return matchesSearch && matchesStatus
         })
     }, [allDevices, searchString, selectedDeviceStatus])
+
 
     const statusBadge = (status: DeviceStatus) => {
         switch (status) {
@@ -299,9 +301,12 @@ function DevicePage() {
             <AddDevice
                 open={addDeviceOpen}
                 setOpen={setAddDeviceOpen}
-                onClose={() => setAddDeviceOpen(false)}
-                existingDevices={allDevices}
+                onClose={() => {
+                    setAddDeviceOpen(false)
+                    fetchDevices()
+                }}
             />
+
         </div>
     )
 }

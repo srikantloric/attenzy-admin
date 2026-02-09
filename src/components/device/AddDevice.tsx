@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,20 +26,17 @@ import useAuth from "@/hooks/useAuth"
 import { toast } from "sonner"
 
 import type { Organization } from "@/types/organization"
-import type { Device } from "@/types/device"
 
 interface AddDeviceProps {
   open: boolean
   setOpen: (status: boolean) => void
   onClose?: () => void
-  existingDevices: Device[]
 }
 
 const AddDevice: React.FC<AddDeviceProps> = ({
   open,
   setOpen,
   onClose,
-  existingDevices,
 }) => {
   const { user } = useAuth()
   const partnerId = user?.partnerId
@@ -50,7 +47,13 @@ const AddDevice: React.FC<AddDeviceProps> = ({
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
 
-  const selectedOrg = organizations.find((o) => o.orgId === selectedOrgId)
+  const selectedOrg = organizations.find(
+    (o) => o.orgId === selectedOrgId
+  )
+
+  // 🔹 Debounce for deviceId only
+  const deviceCheckTimer = useRef<number | null>(null)
+  const [checkingDeviceId, setCheckingDeviceId] = useState(false)
 
   const [form, setForm] = useState({
     deviceId: "",
@@ -61,7 +64,13 @@ const AddDevice: React.FC<AddDeviceProps> = ({
   })
 
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null)
-  const [serialError, setSerialError] = useState<string | null>(null)
+
+  const handleChange = (
+    key: keyof typeof form,
+    value: string
+  ) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
 
   const resetForm = () => {
     setForm({
@@ -73,13 +82,34 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     })
     setSelectedOrgId(null)
     setDeviceIdError(null)
-    setSerialError(null)
     setSuccess(false)
   }
 
-  const handleChange = (key: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
-  }
+  // 🔍 Debounced backend check — deviceId ONLY
+  useEffect(() => {
+    if (!form.deviceId) {
+      setDeviceIdError(null)
+      return
+    }
+
+    if (deviceCheckTimer.current) {
+      clearTimeout(deviceCheckTimer.current)
+    }
+
+    deviceCheckTimer.current = window.setTimeout(async () => {
+      try {
+        setCheckingDeviceId(true)
+        const existing = await getDeviceById(form.deviceId)
+        setDeviceIdError(
+          existing ? "Device ID already exists" : null
+        )
+      } catch {
+        setDeviceIdError("Unable to verify device ID")
+      } finally {
+        setCheckingDeviceId(false)
+      }
+    }, 500)
+  }, [form.deviceId])
 
   const handleSubmit = async () => {
     if (!partnerId) {
@@ -90,16 +120,16 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     try {
       setLoading(true)
 
-      // 🔍 Backend check (authoritative)
+      // 🔐 Final authoritative backend check (deviceId)
       const existing = await getDeviceById(form.deviceId)
       if (existing) {
-        toast.error("Device already assigned", {
-          description: "This device ID already exists in the system.",
+        toast.error("Device already exists", {
+          description: "This Device ID already exists in the system.",
         })
         return
       }
 
-      // ✅ Add device
+      // Backend will enforce serialNumber uniqueness if applicable
       await addDevice({
         deviceId: form.deviceId,
         serialNumber: form.serialNumber,
@@ -119,7 +149,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
   }
 
   useEffect(() => {
-    if (!partnerId) return
+    if (!open || !partnerId) return
 
     const loadOrgs = async () => {
       try {
@@ -131,7 +161,7 @@ const AddDevice: React.FC<AddDeviceProps> = ({
     }
 
     loadOrgs()
-  }, [partnerId])
+  }, [open, partnerId])
 
 
   return (
@@ -178,54 +208,49 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                 <Input
                   placeholder="attenzy001"
                   value={form.deviceId}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    handleChange("deviceId", value)
-
-                    const exists = existingDevices.some(
-                      (d) =>
-                        d.deviceId.toLowerCase() === value.toLowerCase()
+                  onChange={(e) =>
+                    handleChange(
+                      "deviceId",
+                      e.target.value.trim()
                     )
-
-                    setDeviceIdError(
-                      exists ? "Device ID already exists" : null
-                    )
-                  }}
+                  }
                 />
+
+                {checkingDeviceId && (
+                  <p className="text-xs text-muted-foreground">
+                    Checking device ID...
+                  </p>
+                )}
+
                 {deviceIdError && (
-                  <p className="text-xs text-red-600">{deviceIdError}</p>
+                  <p className="text-xs text-red-600">
+                    {deviceIdError}
+                  </p>
                 )}
               </div>
 
               {/* Serial Number */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Serial Number</label>
+                <label className="text-sm font-medium">
+                  Serial Number
+                </label>
                 <Input
                   placeholder="SN001"
                   value={form.serialNumber}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    handleChange("serialNumber", value)
-
-                    const exists = existingDevices.some(
-                      (d) =>
-                        d.serialNumber.toLowerCase() ===
-                        value.toLowerCase()
+                  onChange={(e) =>
+                    handleChange(
+                      "serialNumber",
+                      e.target.value.trim()
                     )
-
-                    setSerialError(
-                      exists ? "Serial number already exists" : null
-                    )
-                  }}
+                  }
                 />
-                {serialError && (
-                  <p className="text-xs text-red-600">{serialError}</p>
-                )}
               </div>
 
               {/* Organization */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Organization</label>
+                <label className="text-sm font-medium">
+                  Organization
+                </label>
 
                 <Combobox
                   items={organizations.map((o) => o.orgId)}
@@ -240,10 +265,10 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                     placeholder="Select organization"
                     value={selectedOrg?.orgName ?? ""}
                   />
-
                   <ComboboxContent>
-                    <ComboboxEmpty>No organizations found.</ComboboxEmpty>
-
+                    <ComboboxEmpty>
+                      No organizations found.
+                    </ComboboxEmpty>
                     <ComboboxList>
                       {(id) => {
                         const org = organizations.find(
@@ -265,24 +290,34 @@ const AddDevice: React.FC<AddDeviceProps> = ({
 
               {/* Location */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
+                <label className="text-sm font-medium">
+                  Location
+                </label>
                 <Input
                   placeholder="Main Gate"
                   value={form.location}
                   onChange={(e) =>
-                    handleChange("location", e.target.value)
+                    handleChange(
+                      "location",
+                      e.target.value
+                    )
                   }
                 />
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
+                <label className="text-sm font-medium">
+                  Description
+                </label>
                 <Textarea
                   maxLength={150}
                   value={form.description}
                   onChange={(e) =>
-                    handleChange("description", e.target.value)
+                    handleChange(
+                      "description",
+                      e.target.value
+                    )
                   }
                 />
                 <div className="text-right text-xs text-muted-foreground">
@@ -308,8 +343,8 @@ const AddDevice: React.FC<AddDeviceProps> = ({
                   onClick={handleSubmit}
                   disabled={
                     loading ||
+                    checkingDeviceId ||
                     !!deviceIdError ||
-                    !!serialError ||
                     !form.deviceId ||
                     !form.serialNumber ||
                     !form.orgId ||
