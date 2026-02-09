@@ -249,13 +249,16 @@ function PartnerDashboard() {
                                         <Badge
                                             variant="outline"
                                             className={
-                                                device.status === "ONLINE" || device.status === "IDLE"
+                                                device.status === "ONLINE"
                                                     ? "border-green-500 text-green-600 bg-green-50"
-                                                    : "border-red-500 text-red-600 bg-red-50"
+                                                    : device.status === "IDLE"
+                                                        ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                                                        : "border-red-500 text-red-600 bg-red-50"
                                             }
                                         >
                                             {device.status}
                                         </Badge>
+
                                     </TableCell>
                                 </TableRow>
                             ))}
