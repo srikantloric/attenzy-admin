@@ -61,17 +61,6 @@ const StudentsPage: React.FC = () => {
     const { user } = useAuth();
     const orgId = user?.orgId;
 
-    useEffect(() => {
-        if (!orgId) return;
-
-        setLoading(true);
-        getStudentsByOrg(orgId)
-            .then(setStudents)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [orgId]);
-
-
     const filteredStudents = useMemo(() => {
         return students.filter((student) => {
             const matchesSearch = student.studentName
