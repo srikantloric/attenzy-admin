@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Student, StudentActiveStatus } from "@/types/student";
-import { getStudentsByOrg } from "@/api/students";
+import { getStudentsByOrg, updateStudent } from "@/api/students";
+import { toast } from "sonner";
 
 import {
     Table,
@@ -24,7 +25,14 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter, Plus } from "lucide-react";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
     Select,
@@ -35,31 +43,77 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
 import useAuth from "@/hooks/useAuth";
-import AddStudentForm from "@/components/people/AddStudentForm";
+
+import AddStudentForm from "@/components/people/student/AddStudentForm";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 type FilterStatus = "all" | Lowercase<StudentActiveStatus>;
+type FormMode = "add" | "edit";
 
 const StudentsPage: React.FC = () => {
+    const { user } = useAuth();
+    const orgId = user?.orgId;
+
     const [students, setStudents] = useState<Student[]>([]);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] =
         useState<FilterStatus>("all");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     const [loading, setLoading] = useState(false);
 
-    const { user } = useAuth();
-    const orgId = user?.orgId;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("add");
+    const [selectedStudent, setSelectedStudent] =
+        useState<Student | null>(null);
+
+    const [confirmStudent, setConfirmStudent] =
+        useState<Student | null>(null);
+
+    /* ================= FETCH ================= */
+
+    const fetchStudents = () => {
+        if (!orgId) return;
+
+        setLoading(true);
+        getStudentsByOrg(orgId)
+            .then(setStudents)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchStudents();
+    }, [orgId]);
+
+    /* ================= STATUS TOGGLE ================= */
+
+    const toggleStudentStatus = async (student: Student) => {
+        if (!orgId) return;
+
+        try {
+            await updateStudent(student.studentId, orgId, {
+                isActive: student.isActive === false,
+            });
+
+            toast.success(
+                student.isActive === false
+                    ? "Student activated"
+                    : "Student suspended"
+            );
+
+            fetchStudents();
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error?.message || "Failed to update status");
+        }
+    };
+
+    /* ================= FILTER ================= */
 
     const filteredStudents = useMemo(() => {
         return students.filter((student) => {
@@ -80,31 +134,17 @@ const StudentsPage: React.FC = () => {
         });
     }, [students, search, filterStatus]);
 
-    const fetchStudents = () => {
-        if (!orgId) return;
-
-        setLoading(true);
-        getStudentsByOrg(orgId)
-            .then(setStudents)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    };
-
-    useEffect(() => {
-        fetchStudents();
-    }, [orgId]);
-
+    /* ================= COUNTS ================= */
 
     const TOTAL_STUDENTS = students.length;
-
     const ACTIVE_COUNT = students.filter(
         (s) => s.isActive !== false
     ).length;
-
     const INACTIVE_COUNT = students.filter(
         (s) => s.isActive === false
     ).length;
 
+    /* ================= RENDER ================= */
 
     return (
         <>
@@ -112,115 +152,71 @@ const StudentsPage: React.FC = () => {
                 <AppBreadcrumb />
 
                 {/* Header */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                Students
-                            </h1>
-
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-                                {TOTAL_STUDENTS}
-                            </span>
-                        </div>
-
-                        <Button
-                            className="gap-2 bg-primary"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Student
-                        </Button>
-                    </div>
-
-                    {/* Meta */}
-                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                        <span>
-                            Total Students:
-                            <span className="ml-1 font-medium text-foreground">
-                                {TOTAL_STUDENTS}
-                            </span>
-                        </span>
-
-                        <span>
-                            Active:
-                            <span className="ml-1 font-medium text-green-600">
-                                {ACTIVE_COUNT}
-                            </span>
-                            <span className="ml-3">
-                                Inactive:
-                                <span className="ml-1 font-medium text-muted-foreground">
-                                    {INACTIVE_COUNT}
-                                </span>
-                            </span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold">Students</h1>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                            {TOTAL_STUDENTS}
                         </span>
                     </div>
+
+                    <Button
+                        className="gap-2 bg-primary"
+                        onClick={() => {
+                            setFormMode("add");
+                            setSelectedStudent(null);
+                            setSidebarOpen(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Student
+                    </Button>
+                </div>
+
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
+                    Active:{" "}
+                    <span className="text-green-600 font-medium">
+                        {ACTIVE_COUNT}
+                    </span>
+                    <span className="ml-4">
+                        Inactive:{" "}
+                        <span className="font-medium">{INACTIVE_COUNT}</span>
+                    </span>
                 </div>
 
                 <Separator />
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            variant={filterStatus === "all" ? "default" : "outline"}
-                            onClick={() => setFilterStatus("all")}
-                        >
-                            All
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={
-                                filterStatus === "active" ? "default" : "outline"
-                            }
-                            onClick={() => setFilterStatus("active")}
-                        >
-                            Active
-                            <Badge variant="secondary" className="ml-2">
-                                {ACTIVE_COUNT}
-                            </Badge>
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={
-                                filterStatus === "inactive" ? "default" : "outline"
-                            }
-                            onClick={() => setFilterStatus("inactive")}
-                        >
-                            Inactive
-                            <Badge variant="secondary" className="ml-2">
-                                {INACTIVE_COUNT}
-                            </Badge>
-                        </Button>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                            (status) => (
+                                <Button
+                                    key={status}
+                                    size="sm"
+                                    variant={
+                                        filterStatus === status
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    onClick={() => setFilterStatus(status)}
+                                >
+                                    {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                </Button>
+                            )
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search students..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Class 8</DropdownMenuItem>
-                                <DropdownMenuItem>Class 9</DropdownMenuItem>
-                                <DropdownMenuItem>Class 10</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-8 w-64"
+                            placeholder="Search students..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
@@ -238,6 +234,9 @@ const StudentsPage: React.FC = () => {
                                     <TableHead className="text-right">
                                         Last Updated
                                     </TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
 
@@ -245,8 +244,8 @@ const StudentsPage: React.FC = () => {
                                 {loading && (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={6}
-                                            className="text-center text-muted-foreground"
+                                            colSpan={7}
+                                            className="text-center"
                                         >
                                             Loading students...
                                         </TableCell>
@@ -286,7 +285,7 @@ const StudentsPage: React.FC = () => {
 
                                             <TableCell>
                                                 {student.isActive ? (
-                                                    <Badge className="bg-green-100 text-green-700 border border-green-300">
+                                                    <Badge className="bg-green-100 text-green-700">
                                                         Active
                                                     </Badge>
                                                 ) : (
@@ -296,8 +295,48 @@ const StudentsPage: React.FC = () => {
                                                 )}
                                             </TableCell>
 
-                                            <TableCell className="text-right text-muted-foreground">
+                                            <TableCell className="text-right">
                                                 {timeAgo(student.updatedAt)}
+                                            </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button size="icon" variant="ghost">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedStudent(student);
+                                                                setFormMode("edit");
+                                                                setSidebarOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuItem
+                                                            className={
+                                                                student.isActive === false
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                            }
+                                                            onClick={() =>
+                                                                setConfirmStudent(student)
+                                                            }
+                                                        >
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {student.isActive === false
+                                                                ? "Activate"
+                                                                : "Suspend"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -307,20 +346,15 @@ const StudentsPage: React.FC = () => {
 
                     <Separator />
 
-                    {/* Pagination (UI only) */}
-                    <div className="flex items-center justify-end gap-6 px-4">
-                        <Field
-                            orientation="horizontal"
-                            className="w-fit gap-2"
-                        >
-                            <FieldLabel>Rows per page</FieldLabel>
-
+                    {/* Pagination */}
+                    <div className="flex items-center justify-end gap-4 mr-4">
+                        <Field orientation="horizontal" className="w-fit">
+                            <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
                             <Select defaultValue="25">
-                                <SelectTrigger className="h-8 w-20">
+                                <SelectTrigger className="w-20" id="select-rows-per-page">
                                     <SelectValue />
                                 </SelectTrigger>
-
-                                <SelectContent>
+                                <SelectContent align="start">
                                     <SelectGroup>
                                         <SelectItem value="10">10</SelectItem>
                                         <SelectItem value="25">25</SelectItem>
@@ -330,7 +364,6 @@ const StudentsPage: React.FC = () => {
                                 </SelectContent>
                             </Select>
                         </Field>
-
                         <Pagination className="mx-0 w-auto">
                             <PaginationContent>
                                 <PaginationItem>
@@ -345,11 +378,39 @@ const StudentsPage: React.FC = () => {
                 </Card>
             </div>
 
+            {/* Sidebar Form */}
             <AddStudentForm
                 open={sidebarOpen}
-                onOpenChange={(open) => {
-                    setSidebarOpen(open);
-                    if (!open) fetchStudents(); 
+                onOpenChange={setSidebarOpen}
+                mode={formMode}
+                student={selectedStudent}
+                onSuccess={fetchStudents}
+            />
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                open={!!confirmStudent}
+                title={
+                    confirmStudent?.isActive === false
+                        ? "Activate Student"
+                        : "Suspend Student"
+                }
+                description={
+                    confirmStudent?.isActive === false
+                        ? "This student will become active again."
+                        : "This student will be suspended and lose access."
+                }
+                confirmText={
+                    confirmStudent?.isActive === false
+                        ? "Activate"
+                        : "Suspend"
+                }
+                onCancel={() => setConfirmStudent(null)}
+                onConfirm={() => {
+                    if (confirmStudent) {
+                        toggleStudentStatus(confirmStudent)
+                        setConfirmStudent(null)
+                    }
                 }}
             />
 

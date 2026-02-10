@@ -13,10 +13,10 @@ import RFIDMappingPage from "@/pages/people/rfid-mapping"
 import ManualAttendancePage from "@/pages/attendance/attendance"
 
 import PartnersPage from "@/pages/partners/PartnersPage"
-import PartnerDetailsPage from "@/pages/partners/PartnerDetailsPage"
+import PartnerDetailsPage from "@/components/partners/PartnerDetailsPage"
 
 import Organizations from "@/pages/organizations/organizationsPage"
-import OrganizationDetailsPage from "@/pages/organizations/OrganizationDetailsPage"
+import OrganizationDetailsPage from "@/components/organizations/OrganizationDetailsPage"
 
 import DevelopersPage from "@/pages/developers/DevelopersPage"
 import OverviewTab from "@/pages/developers/OverviewTab"
