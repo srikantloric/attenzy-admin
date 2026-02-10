@@ -1,4 +1,5 @@
 import { CommandSearch } from "@/components/CommandSearch"
+import { ModeToggle } from "@/components/mode-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,6 +29,8 @@ function AppBar() {
                 <div className="flex items-center gap-3">
 
                     <Badge variant={"outline"}>{user?.role}</Badge>
+
+                    <ModeToggle />
 
                     <Button variant="outline" size="icon">
                         <Bell className="h-5 w-5" />
