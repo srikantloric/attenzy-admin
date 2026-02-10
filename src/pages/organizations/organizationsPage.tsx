@@ -82,8 +82,10 @@ function Organizations() {
     const partnerId = user?.partnerId
 
     const [search, setSearch] = useState("")
+
     const [statusFilter, setStatusFilter] =
         useState<"All" | OrganizationStatus>("All")
+
     const [openAddOrg, setOpenAddOrg] = useState(false)
     const [organizations, setOrganizations] = useState<OrganizationUI[]>([])
     const [loading, setLoading] = useState(false)

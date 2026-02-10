@@ -1,4 +1,4 @@
-import type { Student } from "@/types/student";
+import type { CreateStudentPayload, Student } from "@/types/student";
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -15,4 +15,28 @@ export async function getStudentsByOrg(
 
   const data = await res.json();
   return data.items;
+}
+
+
+export async function createStudent(
+  orgId: string,
+  payload: CreateStudentPayload
+): Promise<Student> {
+  const res = await fetch(`${BACKEND_BASE_URL}/students`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...payload,
+      orgId, 
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error?.message || "Failed to create student");
+  }
+
+  return res.json();
 }

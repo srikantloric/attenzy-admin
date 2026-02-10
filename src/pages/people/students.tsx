@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Student } from "@/types/student";
+import type { Student, StudentActiveStatus } from "@/types/student";
 import { getStudentsByOrg } from "@/api/students";
-
-import { PeopleSidebar } from "@/components/people/PeopleSidebar";
 
 import {
     Table,
@@ -48,8 +46,9 @@ import {
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
 import useAuth from "@/hooks/useAuth";
+import AddStudentForm from "@/components/people/AddStudentForm";
 
-type FilterStatus = "all" | "active" | "inactive";
+type FilterStatus = "all" | Lowercase<StudentActiveStatus>;
 
 const StudentsPage: React.FC = () => {
     const [students, setStudents] = useState<Student[]>([]);
@@ -92,10 +91,31 @@ const StudentsPage: React.FC = () => {
         });
     }, [students, search, filterStatus]);
 
+    const fetchStudents = () => {
+        if (!orgId) return;
+
+        setLoading(true);
+        getStudentsByOrg(orgId)
+            .then(setStudents)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchStudents();
+    }, [orgId]);
+
 
     const TOTAL_STUDENTS = students.length;
-    const ACTIVE_COUNT = students.filter((s) => s.isActive).length;
-    const INACTIVE_COUNT = students.filter((s) => !s.isActive).length;
+
+    const ACTIVE_COUNT = students.filter(
+        (s) => s.isActive !== false
+    ).length;
+
+    const INACTIVE_COUNT = students.filter(
+        (s) => s.isActive === false
+    ).length;
+
 
     return (
         <>
@@ -336,11 +356,14 @@ const StudentsPage: React.FC = () => {
                 </Card>
             </div>
 
-            <PeopleSidebar
+            <AddStudentForm
                 open={sidebarOpen}
-                onOpenChange={setSidebarOpen}
-                type="student"
+                onOpenChange={(open) => {
+                    setSidebarOpen(open);
+                    if (!open) fetchStudents(); 
+                }}
             />
+
         </>
     );
 };

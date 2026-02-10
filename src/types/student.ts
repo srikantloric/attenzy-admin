@@ -1,6 +1,5 @@
 export type StudentActiveStatus = "ACTIVE" | "INACTIVE";
 
-
 export interface Student {
   studentId: string;
 
@@ -25,7 +24,6 @@ export interface CreateStudentPayload {
   studentSection: string;
   studentPhone: string;
   rfidCode?: string;
-  orgId: string;
 }
 
 
@@ -35,6 +33,6 @@ export interface UpdateStudentPayload {
   studentSection?: string;
   studentPhone?: string;
   rfidCode?: string;
-  status?: StudentActiveStatus;
+
   isActive?: boolean;
 }
