@@ -40,7 +40,7 @@ import AddDevice from "@/components/device/PartnerAddDevice"
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
-import DataPagination from "@/components/DataPagination"
+import DataPagination from "@/components/Pagination"
 
 function PartnerDevice() {
     const { user } = useAuth()

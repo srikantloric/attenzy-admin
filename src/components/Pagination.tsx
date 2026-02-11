@@ -24,9 +24,7 @@ export default function DataPagination({
     setCurrentPage,
     rowsPerPage,
 }: DataPaginationProps) {
-    const totalPages = Math.ceil(totalItems / rowsPerPage)
-
-    if (totalPages <= 1) return null
+    const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
 
     const generatePages = () => {
         const pages: (number | "ellipsis")[] = []
@@ -70,7 +68,7 @@ export default function DataPagination({
                     <PaginationItem>
                         <PaginationPrevious
                             onClick={() =>
-                                setCurrentPage((prev) => Math.max(prev - 1, 1))
+                                setCurrentPage(prev => Math.max(prev - 1, 1))
                             }
                             className={
                                 currentPage === 1
@@ -100,7 +98,7 @@ export default function DataPagination({
                     <PaginationItem>
                         <PaginationNext
                             onClick={() =>
-                                setCurrentPage((prev) =>
+                                setCurrentPage(prev =>
                                     Math.min(prev + 1, totalPages)
                                 )
                             }

@@ -40,7 +40,7 @@ import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { listOrgDevices } from "@/api/device"
 import OrgAddDevice from "@/components/device/OrgAddDevice"
-import DataPagination from "@/components/DataPagination"
+import DataPagination from "@/components/Pagination"
 
 function OrganizationDevice() {
   const { user } = useAuth()
