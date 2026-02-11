@@ -103,6 +103,23 @@ function PartnerDevice() {
         })
     }, [allDevices, searchString, selectedDeviceStatus])
 
+    const statusCounts = useMemo(() => {
+        return allDevices.reduce(
+            (acc, device) => {
+                acc.all++
+                acc[device.status]++
+                return acc
+            },
+            {
+                all: 0,
+                ONLINE: 0,
+                IDLE: 0,
+                OFFLINE: 0,
+                INACTIVE: 0,
+            } as Record<DeviceStatus | "all", number>
+        )
+    }, [allDevices])
+
 
     const statusBadge = (status: DeviceStatus) => {
         switch (status) {
@@ -128,7 +145,7 @@ function PartnerDevice() {
     }
 
     return (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-6 p-6">
             <AppBreadcrumb />
 
             {/* HEADER */}
@@ -144,6 +161,26 @@ function PartnerDevice() {
                     <Plus className="h-4 w-4 mr-1" />
                     Add Device
                 </Button>
+            </div>
+
+            {/* Status Counts */}
+            <div className="flex flex-wrap gap-2">
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                    Online: {statusCounts.ONLINE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                    Idle: {statusCounts.IDLE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                    Offline: {statusCounts.OFFLINE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
+                    Inactive: {statusCounts.INACTIVE}
+                </span>
             </div>
 
             {/* FILTERS */}

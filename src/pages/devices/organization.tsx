@@ -104,6 +104,24 @@ function OrganizationDevice() {
   }, [allDevices, searchString, selectedDeviceStatus])
 
 
+  const statusCounts = useMemo(() => {
+    return allDevices.reduce(
+      (acc, device) => {
+        acc.all++
+        acc[device.status]++
+        return acc
+      },
+      {
+        all: 0,
+        ONLINE: 0,
+        IDLE: 0,
+        OFFLINE: 0,
+        INACTIVE: 0,
+      } as Record<DeviceStatus | "all", number>
+    )
+  }, [allDevices])
+
+
   const statusBadge = (status: DeviceStatus) => {
     switch (status) {
       case "ONLINE":
@@ -128,22 +146,45 @@ function OrganizationDevice() {
   }
 
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-6 p-6">
       <AppBreadcrumb />
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold">Devices</h1>
-          <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
-            {filteredDevices.length}
-          </span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">Devices</h1>
+            <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+              {filteredDevices.length}
+            </span>
+          </div>
+
         </div>
 
         <Button className="bg-primary" onClick={() => setAddDeviceOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
           Add Device
         </Button>
+      </div>
+
+      {/* Status Counts */}
+      <div className="flex flex-wrap gap-2">
+
+        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+          Online: {statusCounts.ONLINE}
+        </span>
+
+        <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+          Idle: {statusCounts.IDLE}
+        </span>
+
+        <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+          Offline: {statusCounts.OFFLINE}
+        </span>
+
+        <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
+          Inactive: {statusCounts.INACTIVE}
+        </span>
       </div>
 
       {/* FILTERS */}

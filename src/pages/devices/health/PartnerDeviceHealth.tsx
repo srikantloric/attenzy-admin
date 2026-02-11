@@ -112,7 +112,6 @@ const PartnerDeviceHealth: React.FC = () => {
     }, [devices])
 
 
-
     const filteredDevices = useMemo(() => {
         const q = search.trim().toLowerCase()
 
@@ -140,8 +139,6 @@ const PartnerDeviceHealth: React.FC = () => {
     const offlineCount = deviceHealthData.filter(d => d.uiStatus === "offline").length
 
 
-
-
     if (!partnerId) {
         return (
             <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
@@ -151,7 +148,7 @@ const PartnerDeviceHealth: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 mt-4">
+        <div className="space-y-6 p-6">
             <AppBreadcrumb />
 
             <h1 className="text-2xl font-semibold tracking-tight">
