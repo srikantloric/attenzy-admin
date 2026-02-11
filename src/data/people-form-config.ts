@@ -1,4 +1,5 @@
 export const PEOPLE_FORM_CONFIG = {
+  
   student: [
     { name: "name", label: "Student Name" },
     { name: "class", label: "Class" },

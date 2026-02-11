@@ -46,7 +46,7 @@ const AddStudentForm = ({
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting, isValid },
+        formState: { errors, isSubmitting, isValid, isDirty },
         reset,
     } = useForm<StudentFormValues>({
         resolver: zodResolver(studentSchema),
@@ -166,7 +166,12 @@ const AddStudentForm = ({
                         <Button
                             className="bg-primary"
                             type="submit"
-                            disabled={mode === "view" || !isValid || isSubmitting}
+                            disabled={
+                                mode === "view" ||
+                                !isValid ||
+                                isSubmitting ||
+                                (mode == "edit" && !isDirty)
+                            }
                         >
                             {mode === "add" && "Add Student"}
                             {mode === "edit" && "Update Student"}

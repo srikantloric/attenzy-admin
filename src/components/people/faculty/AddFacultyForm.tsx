@@ -50,7 +50,7 @@ const AddFacultyForm = ({
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting, isValid },
+        formState: { errors, isSubmitting, isValid, isDirty },
         reset,
     } = useForm<FacultyFormValues>({
         resolver: zodResolver(facultySchema),
@@ -188,13 +188,16 @@ const AddFacultyForm = ({
                             disabled={
                                 mode === "view" ||
                                 !isValid ||
-                                isSubmitting
+                                isSubmitting ||
+                                (mode === "edit" && !isDirty)
                             }
                         >
+
                             {mode === "add" && "Add Faculty"}
                             {mode === "edit" && "Update Faculty"}
                             {mode === "view" && "Close"}
                         </Button>
+
                     </div>
                 </form>
             </SheetContent>
