@@ -27,16 +27,16 @@ import { toast } from "sonner"
 
 import type { Organization } from "@/types/organization"
 
-interface AddDeviceProps {
+interface PartnerAddDeviceProps {
   open: boolean
   setOpen: (status: boolean) => void
-  onClose?: () => void
+  onSuccess?: () => void
 }
 
-const AddDevice: React.FC<AddDeviceProps> = ({
+const AddDevice: React.FC<PartnerAddDeviceProps> = ({
   open,
   setOpen,
-  onClose,
+  onSuccess,
 }) => {
   const { user } = useAuth()
   const partnerId = user?.partnerId
@@ -139,6 +139,8 @@ const AddDevice: React.FC<AddDeviceProps> = ({
         partnerId,
       })
 
+      onSuccess?.()
+
       setSuccess(true)
       toast.success("Device added successfully")
     } catch (err: any) {
@@ -171,7 +173,6 @@ const AddDevice: React.FC<AddDeviceProps> = ({
       onOpenChange={(v) => {
         if (!v) {
           resetForm()
-          onClose?.()
         }
         setOpen(v)
       }}

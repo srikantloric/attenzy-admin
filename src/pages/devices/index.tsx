@@ -1,6 +1,6 @@
 import useAuth from "@/hooks/useAuth";
-import PartnerDevice from "./partner";
-import OrganizationDevice from "./organization";
+import PartnerDevice from "./partnerDevicePage";
+import OrganizationDevice from "./organizationDevicePage";
 
 function DevicePage() {
     const { user } = useAuth();

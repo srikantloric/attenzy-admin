@@ -17,16 +17,16 @@ import { toast } from "sonner"
 import { getOrganizationById } from "@/api/organization"
 
 
-interface AddDeviceProps {
+interface OrgAddDeviceProps {
     open: boolean
-    setOpen: (status: boolean) => void
-    onClose?: () => void
+    setOpen: (open: boolean) => void
+    onSuccess?: () => void
 }
 
-const OrgAddDevice: React.FC<AddDeviceProps> = ({
+const OrgAddDevice: React.FC<OrgAddDeviceProps> = ({
     open,
     setOpen,
-    onClose,
+    onSuccess,
 }) => {
     const { user } = useAuth()
     const orgId = user?.orgId
@@ -121,8 +121,12 @@ const OrgAddDevice: React.FC<AddDeviceProps> = ({
                 orgId: orgId,
                 partnerId: orgDetails.item.partnerId,
             })
+
+            onSuccess?.()  
             setSuccess(true)
+
             toast.success("Device added successfully")
+
         } catch (err: any) {
             toast.error(err.message || "Something went wrong")
         } finally {
@@ -137,7 +141,6 @@ const OrgAddDevice: React.FC<AddDeviceProps> = ({
             onOpenChange={(v) => {
                 if (!v) {
                     resetForm()
-                    onClose?.()
                 }
                 setOpen(v)
             }}

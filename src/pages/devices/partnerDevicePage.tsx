@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/pagination"
 
 import type { Device, DeviceStatus } from "@/types/device"
-import AddDevice from "@/components/device/AddDevice"
+import AddDevice from "@/components/device/PertnerAddDevice"
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
@@ -338,8 +338,7 @@ function PartnerDevice() {
             <AddDevice
                 open={addDeviceOpen}
                 setOpen={setAddDeviceOpen}
-                onClose={() => {
-                    setAddDeviceOpen(false)
+                onSuccess={() => {
                     fetchDevices()
                 }}
             />

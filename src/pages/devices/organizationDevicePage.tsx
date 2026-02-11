@@ -340,8 +340,7 @@ function OrganizationDevice() {
       <OrgAddDevice
         open={addDeviceOpen}
         setOpen={setAddDeviceOpen}
-        onClose={() => {
-          setAddDeviceOpen(false)
+        onSuccess={() => {
           fetchDevices()
         }}
       />
