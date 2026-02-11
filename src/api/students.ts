@@ -29,7 +29,7 @@ export async function createStudent(
     },
     body: JSON.stringify({
       ...payload,
-      orgId, 
+      orgId,
     }),
   });
 
@@ -42,24 +42,18 @@ export async function createStudent(
 }
 
 export async function updateStudent(
-  studentId: string,
-  orgId: string,
-  payload: UpdateStudentPayload
+  payload: {
+    studentId: string;
+    orgId: string;
+  } & Partial<Omit<Student, "studentId" | "orgId">>
 ): Promise<Student> {
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/students/${studentId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: studentId,  
-        orgId,          
-        ...payload,
-      }),
-    }
-  );
+  const res = await fetch(`${BACKEND_BASE_URL}/students`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
   if (!res.ok) {
     const error = await res.json();

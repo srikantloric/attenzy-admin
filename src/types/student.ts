@@ -28,11 +28,12 @@ export interface CreateStudentPayload {
 
 
 export interface UpdateStudentPayload {
+  studentId: string;
+  orgId: string;
   studentName?: string;
   studentClass?: string;
   studentSection?: string;
   studentPhone?: string;
   rfidCode?: string;
-
   isActive?: boolean;
 }

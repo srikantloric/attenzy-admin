@@ -84,7 +84,12 @@ const AddStudentForm = ({
             }
 
             if (mode === "edit" && student) {
-                await updateStudent(student.studentId, orgId, data);
+                await updateStudent({
+                    studentId: student.studentId,
+                    orgId,
+                    ...data,
+                });
+
                 toast.success("Student updated successfully");
             }
 

@@ -96,22 +96,25 @@ const StudentsPage: React.FC = () => {
         if (!orgId) return;
 
         try {
-            await updateStudent(student.studentId, orgId, {
-                isActive: student.isActive === false,
+            await updateStudent({
+                studentId: student.studentId,
+                orgId,
+                isActive: !student.isActive,
             });
 
             toast.success(
-                student.isActive === false
-                    ? "Student activated"
-                    : "Student suspended"
+                student.isActive
+                    ? "Student suspended"
+                    : "Student activated"
             );
 
             fetchStudents();
         } catch (error: any) {
-            console.error(error);
             toast.error(error?.message || "Failed to update status");
         }
     };
+
+
 
     /* ================= FILTER ================= */
 
