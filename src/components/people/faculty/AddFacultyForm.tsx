@@ -16,30 +16,34 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
-    studentSchema,
-    type StudentFormValues,
-} from "@/schemas/student.schema";
+    facultySchema,
+    type FacultyFormValues,
+} from "@/schemas/faculty.schema";
 
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
-import { createStudent, updateStudent } from "@/api/students";
-import type { Student } from "@/types/student";
+import {
+    createFaculty,
+    updateFaculty,
+} from "@/api/faculty";
 
-interface AddStudentFormProps {
+import type { Faculty } from "@/types/faculty";
+
+interface AddFacultyFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     mode: "add" | "view" | "edit";
-    student?: Student | null;
+    faculty?: Faculty | null;
     onSuccess: () => void;
 }
 
-const AddStudentForm = ({
+const AddFacultyForm = ({
     open,
     onOpenChange,
     mode,
-    student,
+    faculty,
     onSuccess,
-}: AddStudentFormProps) => {
+}: AddFacultyFormProps) => {
     const { user } = useAuth();
     const orgId = user?.orgId;
 
@@ -48,49 +52,58 @@ const AddStudentForm = ({
         handleSubmit,
         formState: { errors, isSubmitting, isValid },
         reset,
-    } = useForm<StudentFormValues>({
-        resolver: zodResolver(studentSchema),
+    } = useForm<FacultyFormValues>({
+        resolver: zodResolver(facultySchema),
         mode: "onChange",
         defaultValues: {
-            studentName: "",
-            studentClass: "",
-            studentSection: "",
-            studentPhone: "",
+            facultyName: "",
+            facultyDepartment: "",
+            facultyPhone: "",
             rfidCode: "",
         },
     });
 
+    /* ================= RESET FORM ================= */
+
     useEffect(() => {
-        if (student) {
+        if (mode === "edit" && faculty) {
             reset({
-                studentName: student.studentName,
-                studentClass: student.studentClass,
-                studentSection: student.studentSection,
-                studentPhone: student.studentPhone,
-                rfidCode: student.rfidCode ?? "",
+                facultyName: faculty.facultyName,
+                facultyDepartment: faculty.facultyDepartment,
+                facultyPhone: faculty.facultyPhone,
+                rfidCode: faculty.rfidCode ?? "",
             });
         } else {
-            reset();
+            reset({
+                facultyName: "",
+                facultyDepartment: "",
+                facultyPhone: "",
+                rfidCode: "",
+            });
         }
-    }, [student, reset]);
+    }, [faculty, mode, reset]);
 
-    const onSubmit = async (data: StudentFormValues) => {
+
+    /* ================= SUBMIT ================= */
+
+    const onSubmit = async (data: FacultyFormValues) => {
         if (!orgId) return;
 
         try {
             if (mode === "add") {
-                await createStudent(orgId, data);
-                toast.success("Student added successfully");
+                await createFaculty(orgId, data);
+
+                toast.success("Faculty added successfully");
             }
 
-            if (mode === "edit" && student) {
-                await updateStudent({
-                    studentId: student.studentId,
+            if (mode === "edit" && faculty) {
+                await updateFaculty({
+                    facultyId: faculty.facultyId,
                     orgId,
                     ...data,
                 });
 
-                toast.success("Student updated successfully");
+                toast.success("Faculty updated successfully");
             }
 
             onSuccess();
@@ -101,29 +114,36 @@ const AddStudentForm = ({
         }
     };
 
+    /* ================= RENDER ================= */
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-full sm:max-w-lg px-6 py-6">
+            <SheetContent
+                side="right"
+                className="w-full sm:max-w-lg px-6 py-6"
+            >
                 <SheetHeader className="-ml-4">
                     <SheetTitle>
-                        {mode === "add" && "Add Student"}
-                        {mode === "view" && "View Student"}
-                        {mode === "edit" && "Edit Student"}
+                        {mode === "add" && "Add Faculty"}
+                        {mode === "view" && "View Faculty"}
+                        {mode === "edit" && "Edit Faculty"}
                     </SheetTitle>
                     <SheetDescription>
                         {mode === "view"
-                            ? "Student details"
-                            : "Enter student details"}
+                            ? "Faculty details"
+                            : "Enter faculty details"}
                     </SheetDescription>
                 </SheetHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 mt-2">
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="space-y-5 mt-2"
+                >
                     {(
                         [
-                            ["studentName", "Student Name"],
-                            ["studentClass", "Class"],
-                            ["studentSection", "Section"],
-                            ["studentPhone", "Phone"],
+                            ["facultyName", "Faculty Name"],
+                            ["facultyDepartment", "Department"],
+                            ["facultyPhone", "Phone"],
                             ["rfidCode", "RFID Code"],
                         ] as const
                     ).map(([field, label]) => (
@@ -134,10 +154,10 @@ const AddStudentForm = ({
                             <Input
                                 {...register(field)}
                                 disabled={mode === "view"}
-                                maxLength={field === "studentPhone" ? 10 : undefined}
-                                inputMode={field === "studentPhone" ? "numeric" : undefined}
+                                maxLength={field === "facultyPhone" ? 10 : undefined}
+                                inputMode={field === "facultyPhone" ? "numeric" : undefined}
                                 onInput={(e) => {
-                                    if (field === "studentPhone") {
+                                    if (field === "facultyPhone") {
                                         e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "");
                                     }
                                 }}
@@ -148,7 +168,6 @@ const AddStudentForm = ({
                                     {errors[field]?.message}
                                 </p>
                             )}
-
                         </div>
                     ))}
 
@@ -166,10 +185,14 @@ const AddStudentForm = ({
                         <Button
                             className="bg-primary"
                             type="submit"
-                            disabled={mode === "view" || !isValid || isSubmitting}
+                            disabled={
+                                mode === "view" ||
+                                !isValid ||
+                                isSubmitting
+                            }
                         >
-                            {mode === "add" && "Add Student"}
-                            {mode === "edit" && "Update Student"}
+                            {mode === "add" && "Add Faculty"}
+                            {mode === "edit" && "Update Faculty"}
                             {mode === "view" && "Close"}
                         </Button>
                     </div>
@@ -179,4 +202,4 @@ const AddStudentForm = ({
     );
 };
 
-export default AddStudentForm;
+export default AddFacultyForm;

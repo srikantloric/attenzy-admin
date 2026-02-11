@@ -1,4 +1,4 @@
-import type { CreateStudentPayload, Student, UpdateStudentPayload } from "@/types/student";
+import type { CreateStudentPayload, Student } from "@/types/student";
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 

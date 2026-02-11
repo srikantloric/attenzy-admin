@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { facultyData } from "@/data/faculty";
-import type { Faculty } from "@/data/faculty";
-import { PeopleSidebar } from "@/components/people/PeopleSidebar";
+import { useEffect, useMemo, useState } from "react";
+import type { Faculty } from "@/types/faculty";
+import { getFaculty, updateFaculty } from "@/api/faculty";
+import { toast } from "sonner";
 
 import {
     Table,
@@ -9,7 +9,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table";
 
 import { Input } from "@/components/ui/input";
@@ -22,36 +22,131 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter, Plus } from "lucide-react";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 
-const TOTAL_FACULTY = 84;
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
+
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { timeAgo } from "@/utils/timeAgo";
+import useAuth from "@/hooks/useAuth";
+
+import AddFacultyForm from "@/components/people/faculty/AddFacultyForm";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+
+type FilterStatus = "all" | "active" | "inactive";
+type FormMode = "add" | "edit";
 
 const FacultyPage: React.FC = () => {
-    const [search, setSearch] = useState<string>("");
-    type FilterType = "all" | "invalid";
+    const { user } = useAuth();
+    const orgId = user?.orgId;
 
-    const [filter, setFilter] = useState<FilterType>("all");
+    const [faculty, setFaculty] = useState<Faculty[]>([]);
+    const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] =
+        useState<FilterStatus>("all");
+
+    const [loading, setLoading] = useState(false);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("add");
+    const [selectedFaculty, setSelectedFaculty] =
+        useState<Faculty | null>(null);
 
-    const filteredFaculty = useMemo<Faculty[]>(() => {
-        return facultyData.filter((faculty) => {
-            const matchesSearch = faculty.name
+    const [confirmFaculty, setConfirmFaculty] =
+        useState<Faculty | null>(null);
+
+    /* ================= FETCH ================= */
+
+    const fetchFaculty = () => {
+        if (!orgId) return;
+
+        setLoading(true);
+
+        getFaculty(orgId)
+            .then(setFaculty)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchFaculty();
+    }, [orgId]);
+
+    /* ================= STATUS TOGGLE ================= */
+
+    const toggleFacultyStatus = async (faculty: Faculty) => {
+        if (!orgId) return;
+
+        try {
+            await updateFaculty({
+                facultyId: faculty.facultyId,
+                orgId,
+                isActive: !faculty.isActive,
+            });
+
+            toast.success(
+                faculty.isActive
+                    ? "Faculty suspended"
+                    : "Faculty activated"
+            );
+
+            fetchFaculty();
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to update status");
+        }
+    };
+
+    /* ================= FILTER ================= */
+
+    const filteredFaculty = useMemo(() => {
+        return faculty.filter((f) => {
+            const matchesSearch = f.facultyName
                 .toLowerCase()
                 .includes(search.toLowerCase());
 
+            const isActive = f.isActive !== false;
+
             const matchesFilter =
-                filter === "all" ? true : faculty.rfid === null;
+                filterStatus === "all"
+                    ? true
+                    : filterStatus === "active"
+                        ? isActive
+                        : !isActive;
 
             return matchesSearch && matchesFilter;
         });
-    }, [search, filter]);
+    }, [faculty, search, filterStatus]);
+
+    /* ================= COUNTS ================= */
+
+    const TOTAL = faculty.length;
+    const ACTIVE_COUNT = faculty.filter(
+        (f) => f.isActive !== false
+    ).length;
+    const INACTIVE_COUNT = faculty.filter(
+        (f) => f.isActive === false
+    ).length;
+
+    /* ================= RENDER ================= */
 
     return (
         <>
@@ -59,167 +154,233 @@ const FacultyPage: React.FC = () => {
                 <AppBreadcrumb />
 
                 {/* Header */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        {/* Left: Title + Count */}
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                Faculty
-                            </h1>
-
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-                                {TOTAL_FACULTY}
-                            </span>
-                        </div>
-
-                        {/* Right: Action */}
-                        <Button
-                            className="gap-2 bg-primary"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Faculty
-                        </Button>
-                    </div>
-
-
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>
-                            Total Faculty:
-                            <span className="ml-1 font-medium text-foreground">
-                                {TOTAL_FACULTY}
-                            </span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-green-600">
-                            +3
-                            <span className="text-muted-foreground">added</span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-red-500">
-                            -2
-                            <span className="text-muted-foreground">removed</span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold">
+                            Faculty
+                        </h1>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                            {TOTAL}
                         </span>
                     </div>
+
+                    <Button
+                        className="gap-2 bg-primary"
+                        onClick={() => {
+                            setSelectedFaculty(null);   
+                            setFormMode("add");         
+                            setSidebarOpen(true);
+                        }}
+                    >
+
+                        <Plus className="h-4 w-4" />
+                        Add Faculty
+                    </Button>
                 </div>
 
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
+                    Active:{" "}
+                    <span className="text-green-600 font-medium">
+                        {ACTIVE_COUNT}
+                    </span>
+                    <span className="ml-4">
+                        Inactive:{" "}
+                        <span className="font-medium">
+                            {INACTIVE_COUNT}
+                        </span>
+                    </span>
+                </div>
 
                 <Separator />
 
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    {/* Left: Toggle Filters */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant={filter === "all" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFilter("all")}
-                        >
-                            All
-                        </Button>
-
-                        <Button
-                            variant={filter === "invalid" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFilter("invalid")}
-                        >
-                            Invalid
-                        </Button>
+                {/* Filters */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                            (status) => (
+                                <Button
+                                    key={status}
+                                    size="sm"
+                                    variant={
+                                        filterStatus === status
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    onClick={() => setFilterStatus(status)}
+                                >
+                                    {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                </Button>
+                            )
+                        )}
                     </div>
 
-                    {/* Right: Search + Advanced Filter */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Department</DropdownMenuItem>
-                                <DropdownMenuItem>RFID Status</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-8 w-64"
+                            placeholder="Search faculty..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
                 {/* Table */}
                 <Card>
-                    <CardContent className="">
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Contact</TableHead>
                                     <TableHead>Department</TableHead>
-                                    <TableHead>RFID Card Number</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead>RFID</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">
-                                        Last Seen
+                                        Last Updated
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                                {filteredFaculty.map((faculty) => (
-                                    <TableRow key={faculty.id}>
-                                        <TableCell>{faculty.id}</TableCell>
-
-                                        <TableCell className="font-medium">
-                                            {faculty.name}
-                                        </TableCell>
-
-                                        <TableCell>{faculty.contact}</TableCell>
-
-                                        <TableCell>{faculty.department}</TableCell>
-
-                                        <TableCell>
-                                            {faculty.rfid ? (
-                                                faculty.rfid
-                                            ) : (
-                                                <Badge variant="destructive">Invalid</Badge>
-                                            )}
-                                        </TableCell>
-
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {faculty.lastSeen}
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center"
+                                        >
+                                            Loading faculty...
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
+
+                                {!loading &&
+                                    filteredFaculty.map((f) => (
+                                        <TableRow
+                                            key={f.facultyId}
+                                            className={
+                                                f.isActive === false
+                                                    ? "opacity-60"
+                                                    : ""
+                                            }
+                                        >
+                                            <TableCell className="font-medium">
+                                                {f.facultyName}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {f.facultyDepartment}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {f.facultyPhone}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {f.rfidCode ?? (
+                                                    <Badge variant="destructive">
+                                                        Invalid
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {f.isActive ? (
+                                                    <Badge className="bg-green-100 text-green-700">
+                                                        Active
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary">
+                                                        Inactive
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                {timeAgo(f.updatedAt)}
+                                            </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button size="icon" variant="ghost">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedFaculty(f);
+                                                                setFormMode("edit");
+                                                                setSidebarOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuItem
+                                                            className={
+                                                                f.isActive === false
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                            }
+                                                            onClick={() =>
+                                                                setConfirmFaculty(f)
+                                                            }
+                                                        >
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {f.isActive === false
+                                                                ? "Activate"
+                                                                : "Suspend"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                             </TableBody>
                         </Table>
                     </CardContent>
 
                     <Separator />
 
-                    {/* Pagination */}
+                    {/* Pagination UI */}
                     <div className="flex items-center justify-end gap-4 mr-4">
                         <Field orientation="horizontal" className="w-fit">
-                            <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
+                            <FieldLabel>
+                                Rows per page
+                            </FieldLabel>
                             <Select defaultValue="25">
-                                <SelectTrigger className="w-20" id="select-rows-per-page">
+                                <SelectTrigger className="w-20">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent align="start">
+                                <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
+                                        <SelectItem value="10">
+                                            10
+                                        </SelectItem>
+                                        <SelectItem value="25">
+                                            25
+                                        </SelectItem>
+                                        <SelectItem value="50">
+                                            50
+                                        </SelectItem>
+                                        <SelectItem value="100">
+                                            100
+                                        </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </Field>
+
                         <Pagination className="mx-0 w-auto">
                             <PaginationContent>
                                 <PaginationItem>
@@ -232,15 +393,43 @@ const FacultyPage: React.FC = () => {
                         </Pagination>
                     </div>
                 </Card>
-
             </div>
 
-            <PeopleSidebar
+            {/* Sidebar Form */}
+            <AddFacultyForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
-                type="faculty"
+                mode={formMode}
+                faculty={selectedFaculty}
+                onSuccess={fetchFaculty}
             />
 
+            {/* Confirm Dialog */}
+            <ConfirmDialog
+                open={!!confirmFaculty}
+                title={
+                    confirmFaculty?.isActive === false
+                        ? "Activate Faculty"
+                        : "Suspend Faculty"
+                }
+                description={
+                    confirmFaculty?.isActive === false
+                        ? "This faculty will become active again."
+                        : "This faculty will be suspended."
+                }
+                confirmText={
+                    confirmFaculty?.isActive === false
+                        ? "Activate"
+                        : "Suspend"
+                }
+                onCancel={() => setConfirmFaculty(null)}
+                onConfirm={() => {
+                    if (confirmFaculty) {
+                        toggleFacultyStatus(confirmFaculty);
+                        setConfirmFaculty(null);
+                    }
+                }}
+            />
         </>
     );
 };
