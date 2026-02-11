@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { staffData } from "@/data/staff";
-import type { Staff, StaffStatus } from "@/data/staff";
-import { PeopleSidebar } from "@/components/people/PeopleSidebar";
+import { useEffect, useMemo, useState } from "react";
+import type { Staff } from "@/types/staff";
+import { getStaffByOrg, updateStaff } from "@/api/staff";
+import { toast } from "sonner";
 
 import {
     Table,
@@ -9,7 +9,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table";
 
 import { Input } from "@/components/ui/input";
@@ -22,53 +22,131 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { Search, Filter, Plus } from "lucide-react";
-
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
 
 import {
     Pagination,
     PaginationContent,
     PaginationItem,
     PaginationNext,
-    PaginationPrevious
+    PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
-const TOTAL_STAFF = 56;
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
+
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { timeAgo } from "@/utils/timeAgo";
+import useAuth from "@/hooks/useAuth";
+
+import AddStaffForm from "@/components/people/staff/AddStaffForm";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+
+type FilterStatus = "all" | "active" | "inactive";
+type FormMode = "add" | "edit";
 
 const StaffPage: React.FC = () => {
-    const [search, setSearch] = useState<string>("");
-    const [filter, setFilter] = useState<StaffStatus | "all">("all");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { user } = useAuth();
+    const orgId = user?.orgId;
 
-    const filteredStaff = useMemo<Staff[]>(() => {
-        return staffData.filter((staff) => {
-            const matchesSearch = staff.name
+    const [staff, setStaff] = useState<Staff[]>([]);
+    const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] =
+        useState<FilterStatus>("all");
+
+    const [loading, setLoading] = useState(false);
+
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("add");
+    const [selectedStaff, setSelectedStaff] =
+        useState<Staff | null>(null);
+
+    const [confirmStaff, setConfirmStaff] =
+        useState<Staff | null>(null);
+
+    /* ================= FETCH ================= */
+
+    const fetchStaff = () => {
+        if (!orgId) return;
+
+        setLoading(true);
+
+        getStaffByOrg(orgId)
+            .then(setStaff)
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchStaff();
+    }, [orgId]);
+
+    /* ================= STATUS TOGGLE ================= */
+
+    const toggleStaffStatus = async (staffMember: Staff) => {
+        if (!orgId) return;
+
+        try {
+            await updateStaff({
+                staffId: staffMember.staffId,
+                orgId,
+                isActive: !staffMember.isActive,
+            });
+
+            toast.success(
+                staffMember.isActive
+                    ? "Staff suspended"
+                    : "Staff activated"
+            );
+
+            fetchStaff();
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to update status");
+        }
+    };
+
+    /* ================= FILTER ================= */
+
+    const filteredStaff = useMemo(() => {
+        return staff.filter((s) => {
+            const matchesSearch = s.staffName
                 .toLowerCase()
                 .includes(search.toLowerCase());
 
+            const isActive = s.isActive !== false;
+
             const matchesFilter =
-                filter === "all" ? true : staff.status === filter;
+                filterStatus === "all"
+                    ? true
+                    : filterStatus === "active"
+                        ? isActive
+                        : !isActive;
 
             return matchesSearch && matchesFilter;
         });
-    }, [search, filter]);
+    }, [staff, search, filterStatus]);
 
-    const invalidCount = staffData.filter(
-        (s) => s.status === "invalid"
+    /* ================= COUNTS ================= */
+
+    const TOTAL = staff.length;
+    const ACTIVE_COUNT = staff.filter(
+        (s) => s.isActive !== false
     ).length;
+    const INACTIVE_COUNT = staff.filter(
+        (s) => s.isActive === false
+    ).length;
+
+    /* ================= RENDER ================= */
 
     return (
         <>
@@ -76,180 +154,212 @@ const StaffPage: React.FC = () => {
                 <AppBreadcrumb />
 
                 {/* Header */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        {/* Left: Title + Count */}
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                Staff
-                            </h1>
-
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-                                {TOTAL_STAFF}
-                            </span>
-                        </div>
-
-                        {/* Right: Action */}
-                        <Button
-                            className="gap-2 bg-primary"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Staff
-                        </Button>
-                    </div>
-
-
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>
-                            Total Faculty:
-                            <span className="ml-1 font-medium text-foreground">
-                                {TOTAL_STAFF}
-                            </span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-green-600">
-                            +3
-                            <span className="text-muted-foreground">added</span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-red-500">
-                            -2
-                            <span className="text-muted-foreground">removed</span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold">
+                            Staff
+                        </h1>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                            {TOTAL}
                         </span>
                     </div>
+
+                    <Button
+                        className="gap-2 bg-primary"
+                        onClick={() => {
+                            setSelectedStaff(null);
+                            setFormMode("add");
+                            setSidebarOpen(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Staff
+                    </Button>
+                </div>
+
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
+                    Active:{" "}
+                    <span className="text-green-600 font-medium">
+                        {ACTIVE_COUNT}
+                    </span>
+                    <span className="ml-4">
+                        Inactive:{" "}
+                        <span className="font-medium">
+                            {INACTIVE_COUNT}
+                        </span>
+                    </span>
                 </div>
 
                 <Separator />
 
-                {/* Stats Card */}
-                {/* <div className="grid grid-cols-1">
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Total Staff
-                        </p>
-                        <p className="text-2xl font-semibold">
-                            {TOTAL_STAFF}
-                            <span className="ml-2 text-sm text-green-600">+4</span>
-                        </p>
-                    </CardContent>
-                </Card>
-            </div> */}
-
                 {/* Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    {/* Toggle */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            variant={filter === "all" ? "default" : "outline"}
-                            onClick={() => setFilter("all")}
-                        >
-                            All
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "invalid" ? "default" : "outline"}
-                            onClick={() => setFilter("invalid")}
-                        >
-                            Invalid
-                            <Badge variant="destructive" className="ml-2">
-                                {invalidCount}
-                            </Badge>
-                        </Button>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                            (status) => (
+                                <Button
+                                    key={status}
+                                    size="sm"
+                                    variant={
+                                        filterStatus === status
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    onClick={() => setFilterStatus(status)}
+                                >
+                                    {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                </Button>
+                            )
+                        )}
                     </div>
 
-                    {/* Search */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Position</DropdownMenuItem>
-                                <DropdownMenuItem>RFID Status</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-8 w-64"
+                            placeholder="Search staff..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
                 {/* Table */}
                 <Card>
-                    <CardContent className="">
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Position</TableHead>
-                                    <TableHead>RFID Card Number</TableHead>
+                                    <TableHead>Designation</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead>RFID</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">
-                                        Last Seen
+                                        Last Updated
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                                {filteredStaff.map((staff) => (
-                                    <TableRow key={staff.id}>
-                                        <TableCell>{staff.id}</TableCell>
-
-                                        <TableCell className="font-medium">
-                                            {staff.name}
-                                        </TableCell>
-
-                                        <TableCell>{staff.contact}</TableCell>
-
-                                        <TableCell>{staff.position}</TableCell>
-
-                                        <TableCell>
-                                            {staff.rfid ?? (
-                                                <Badge variant="destructive">
-                                                    Invalid
-                                                </Badge>
-                                            )}
-                                        </TableCell>
-
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {staff.lastSeen}
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center"
+                                        >
+                                            Loading staff...
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
+
+                                {!loading &&
+                                    filteredStaff.map((s) => (
+                                        <TableRow
+                                            key={s.staffId}
+                                            className={
+                                                s.isActive === false
+                                                    ? "opacity-60"
+                                                    : ""
+                                            }
+                                        >
+                                            <TableCell className="font-medium">
+                                                {s.staffName}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {s.staffDesignation}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {s.staffPhone}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {s.rfidCode ?? (
+                                                    <Badge variant="destructive">
+                                                        Invalid
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {s.isActive ? (
+                                                    <Badge className="bg-green-100 text-green-700">
+                                                        Active
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary">
+                                                        Inactive
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                {timeAgo(s.updatedAt)}
+                                            </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button size="icon" variant="ghost">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedStaff(s);
+                                                                setFormMode("edit");
+                                                                setSidebarOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuItem
+                                                            className={
+                                                                s.isActive === false
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                            }
+                                                            onClick={() =>
+                                                                setConfirmStaff(s)
+                                                            }
+                                                        >
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {s.isActive === false
+                                                                ? "Activate"
+                                                                : "Suspend"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                             </TableBody>
                         </Table>
                     </CardContent>
 
                     <Separator />
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end gap-6 px-4">
-                        <Field orientation="horizontal" className="w-fit gap-2">
-                            <FieldLabel htmlFor="select-rows-per-page">
-                                Rows per page
-                            </FieldLabel>
-
+                    {/* Pagination UI */}
+                    <div className="flex items-center justify-end gap-4 mr-4">
+                        <Field orientation="horizontal" className="w-fit">
+                            <FieldLabel>Rows per page</FieldLabel>
                             <Select defaultValue="25">
-                                <SelectTrigger className="h-8 w-20" id="select-rows-per-page">
+                                <SelectTrigger className="w-20">
                                     <SelectValue />
                                 </SelectTrigger>
-
-                                <SelectContent align="start">
+                                <SelectContent>
                                     <SelectGroup>
                                         <SelectItem value="10">10</SelectItem>
                                         <SelectItem value="25">25</SelectItem>
@@ -271,17 +381,44 @@ const StaffPage: React.FC = () => {
                             </PaginationContent>
                         </Pagination>
                     </div>
-
                 </Card>
-
             </div>
 
-            <PeopleSidebar
+            {/* Sidebar Form */}
+            <AddStaffForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
-                type="staff"
+                mode={formMode}
+                staff={selectedStaff}
+                onSuccess={fetchStaff}
             />
 
+            {/* Confirm Dialog */}
+            <ConfirmDialog
+                open={!!confirmStaff}
+                title={
+                    confirmStaff?.isActive === false
+                        ? "Activate Staff"
+                        : "Suspend Staff"
+                }
+                description={
+                    confirmStaff?.isActive === false
+                        ? "This staff member will become active again."
+                        : "This staff member will be suspended."
+                }
+                confirmText={
+                    confirmStaff?.isActive === false
+                        ? "Activate"
+                        : "Suspend"
+                }
+                onCancel={() => setConfirmStaff(null)}
+                onConfirm={() => {
+                    if (confirmStaff) {
+                        toggleStaffStatus(confirmStaff);
+                        setConfirmStaff(null);
+                    }
+                }}
+            />
         </>
     );
 };
