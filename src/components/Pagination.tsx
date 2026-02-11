@@ -1,117 +1,110 @@
 import type { Dispatch, SetStateAction } from "react"
 
+import { Field, FieldLabel } from "@/components/ui/field"
 import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
 } from "@/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface DataPaginationProps {
-    totalItems: number
-    currentPage: number
-    setCurrentPage: Dispatch<SetStateAction<number>>
-    rowsPerPage: number
-    setRowsPerPage: Dispatch<SetStateAction<number>>
+  totalItems: number
+  currentPage: number
+  setCurrentPage: Dispatch<SetStateAction<number>>
+  rowsPerPage: number
+  setRowsPerPage: Dispatch<SetStateAction<number>>
 }
 
 export default function DataPagination({
-    totalItems,
-    currentPage,
-    setCurrentPage,
-    rowsPerPage,
+  totalItems,
+  currentPage,
+  setCurrentPage,
+  rowsPerPage,
+  setRowsPerPage,
 }: DataPaginationProps) {
-    const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
 
-    const generatePages = () => {
-        const pages: (number | "ellipsis")[] = []
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
 
-        if (totalPages <= 5) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i)
-            }
-        } else {
-            pages.push(1)
+  return (
+    <div className="flex items-center justify-end gap-4 pr-2 py-3">
 
-            if (currentPage > 3) {
-                pages.push("ellipsis")
-            }
+      {/* Rows Per Page */}
+      <Field orientation="horizontal" className="w-fit">
+        <FieldLabel htmlFor="select-rows-per-page">
+          Rows per page
+        </FieldLabel>
 
-            const start = Math.max(2, currentPage - 1)
-            const end = Math.min(totalPages - 1, currentPage + 1)
+        <Select
+          value={String(rowsPerPage)}
+          onValueChange={(value) => {
+            setRowsPerPage(Number(value))
+            setCurrentPage(1)
+          }}
+        >
+          <SelectTrigger className="w-20" id="select-rows-per-page">
+            <SelectValue />
+          </SelectTrigger>
 
-            for (let i = start; i <= end; i++) {
-                pages.push(i)
-            }
+          <SelectContent align="start">
+            <SelectGroup>
+              <SelectItem value="8">8</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Field>
 
-            if (currentPage < totalPages - 2) {
-                pages.push("ellipsis")
-            }
+      {/* Pagination Controls */}
+      <Pagination className="mx-0 w-auto">
+        <PaginationContent>
 
-            pages.push(totalPages)
-        }
+          {/* Previous */}
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() =>
+                setCurrentPage(prev =>
+                  Math.max(prev - 1, 1)
+                )
+              }
+              className={
+                currentPage === 1
+                  ? "pointer-events-none opacity-50"
+                  : ""
+              }
+            />
+          </PaginationItem>
 
-        return pages
-    }
+          {/* Next */}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() =>
+                setCurrentPage(prev =>
+                  Math.min(prev + 1, totalPages)
+                )
+              }
+              className={
+                currentPage === totalPages
+                  ? "pointer-events-none opacity-50"
+                  : ""
+              }
+            />
+          </PaginationItem>
 
-    return (
-        <div className="flex items-center justify-between gap-4 py-3">
-
-            {/* Pagination */}
-            <Pagination>
-                <PaginationContent>
-
-                    {/* Previous */}
-                    <PaginationItem>
-                        <PaginationPrevious
-                            onClick={() =>
-                                setCurrentPage(prev => Math.max(prev - 1, 1))
-                            }
-                            className={
-                                currentPage === 1
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                            }
-                        />
-                    </PaginationItem>
-
-                    {/* Page Numbers */}
-                    {generatePages().map((page, index) => (
-                        <PaginationItem key={index}>
-                            {page === "ellipsis" ? (
-                                <PaginationEllipsis />
-                            ) : (
-                                <PaginationLink
-                                    isActive={currentPage === page}
-                                    onClick={() => setCurrentPage(page)}
-                                >
-                                    {page}
-                                </PaginationLink>
-                            )}
-                        </PaginationItem>
-                    ))}
-
-                    {/* Next */}
-                    <PaginationItem>
-                        <PaginationNext
-                            onClick={() =>
-                                setCurrentPage(prev =>
-                                    Math.min(prev + 1, totalPages)
-                                )
-                            }
-                            className={
-                                currentPage === totalPages
-                                    ? "pointer-events-none opacity-50"
-                                    : ""
-                            }
-                        />
-                    </PaginationItem>
-
-                </PaginationContent>
-            </Pagination>
-        </div>
-    )
+        </PaginationContent>
+      </Pagination>
+    </div>
+  )
 }
