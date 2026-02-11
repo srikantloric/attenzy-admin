@@ -244,7 +244,6 @@ function OrganizationDevice() {
               <TableRow>
                 <TableHead>Device ID</TableHead>
                 <TableHead>Serial No</TableHead>
-                <TableHead>Organization</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -258,7 +257,6 @@ function OrganizationDevice() {
                     {device.deviceId}
                   </TableCell>
                   <TableCell>{device.serialNumber}</TableCell>
-                  <TableCell>{device.orgName}</TableCell>
                   <TableCell>{device.location}</TableCell>
                   <TableCell>
                     <span
