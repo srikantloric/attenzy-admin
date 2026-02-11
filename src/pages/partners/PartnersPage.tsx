@@ -25,16 +25,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Plus, Filter, ChevronDown, Search, } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+
 import {
     MoreHorizontal,
     Eye,
     Pencil,
     Ban
 } from "lucide-react"
-import type { Partner } from "@/types/partner" 
+import type { Partner } from "@/types/partner"
 import {
     Dialog,
     DialogContent,
@@ -50,6 +48,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ConfirmDialog from "@/components/common/ConfirmDialog"
 import { toast } from "sonner"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
+import DataPagination from "@/components/Pagination"
 
 /* ---------------- component ---------------- */
 function PartnersPage() {
@@ -58,6 +57,9 @@ function PartnersPage() {
     const [openAddPartner, setOpenAddPartner] = useState(false)
 
     const [partnerToSuspend, setPartnerToSuspend] = useState<Partner | null>(null)
+
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(10)
 
     const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -87,6 +89,15 @@ function PartnersPage() {
 
         return matchesSearch && matchesStatus
     })
+
+    const paginatedPartners = filteredPartners.slice(
+        (currentPage - 1) * rowsPerPage,
+        currentPage * rowsPerPage
+    )
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [search, statusFilter])
 
     const openAdminPage = (partner: Partner) => {
         navigate(`/partners/${partner.partnerId}`)
@@ -223,7 +234,7 @@ function PartnersPage() {
                     </TableHeader>
 
                     <TableBody>
-                        {filteredPartners.map(partner => (
+                        {paginatedPartners.map(partner => (
                             <TableRow key={partner.partnerId}>
                                 <TableCell className="w-18">
                                     <Avatar className="h-10 w-10">
@@ -310,35 +321,13 @@ function PartnersPage() {
 
                 <Separator />
 
-                {/* Pagination */}
-                <div className="flex items-center justify-end gap-4 mr-4">
-                    <Field orientation="horizontal" className="w-fit">
-                        <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="w-20" id="select-rows-per-page">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
+                <DataPagination
+                    totalItems={filteredPartners.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
             </Card>
 

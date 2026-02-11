@@ -44,23 +44,6 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog"
 
-import { Field, FieldLabel } from "@/components/ui/field"
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
-
 import AddOrganizationForm from "@/components/organizations/AddOrganizationForm"
 import type {
     OrganizationUI,
@@ -75,6 +58,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog"
 import { toast } from "sonner"
 import axios from "axios"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
+import DataPagination from "@/components/Pagination"
 
 function Organizations() {
     const navigate = useNavigate()
@@ -94,6 +78,9 @@ function Organizations() {
 
     const [orgToSuspend, setOrgToSuspend] = useState<OrganizationUI | null>(null)
     const [openConfirm, setOpenConfirm] = useState(false)
+
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(10)
 
     const fetchOrganizations = useCallback(async () => {
         if (!partnerId) return
@@ -121,6 +108,7 @@ function Organizations() {
             setLoading(false)
         }
     }, [partnerId])
+
 
     const handleSuspendOrganization = async () => {
         if (!orgToSuspend) return
@@ -180,6 +168,15 @@ function Organizations() {
 
         return matchesSearch && matchesStatus
     })
+
+    const paginatedOrganizations = filteredOrganizations.slice(
+        (currentPage - 1) * rowsPerPage,
+        currentPage * rowsPerPage
+    )
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [search, statusFilter])
 
 
     return (
@@ -278,7 +275,7 @@ function Organizations() {
                         </TableHeader>
 
                         <TableBody>
-                            {filteredOrganizations.map((org) => (
+                            {paginatedOrganizations.map((org) => (
                                 <TableRow key={org.id}>
 
                                     <TableCell className="w-18">
@@ -356,35 +353,13 @@ function Organizations() {
 
                 <Separator />
 
-                {/* Pagination */}
-                <div className="flex items-center justify-end gap-4 mr-4">
-                    <Field orientation="horizontal" className="w-fit">
-                        <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="w-20" id="select-rows-per-page">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
+                <DataPagination
+                    totalItems={filteredOrganizations.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
             </Card>
 
