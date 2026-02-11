@@ -20,22 +20,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Field, FieldLabel } from "@/components/ui/field"
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
+
 import {
     MoreVertical,
     Eye,
@@ -46,10 +31,12 @@ import {
 import SignalBars from "@/components/SignalBars"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
-import {  listOrgDevices } from "@/api/device"
+import { listOrgDevices } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
 import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
+import { Pagination } from "@/components/ui/pagination"
+import DataPagination from "@/components/Pagination"
 
 
 const OrgDeviceHealth: React.FC = () => {
@@ -63,6 +50,9 @@ const OrgDeviceHealth: React.FC = () => {
     const [search, setSearch] = useState("")
     const [filter, setFilter] =
         useState<"all" | "online" | "idle" | "offline" | "alerts">("all")
+
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(10)
 
 
     useEffect(() => {
@@ -112,7 +102,6 @@ const OrgDeviceHealth: React.FC = () => {
     }, [devices])
 
 
-
     const filteredDevices = useMemo(() => {
         const q = search.trim().toLowerCase()
 
@@ -132,6 +121,16 @@ const OrgDeviceHealth: React.FC = () => {
             return matchesSearch && matchesFilter
         })
     }, [deviceHealthData, search, filter])
+
+    const paginatedDevices = useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage
+        const end = currentPage * rowsPerPage
+        return filteredDevices.slice(start, end)
+    }, [filteredDevices, currentPage, rowsPerPage])
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [search, filter])
 
 
     const totalDevices = deviceHealthData.length
@@ -295,7 +294,7 @@ const OrgDeviceHealth: React.FC = () => {
                             </TableHeader>
 
                             <TableBody>
-                                {filteredDevices.map((device) => (
+                                {paginatedDevices.map((device) => (
                                     <TableRow key={device.deviceId}>
                                         <TableCell>{device.deviceId}</TableCell>
 
@@ -317,16 +316,15 @@ const OrgDeviceHealth: React.FC = () => {
                                         </TableCell>
 
                                         <TableCell>
-                                            <TableCell>
-                                                {device.signalBars === 0 ? (
-                                                    <SignalBars strength={0} />
-                                                ) : (
-                                                    <SignalBars
-                                                        strength={device.signalBars}
-                                                    />
-                                                )}
-                                            </TableCell>
+                                            {device.signalBars === 0 ? (
+                                                <SignalBars strength={0} />
+                                            ) : (
+                                                <SignalBars
+                                                    strength={device.signalBars}
+                                                />
+                                            )}
                                         </TableCell>
+
                                         <TableCell className="text-center text-muted-foreground">
                                             {formatLastActivity(device.updatedAt)}
                                         </TableCell>
@@ -367,35 +365,14 @@ const OrgDeviceHealth: React.FC = () => {
 
                 <Separator />
 
-                <div className="flex items-center justify-end gap-6 px-4">
-                    <Field orientation="horizontal" className="w-fit gap-2">
-                        <FieldLabel>Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="h-8 w-20">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
+                <DataPagination
+                    totalItems={filteredDevices.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
             </Card>
         </div>
     )

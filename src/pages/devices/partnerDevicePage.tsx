@@ -67,14 +67,17 @@ function PartnerDevice() {
 
             const data = await getDevicesByPartner(partnerId)
 
-            const items = (data.items ?? []) as Device[]
+            // const items = (data.items ?? []) as Device[]
 
-            const uniqueDevices: Device[] = Array.from(
-                new Map(
-                    items.map((d) => [d.deviceId, d])
-                ).values()
-            )
-            setAllDevices(uniqueDevices)
+            // const uniqueDevices: Device[] = Array.from(
+            //     new Map(
+            //         items.map((d) => [d.deviceId, d])
+            //     ).values()
+            // )
+
+            // setAllDevices(uniqueDevices)
+
+            setAllDevices(data.items ?? [])
 
         } catch (err: any) {
             console.error(err)
@@ -112,6 +115,7 @@ function PartnerDevice() {
         const end = currentPage * rowsPerPage
         return filteredDevices.slice(start, end)
     }, [filteredDevices, currentPage, rowsPerPage])
+
 
     useEffect(() => {
         setCurrentPage(1)

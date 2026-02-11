@@ -20,22 +20,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Field, FieldLabel } from "@/components/ui/field"
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
+
 import {
     MoreVertical,
     Eye,
@@ -50,6 +35,7 @@ import { getDevicesByPartner } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
 import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
+import DataPagination from "@/components/Pagination"
 
 
 const PartnerDeviceHealth: React.FC = () => {
@@ -64,6 +50,9 @@ const PartnerDeviceHealth: React.FC = () => {
     const [filter, setFilter] =
         useState<"all" | "online" | "idle" | "offline" | "alerts">("all")
 
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(8)
+
 
     useEffect(() => {
         if (!partnerId) return
@@ -74,6 +63,17 @@ const PartnerDeviceHealth: React.FC = () => {
                 setError(null)
 
                 const res = await getDevicesByPartner(partnerId)
+
+                // const items = (res.items ?? []) as Device[]
+
+                // const uniqueDevices: Device[] = Array.from(
+                //     new Map(
+                //         items.map((d) => [d.deviceId, d])
+                //     ).values()
+                // )
+
+                // setDevices(uniqueDevices)
+
                 setDevices(res.items ?? [])
             } catch (err: any) {
                 setError(err.message || "Failed to load device health")
@@ -131,6 +131,16 @@ const PartnerDeviceHealth: React.FC = () => {
             return matchesSearch && matchesFilter
         })
     }, [deviceHealthData, search, filter])
+
+    const paginatedDevices = useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage
+        const end = currentPage * rowsPerPage
+        return filteredDevices.slice(start, end)
+    }, [filteredDevices, currentPage, rowsPerPage])
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [search, filter])
 
 
     const totalDevices = deviceHealthData.length
@@ -295,7 +305,7 @@ const PartnerDeviceHealth: React.FC = () => {
                             </TableHeader>
 
                             <TableBody>
-                                {filteredDevices.map((device) => (
+                                {paginatedDevices.map((device) => (
                                     <TableRow key={device.deviceId}>
                                         <TableCell>{device.deviceId}</TableCell>
 
@@ -367,35 +377,14 @@ const PartnerDeviceHealth: React.FC = () => {
 
                 <Separator />
 
-                <div className="flex items-center justify-end gap-6 px-4">
-                    <Field orientation="horizontal" className="w-fit gap-2">
-                        <FieldLabel>Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="h-8 w-20">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
+                <DataPagination
+                    totalItems={filteredDevices.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
             </Card>
         </div>
     )
