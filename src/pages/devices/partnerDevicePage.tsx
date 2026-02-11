@@ -33,22 +33,14 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-    SelectGroup,
 } from "@/components/ui/select"
-import { Field, FieldLabel } from "@/components/ui/field"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
 
 import type { Device, DeviceStatus } from "@/types/device"
-import AddDevice from "@/components/device/PertnerAddDevice"
+import AddDevice from "@/components/device/PartnerAddDevice"
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
+import DataPagination from "@/components/DataPagination"
 
 function PartnerDevice() {
     const { user } = useAuth()
@@ -63,6 +55,9 @@ function PartnerDevice() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(8)
+
     const fetchDevices = useCallback(async () => {
         if (!partnerId) return
 
@@ -71,7 +66,16 @@ function PartnerDevice() {
             setError(null)
 
             const data = await getDevicesByPartner(partnerId)
-            setAllDevices(data.items ?? [])
+
+            const items = (data.items ?? []) as Device[]
+
+            const uniqueDevices: Device[] = Array.from(
+                new Map(
+                    items.map((d) => [d.deviceId, d])
+                ).values()
+            )
+            setAllDevices(uniqueDevices)
+
         } catch (err: any) {
             console.error(err)
             setError(err.message || "Failed to load devices")
@@ -102,6 +106,17 @@ function PartnerDevice() {
             return matchesSearch && matchesStatus
         })
     }, [allDevices, searchString, selectedDeviceStatus])
+
+    const paginatedDevices = useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage
+        const end = currentPage * rowsPerPage
+        return filteredDevices.slice(start, end)
+    }, [filteredDevices, currentPage, rowsPerPage])
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchString, selectedDeviceStatus])
+
 
     const statusCounts = useMemo(() => {
         return allDevices.reduce(
@@ -248,7 +263,7 @@ function PartnerDevice() {
                         </TableHeader>
 
                         <TableBody>
-                            {filteredDevices.map((device) => (
+                            {paginatedDevices.map((device) => (
                                 <TableRow key={device.deviceId}>
                                     <TableCell className="font-medium">
                                         {device.deviceId}
@@ -303,36 +318,14 @@ function PartnerDevice() {
 
                 <Separator />
 
-                {/* PAGINATION (UI only for now) */}
-                <div className="flex items-center justify-end gap-4 mr-4 py-3">
-                    <Field orientation="horizontal" className="w-fit">
-                        <FieldLabel>Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="w-20">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
+                <DataPagination
+                    totalItems={filteredDevices.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
             </Card>
 
             <AddDevice
