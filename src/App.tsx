@@ -4,7 +4,6 @@ import { RouterProvider } from 'react-router-dom';
 import router from '@/routes';
 
 // auth-provider
-// import { FirebaseProvider as AuthProvider } from '@/contexts/FirebaseContext';
 import { AWSCognitoProvider as AuthProvider } from '@/contexts/AWSCognitoContext';
 import { ThemeProvider } from './components/theme-provider';
 
