@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Staff } from "@/types/staff";
-import { getStaffByOrg, updateStaff } from "@/api/staff";
+import { useEffect, useState } from "react";
+import type { StaffProfile, User } from "@/types/users";
+import { getUsersByOrg, updateUser } from "@/api/users";
 import { toast } from "sonner";
 
 import {
@@ -25,125 +25,103 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-
 import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
 import useAuth from "@/hooks/useAuth";
 
-import AddStaffForm from "@/components/people/staff/AddStaffForm";
+import AddUserForm from "@/components/people/AddUserForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import DataPagination from "@/components/Pagination";
 
-type FilterStatus = "all" | "active" | "inactive";
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+
 type FormMode = "add" | "edit";
 
 const StaffPage: React.FC = () => {
     const { user } = useAuth();
     const orgId = user?.orgId;
 
-    const [staff, setStaff] = useState<Staff[]>([]);
-    const [search, setSearch] = useState("");
-    const [filterStatus, setFilterStatus] =
-        useState<FilterStatus>("all");
-
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [formMode, setFormMode] = useState<FormMode>("add");
-    const [selectedStaff, setSelectedStaff] =
-        useState<Staff | null>(null);
-
-    const [confirmStaff, setConfirmStaff] =
-        useState<Staff | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
     /* ================= FETCH ================= */
 
-    const fetchStaff = () => {
+    const fetchUsers = () => {
         if (!orgId) return;
 
         setLoading(true);
 
-        getStaffByOrg(orgId)
-            .then(setStaff)
+        getUsersByOrg(orgId)
+            .then((data) => {
+                const staff = data.filter(
+                    (u: User) => u.userType === "STAFF"
+                );
+                setUsers(staff);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchStaff();
+        fetchUsers();
     }, [orgId]);
+
+    /* ================= FILTER + PAGINATION ================= */
+
+    const {
+        search,
+        setSearch,
+        filterStatus,
+        setFilterStatus,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: users,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
 
     /* ================= STATUS TOGGLE ================= */
 
-    const toggleStaffStatus = async (staffMember: Staff) => {
+    const toggleUserStatus = async (user: User) => {
         if (!orgId) return;
 
         try {
-            await updateStaff({
-                staffId: staffMember.staffId,
-                orgId,
-                isActive: !staffMember.isActive,
+            await updateUser(orgId, user.userId, {
+                isActive: !user.isActive,
             });
 
             toast.success(
-                staffMember.isActive
+                user.isActive
                     ? "Staff suspended"
                     : "Staff activated"
             );
 
-            fetchStaff();
+            fetchUsers();
         } catch (error: any) {
             toast.error(error?.message || "Failed to update status");
         }
     };
 
-    /* ================= FILTER ================= */
-
-    const filteredStaff = useMemo(() => {
-        return staff.filter((s) => {
-            const matchesSearch = s.staffName
-                .toLowerCase()
-                .includes(search.toLowerCase());
-
-            const isActive = s.isActive !== false;
-
-            const matchesFilter =
-                filterStatus === "all"
-                    ? true
-                    : filterStatus === "active"
-                        ? isActive
-                        : !isActive;
-
-            return matchesSearch && matchesFilter;
-        });
-    }, [staff, search, filterStatus]);
-
     /* ================= COUNTS ================= */
 
-    const TOTAL = staff.length;
-    const ACTIVE_COUNT = staff.filter(
-        (s) => s.isActive !== false
+    const TOTAL = users.length;
+    const ACTIVE_COUNT = users.filter(
+        (u) => u.isActive !== false
     ).length;
-    const INACTIVE_COUNT = staff.filter(
-        (s) => s.isActive === false
+    const INACTIVE_COUNT = users.filter(
+        (u) => u.isActive === false
     ).length;
 
     /* ================= RENDER ================= */
@@ -167,7 +145,7 @@ const StaffPage: React.FC = () => {
                     <Button
                         className="gap-2 bg-primary"
                         onClick={() => {
-                            setSelectedStaff(null);
+                            setSelectedUser(null);
                             setFormMode("add");
                             setSidebarOpen(true);
                         }}
@@ -196,7 +174,7 @@ const StaffPage: React.FC = () => {
                 {/* Filters */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex gap-2">
-                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                        {(["all", "active", "inactive"] as const).map(
                             (status) => (
                                 <Button
                                     key={status}
@@ -221,7 +199,9 @@ const StaffPage: React.FC = () => {
                             className="pl-8 w-64"
                             placeholder="Search staff..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) =>
+                                setSearch(e.target.value)
+                            }
                         />
                     </div>
                 </div>
@@ -259,29 +239,28 @@ const StaffPage: React.FC = () => {
                                 )}
 
                                 {!loading &&
-                                    filteredStaff.map((s) => (
+                                    paginatedData.map((u) => (
                                         <TableRow
-                                            key={s.staffId}
+                                            key={u.userId}
                                             className={
-                                                s.isActive === false
+                                                u.isActive === false
                                                     ? "opacity-60"
                                                     : ""
                                             }
                                         >
                                             <TableCell className="font-medium">
-                                                {s.staffName}
+                                                {u.name}
                                             </TableCell>
 
                                             <TableCell>
-                                                {s.staffDesignation}
+                                                {(u.profile as StaffProfile)
+                                                    ?.designation}
                                             </TableCell>
 
-                                            <TableCell>
-                                                {s.staffPhone}
-                                            </TableCell>
+                                            <TableCell>{u.phone}</TableCell>
 
                                             <TableCell>
-                                                {s.rfidCode ?? (
+                                                {u.rfidCode ?? (
                                                     <Badge variant="destructive">
                                                         Invalid
                                                     </Badge>
@@ -289,7 +268,7 @@ const StaffPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell>
-                                                {s.isActive ? (
+                                                {u.isActive !== false ? (
                                                     <Badge className="bg-green-100 text-green-700">
                                                         Active
                                                     </Badge>
@@ -301,14 +280,16 @@ const StaffPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                {timeAgo(s.updatedAt)}
+                                                {timeAgo(u.updatedAt)}
                                             </TableCell>
 
-                                            {/* Actions */}
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button size="icon" variant="ghost">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -316,7 +297,7 @@ const StaffPage: React.FC = () => {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem
                                                             onClick={() => {
-                                                                setSelectedStaff(s);
+                                                                setSelectedUser(u);
                                                                 setFormMode("edit");
                                                                 setSidebarOpen(true);
                                                             }}
@@ -327,16 +308,16 @@ const StaffPage: React.FC = () => {
 
                                                         <DropdownMenuItem
                                                             className={
-                                                                s.isActive === false
+                                                                u.isActive === false
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                             onClick={() =>
-                                                                setConfirmStaff(s)
+                                                                setConfirmUser(u)
                                                             }
                                                         >
                                                             <Ban className="mr-2 h-4 w-4" />
-                                                            {s.isActive === false
+                                                            {u.isActive === false
                                                                 ? "Activate"
                                                                 : "Suspend"}
                                                         </DropdownMenuItem>
@@ -351,71 +332,45 @@ const StaffPage: React.FC = () => {
 
                     <Separator />
 
-                    {/* Pagination UI */}
-                    <div className="flex items-center justify-end gap-4 mr-4">
-                        <Field orientation="horizontal" className="w-fit">
-                            <FieldLabel>Rows per page</FieldLabel>
-                            <Select defaultValue="25">
-                                <SelectTrigger className="w-20">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
                 </Card>
             </div>
 
             {/* Sidebar Form */}
-            <AddStaffForm
+            <AddUserForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
                 mode={formMode}
-                staff={selectedStaff}
-                onSuccess={fetchStaff}
+                user={selectedUser}
+                onSuccess={fetchUsers}
+                defaultUserType="STAFF"
             />
 
             {/* Confirm Dialog */}
             <ConfirmDialog
-                open={!!confirmStaff}
+                open={!!confirmUser}
                 title={
-                    confirmStaff?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate Staff"
                         : "Suspend Staff"
                 }
-                description={
-                    confirmStaff?.isActive === false
-                        ? "This staff member will become active again."
-                        : "This staff member will be suspended."
-                }
+                description="Are you sure?"
                 confirmText={
-                    confirmStaff?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate"
                         : "Suspend"
                 }
-                onCancel={() => setConfirmStaff(null)}
+                onCancel={() => setConfirmUser(null)}
                 onConfirm={() => {
-                    if (confirmStaff) {
-                        toggleStaffStatus(confirmStaff);
-                        setConfirmStaff(null);
+                    if (confirmUser) {
+                        toggleUserStatus(confirmUser);
+                        setConfirmUser(null);
                     }
                 }}
             />

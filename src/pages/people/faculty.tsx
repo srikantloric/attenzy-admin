@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Faculty } from "@/types/faculty";
-import { getFaculty, updateFaculty } from "@/api/faculty";
+import { useEffect, useState } from "react";
+import type { FacultyProfile, User } from "@/types/users";
+import { getUsersByOrg, updateUser } from "@/api/users";
 import { toast } from "sonner";
 
 import {
@@ -25,125 +25,103 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-
 import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
 import useAuth from "@/hooks/useAuth";
 
-import AddFacultyForm from "@/components/people/faculty/AddFacultyForm";
+import AddUserForm from "@/components/people/AddUserForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import DataPagination from "@/components/Pagination";
 
-type FilterStatus = "all" | "active" | "inactive";
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+
 type FormMode = "add" | "edit";
 
 const FacultyPage: React.FC = () => {
     const { user } = useAuth();
     const orgId = user?.orgId;
 
-    const [faculty, setFaculty] = useState<Faculty[]>([]);
-    const [search, setSearch] = useState("");
-    const [filterStatus, setFilterStatus] =
-        useState<FilterStatus>("all");
-
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [formMode, setFormMode] = useState<FormMode>("add");
-    const [selectedFaculty, setSelectedFaculty] =
-        useState<Faculty | null>(null);
-
-    const [confirmFaculty, setConfirmFaculty] =
-        useState<Faculty | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
     /* ================= FETCH ================= */
 
-    const fetchFaculty = () => {
+    const fetchUsers = () => {
         if (!orgId) return;
 
         setLoading(true);
 
-        getFaculty(orgId)
-            .then(setFaculty)
+        getUsersByOrg(orgId)
+            .then((data) => {
+                const faculty = data.filter(
+                    (u: User) => u.userType === "FACULTY"
+                );
+                setUsers(faculty);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchFaculty();
+        fetchUsers();
     }, [orgId]);
+
+    /* ================= FILTER + PAGINATION ================= */
+
+    const {
+        search,
+        setSearch,
+        filterStatus,
+        setFilterStatus,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: users,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
 
     /* ================= STATUS TOGGLE ================= */
 
-    const toggleFacultyStatus = async (faculty: Faculty) => {
+    const toggleUserStatus = async (user: User) => {
         if (!orgId) return;
 
         try {
-            await updateFaculty({
-                facultyId: faculty.facultyId,
-                orgId,
-                isActive: !faculty.isActive,
+            await updateUser(orgId, user.userId, {
+                isActive: !user.isActive,
             });
 
             toast.success(
-                faculty.isActive
+                user.isActive
                     ? "Faculty suspended"
                     : "Faculty activated"
             );
 
-            fetchFaculty();
+            fetchUsers();
         } catch (error: any) {
             toast.error(error?.message || "Failed to update status");
         }
     };
 
-    /* ================= FILTER ================= */
-
-    const filteredFaculty = useMemo(() => {
-        return faculty.filter((f) => {
-            const matchesSearch = f.facultyName
-                .toLowerCase()
-                .includes(search.toLowerCase());
-
-            const isActive = f.isActive !== false;
-
-            const matchesFilter =
-                filterStatus === "all"
-                    ? true
-                    : filterStatus === "active"
-                        ? isActive
-                        : !isActive;
-
-            return matchesSearch && matchesFilter;
-        });
-    }, [faculty, search, filterStatus]);
-
     /* ================= COUNTS ================= */
 
-    const TOTAL = faculty.length;
-    const ACTIVE_COUNT = faculty.filter(
-        (f) => f.isActive !== false
+    const TOTAL = users.length;
+    const ACTIVE_COUNT = users.filter(
+        (u) => u.isActive !== false
     ).length;
-    const INACTIVE_COUNT = faculty.filter(
-        (f) => f.isActive === false
+    const INACTIVE_COUNT = users.filter(
+        (u) => u.isActive === false
     ).length;
 
     /* ================= RENDER ================= */
@@ -167,12 +145,11 @@ const FacultyPage: React.FC = () => {
                     <Button
                         className="gap-2 bg-primary"
                         onClick={() => {
-                            setSelectedFaculty(null);   
-                            setFormMode("add");         
+                            setSelectedUser(null);
+                            setFormMode("add");
                             setSidebarOpen(true);
                         }}
                     >
-
                         <Plus className="h-4 w-4" />
                         Add Faculty
                     </Button>
@@ -197,7 +174,7 @@ const FacultyPage: React.FC = () => {
                 {/* Filters */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex gap-2">
-                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                        {(["all", "active", "inactive"] as const).map(
                             (status) => (
                                 <Button
                                     key={status}
@@ -222,7 +199,9 @@ const FacultyPage: React.FC = () => {
                             className="pl-8 w-64"
                             placeholder="Search faculty..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) =>
+                                setSearch(e.target.value)
+                            }
                         />
                     </div>
                 </div>
@@ -260,29 +239,28 @@ const FacultyPage: React.FC = () => {
                                 )}
 
                                 {!loading &&
-                                    filteredFaculty.map((f) => (
+                                    paginatedData.map((u) => (
                                         <TableRow
-                                            key={f.facultyId}
+                                            key={u.userId}
                                             className={
-                                                f.isActive === false
+                                                u.isActive === false
                                                     ? "opacity-60"
                                                     : ""
                                             }
                                         >
                                             <TableCell className="font-medium">
-                                                {f.facultyName}
+                                                {u.name}
                                             </TableCell>
 
                                             <TableCell>
-                                                {f.facultyDepartment}
+                                                {(u.profile as FacultyProfile)
+                                                    ?.department}
                                             </TableCell>
 
-                                            <TableCell>
-                                                {f.facultyPhone}
-                                            </TableCell>
+                                            <TableCell>{u.phone}</TableCell>
 
                                             <TableCell>
-                                                {f.rfidCode ?? (
+                                                {u.rfidCode ?? (
                                                     <Badge variant="destructive">
                                                         Invalid
                                                     </Badge>
@@ -290,7 +268,7 @@ const FacultyPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell>
-                                                {f.isActive ? (
+                                                {u.isActive !== false ? (
                                                     <Badge className="bg-green-100 text-green-700">
                                                         Active
                                                     </Badge>
@@ -302,14 +280,16 @@ const FacultyPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                {timeAgo(f.updatedAt)}
+                                                {timeAgo(u.updatedAt)}
                                             </TableCell>
 
-                                            {/* Actions */}
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button size="icon" variant="ghost">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -317,7 +297,7 @@ const FacultyPage: React.FC = () => {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem
                                                             onClick={() => {
-                                                                setSelectedFaculty(f);
+                                                                setSelectedUser(u);
                                                                 setFormMode("edit");
                                                                 setSidebarOpen(true);
                                                             }}
@@ -328,16 +308,16 @@ const FacultyPage: React.FC = () => {
 
                                                         <DropdownMenuItem
                                                             className={
-                                                                f.isActive === false
+                                                                u.isActive === false
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                             onClick={() =>
-                                                                setConfirmFaculty(f)
+                                                                setConfirmUser(u)
                                                             }
                                                         >
                                                             <Ban className="mr-2 h-4 w-4" />
-                                                            {f.isActive === false
+                                                            {u.isActive === false
                                                                 ? "Activate"
                                                                 : "Suspend"}
                                                         </DropdownMenuItem>
@@ -352,81 +332,45 @@ const FacultyPage: React.FC = () => {
 
                     <Separator />
 
-                    {/* Pagination UI */}
-                    <div className="flex items-center justify-end gap-4 mr-4">
-                        <Field orientation="horizontal" className="w-fit">
-                            <FieldLabel>
-                                Rows per page
-                            </FieldLabel>
-                            <Select defaultValue="25">
-                                <SelectTrigger className="w-20">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="10">
-                                            10
-                                        </SelectItem>
-                                        <SelectItem value="25">
-                                            25
-                                        </SelectItem>
-                                        <SelectItem value="50">
-                                            50
-                                        </SelectItem>
-                                        <SelectItem value="100">
-                                            100
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
                 </Card>
             </div>
 
             {/* Sidebar Form */}
-            <AddFacultyForm
+            <AddUserForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
                 mode={formMode}
-                faculty={selectedFaculty}
-                onSuccess={fetchFaculty}
+                user={selectedUser}
+                onSuccess={fetchUsers}
+                defaultUserType="FACULTY"
             />
 
             {/* Confirm Dialog */}
             <ConfirmDialog
-                open={!!confirmFaculty}
+                open={!!confirmUser}
                 title={
-                    confirmFaculty?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate Faculty"
                         : "Suspend Faculty"
                 }
-                description={
-                    confirmFaculty?.isActive === false
-                        ? "This faculty will become active again."
-                        : "This faculty will be suspended."
-                }
+                description="Are you sure?"
                 confirmText={
-                    confirmFaculty?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate"
                         : "Suspend"
                 }
-                onCancel={() => setConfirmFaculty(null)}
+                onCancel={() => setConfirmUser(null)}
                 onConfirm={() => {
-                    if (confirmFaculty) {
-                        toggleFacultyStatus(confirmFaculty);
-                        setConfirmFaculty(null);
+                    if (confirmUser) {
+                        toggleUserStatus(confirmUser);
+                        setConfirmUser(null);
                     }
                 }}
             />

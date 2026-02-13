@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Student, StudentActiveStatus } from "@/types/student";
-import { getStudentsByOrg, updateStudent } from "@/api/students";
+import { useEffect, useState } from "react";
+import type { StudentProfile, User } from "@/types/users";
+import { getUsersByOrg, updateUser } from "@/api/users";
 import { toast } from "sonner";
 
 import {
@@ -25,126 +25,102 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-
 import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
 import useAuth from "@/hooks/useAuth";
 
-import AddStudentForm from "@/components/people/student/AddStudentForm";
+import AddUserForm from "@/components/people/AddUserForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import DataPagination from "@/components/Pagination";
 
-type FilterStatus = "all" | Lowercase<StudentActiveStatus>;
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+
 type FormMode = "add" | "edit";
 
 const StudentsPage: React.FC = () => {
     const { user } = useAuth();
     const orgId = user?.orgId;
 
-    const [students, setStudents] = useState<Student[]>([]);
-    const [search, setSearch] = useState("");
-    const [filterStatus, setFilterStatus] =
-        useState<FilterStatus>("all");
-
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [formMode, setFormMode] = useState<FormMode>("add");
-    const [selectedStudent, setSelectedStudent] =
-        useState<Student | null>(null);
-
-    const [confirmStudent, setConfirmStudent] =
-        useState<Student | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
     /* ================= FETCH ================= */
 
-    const fetchStudents = () => {
+    const fetchUsers = () => {
         if (!orgId) return;
 
         setLoading(true);
-        getStudentsByOrg(orgId)
-            .then(setStudents)
+        getUsersByOrg(orgId)
+            .then((data) => {
+                const students = data.filter(
+                    (u: User) => u.userType === "STUDENT"
+                );
+                setUsers(students);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchStudents();
+        fetchUsers();
     }, [orgId]);
+
+    /* ================= FILTER + PAGINATION ================= */
+
+    const {
+        search,
+        setSearch,
+        filterStatus,
+        setFilterStatus,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: users,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
 
     /* ================= STATUS TOGGLE ================= */
 
-    const toggleStudentStatus = async (student: Student) => {
+    const toggleUserStatus = async (user: User) => {
         if (!orgId) return;
 
         try {
-            await updateStudent({
-                studentId: student.studentId,
-                orgId,
-                isActive: !student.isActive,
+            await updateUser(orgId, user.userId, {
+                isActive: !user.isActive,
             });
 
             toast.success(
-                student.isActive
+                user.isActive
                     ? "Student suspended"
                     : "Student activated"
             );
 
-            fetchStudents();
+            fetchUsers();
         } catch (error: any) {
             toast.error(error?.message || "Failed to update status");
         }
     };
 
-
-
-    /* ================= FILTER ================= */
-
-    const filteredStudents = useMemo(() => {
-        return students.filter((student) => {
-            const matchesSearch = student.studentName
-                .toLowerCase()
-                .includes(search.toLowerCase());
-
-            const isActive = student.isActive !== false;
-
-            const matchesFilter =
-                filterStatus === "all"
-                    ? true
-                    : filterStatus === "active"
-                        ? isActive
-                        : !isActive;
-
-            return matchesSearch && matchesFilter;
-        });
-    }, [students, search, filterStatus]);
-
     /* ================= COUNTS ================= */
 
-    const TOTAL_STUDENTS = students.length;
-    const ACTIVE_COUNT = students.filter(
-        (s) => s.isActive !== false
+    const TOTAL = users.length;
+    const ACTIVE_COUNT = users.filter(
+        (u) => u.isActive !== false
     ).length;
-    const INACTIVE_COUNT = students.filter(
-        (s) => s.isActive === false
+    const INACTIVE_COUNT = users.filter(
+        (u) => u.isActive === false
     ).length;
 
     /* ================= RENDER ================= */
@@ -157,9 +133,11 @@ const StudentsPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-semibold">Students</h1>
+                        <h1 className="text-2xl font-semibold">
+                            Students
+                        </h1>
                         <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
-                            {TOTAL_STUDENTS}
+                            {TOTAL}
                         </span>
                     </div>
 
@@ -167,7 +145,7 @@ const StudentsPage: React.FC = () => {
                         className="gap-2 bg-primary"
                         onClick={() => {
                             setFormMode("add");
-                            setSelectedStudent(null);
+                            setSelectedUser(null);
                             setSidebarOpen(true);
                         }}
                     >
@@ -184,7 +162,9 @@ const StudentsPage: React.FC = () => {
                     </span>
                     <span className="ml-4">
                         Inactive:{" "}
-                        <span className="font-medium">{INACTIVE_COUNT}</span>
+                        <span className="font-medium">
+                            {INACTIVE_COUNT}
+                        </span>
                     </span>
                 </div>
 
@@ -193,7 +173,7 @@ const StudentsPage: React.FC = () => {
                 {/* Filters */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex gap-2">
-                        {(["all", "active", "inactive"] as FilterStatus[]).map(
+                        {(["all", "active", "inactive"] as const).map(
                             (status) => (
                                 <Button
                                     key={status}
@@ -218,7 +198,9 @@ const StudentsPage: React.FC = () => {
                             className="pl-8 w-64"
                             placeholder="Search students..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) =>
+                                setSearch(e.target.value)
+                            }
                         />
                     </div>
                 </div>
@@ -256,30 +238,31 @@ const StudentsPage: React.FC = () => {
                                 )}
 
                                 {!loading &&
-                                    filteredStudents.map((student) => (
+                                    paginatedData.map((user) => (
                                         <TableRow
-                                            key={student.studentId}
+                                            key={user.userId}
                                             className={
-                                                student.isActive === false
+                                                user.isActive === false
                                                     ? "opacity-60"
                                                     : ""
                                             }
                                         >
                                             <TableCell className="font-medium">
-                                                {student.studentName}
+                                                {user.name}
+                                            </TableCell>
+
+                                            <TableCell>{user.phone}</TableCell>
+
+                                            <TableCell>
+                                                {(user.profile as StudentProfile)
+                                                    ?.class}
+                                                -
+                                                {(user.profile as StudentProfile)
+                                                    ?.section}
                                             </TableCell>
 
                                             <TableCell>
-                                                {student.studentPhone}
-                                            </TableCell>
-
-                                            <TableCell>
-                                                {student.studentClass}-
-                                                {student.studentSection}
-                                            </TableCell>
-
-                                            <TableCell>
-                                                {student.rfidCode ?? (
+                                                {user.rfidCode ?? (
                                                     <Badge variant="destructive">
                                                         Invalid
                                                     </Badge>
@@ -287,7 +270,7 @@ const StudentsPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell>
-                                                {student.isActive ? (
+                                                {user.isActive !== false ? (
                                                     <Badge className="bg-green-100 text-green-700">
                                                         Active
                                                     </Badge>
@@ -299,14 +282,16 @@ const StudentsPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                {timeAgo(student.updatedAt)}
+                                                {timeAgo(user.updatedAt)}
                                             </TableCell>
 
-                                            {/* Actions */}
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button size="icon" variant="ghost">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -314,7 +299,7 @@ const StudentsPage: React.FC = () => {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem
                                                             onClick={() => {
-                                                                setSelectedStudent(student);
+                                                                setSelectedUser(user);
                                                                 setFormMode("edit");
                                                                 setSidebarOpen(true);
                                                             }}
@@ -325,16 +310,16 @@ const StudentsPage: React.FC = () => {
 
                                                         <DropdownMenuItem
                                                             className={
-                                                                student.isActive === false
+                                                                user.isActive === false
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                             onClick={() =>
-                                                                setConfirmStudent(student)
+                                                                setConfirmUser(user)
                                                             }
                                                         >
                                                             <Ban className="mr-2 h-4 w-4" />
-                                                            {student.isActive === false
+                                                            {user.isActive === false
                                                                 ? "Activate"
                                                                 : "Suspend"}
                                                         </DropdownMenuItem>
@@ -349,74 +334,52 @@ const StudentsPage: React.FC = () => {
 
                     <Separator />
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end gap-4 mr-4">
-                        <Field orientation="horizontal" className="w-fit">
-                            <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
-                            <Select defaultValue="25">
-                                <SelectTrigger className="w-20" id="select-rows-per-page">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent align="start">
-                                    <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
                 </Card>
             </div>
 
             {/* Sidebar Form */}
-            <AddStudentForm
+            <AddUserForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
                 mode={formMode}
-                student={selectedStudent}
-                onSuccess={fetchStudents}
+                user={selectedUser}
+                onSuccess={fetchUsers}
+                defaultUserType="STUDENT"
             />
 
-            {/* Confirmation Dialog */}
+            {/* Confirm Dialog */}
             <ConfirmDialog
-                open={!!confirmStudent}
+                open={!!confirmUser}
                 title={
-                    confirmStudent?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate Student"
                         : "Suspend Student"
                 }
                 description={
-                    confirmStudent?.isActive === false
+                    confirmUser?.isActive === false
                         ? "This student will become active again."
-                        : "This student will be suspended and lose access."
+                        : "This student will be suspended."
                 }
                 confirmText={
-                    confirmStudent?.isActive === false
+                    confirmUser?.isActive === false
                         ? "Activate"
                         : "Suspend"
                 }
-                onCancel={() => setConfirmStudent(null)}
+                onCancel={() => setConfirmUser(null)}
                 onConfirm={() => {
-                    if (confirmStudent) {
-                        toggleStudentStatus(confirmStudent)
-                        setConfirmStudent(null)
+                    if (confirmUser) {
+                        toggleUserStatus(confirmUser);
+                        setConfirmUser(null);
                     }
                 }}
             />
-
         </>
     );
 };
