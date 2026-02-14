@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/pagination";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import useAuth from "@/hooks/useAuth";
 
 const TOTAL_STUDENTS = 1200;
 const RFID_ISSUED = 950;
@@ -53,6 +54,14 @@ const RFIDMappingPage: React.FC = () => {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<RFIDStatus | "all">("all");
     const [assignOpen, setAssignOpen] = useState(false);
+
+    const { user } = useAuth();
+    const orgId = user?.orgId;
+
+    if (!orgId) {
+        return null; // or loading spinner
+    }
+
 
     const filteredData = useMemo<RFIDMapping[]>(() => {
         return rfidMappingData.filter((item) => {
@@ -292,6 +301,7 @@ const RFIDMappingPage: React.FC = () => {
             <AssignRFIDSidebar
                 open={assignOpen}
                 onOpenChange={setAssignOpen}
+                orgId={orgId}
             />
 
         </>

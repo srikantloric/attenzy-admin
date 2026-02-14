@@ -32,6 +32,12 @@ export interface FacultyProfile {
   subjects: string[];
 }
 
+export interface AssignRFIDResponse {
+  message: string;
+  userId: string;
+  rfidCode: string;
+}
+
 /* ================= FULL USER (DISCRIMINATED UNION) ================= */
 
 export interface StudentUser extends BaseUser {
@@ -118,3 +124,4 @@ export type UpdateUserPayload =
     profile?: Partial<FacultyProfile>;
     isActive?: boolean;
   };
+

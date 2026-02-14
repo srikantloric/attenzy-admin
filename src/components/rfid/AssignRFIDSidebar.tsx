@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Sheet,
     SheetContent,
     SheetHeader,
     SheetTitle,
-    SheetDescription
+    SheetDescription,
 } from "@/components/ui/sheet";
 
 import { Button } from "@/components/ui/button";
@@ -15,130 +15,80 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue
+    SelectValue,
 } from "@/components/ui/select";
 
-import { Calendar } from "@/components/ui/calendar";
-
-import { db } from "@/contexts/FirebaseContext";
 import {
-    collection,
-    getDocs,
-    updateDoc,
-    doc,
-    Timestamp
-} from "firebase/firestore";
+    Combobox,
+    ComboboxInput,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxList,
+    ComboboxItem,
+} from "@/components/ui/combobox";
 
 import { toast } from "sonner";
 
-type AssignType = "student" | "faculty" | "staff";
-
-interface PersonOption {
-    docId: string;   // Firestore document id
-    name: string;
-}
+import type { User, UserType } from "@/types/users";
+import {
+    getUsersByOrg,
+    assignOrUpdateRFID,
+} from "@/api/users";
 
 interface AssignRFIDSidebarProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    orgId: string;
 }
 
 export const AssignRFIDSidebar = ({
     open,
-    onOpenChange
+    onOpenChange,
+    orgId,
 }: AssignRFIDSidebarProps) => {
-    const [assignType, setAssignType] = useState<AssignType>("student");
-    const [people, setPeople] = useState<PersonOption[]>([]);
-    const [selectedPerson, setSelectedPerson] = useState<string>("");
+    const [assignType, setAssignType] =
+        useState<UserType>("STUDENT");
+
+    const [users, setUsers] = useState<User[]>([]);
+    const [selectedUserId, setSelectedUserId] =
+        useState<string>("");
 
     const [rfidCard, setRfidCard] = useState("");
-    const [date, setDate] = useState<Date | undefined>(new Date());
+
     const [loading, setLoading] = useState(false);
 
-    const [rfidConflict, setRfidConflict] = useState(false);
-    const [_, setCheckingRFID] = useState(false);
 
-    /* ---------------------------------------------
-       Load people based on selected type
-    --------------------------------------------- */
     useEffect(() => {
-        const fetchPeople = async () => {
-            const snapshot = await getDocs(
-                collection(db, assignType === "student"
-                    ? "students"
-                    : assignType === "faculty"
-                        ? "faculty"
-                        : "staff")
-            );
-
-            const data: PersonOption[] = snapshot.docs.map((doc) => ({
-                docId: doc.id,
-                name: doc.data().name
-            }));
-
-            setPeople(data);
-            setSelectedPerson("");
+        const fetchUsers = async () => {
+            try {
+                const data = await getUsersByOrg(orgId);
+                setUsers(data);
+            } catch (error) {
+                toast.error("Failed to load users");
+            }
         };
 
-        fetchPeople();
-    }, [assignType]);
-
-    const resetForm = () => {
-        setAssignType("student");
-        setPeople([]);
-        setSelectedPerson("");
-        setRfidCard("");
-        setDate(new Date());
-        setRfidConflict(false);
-        setCheckingRFID(false);
-    };
+        if (open) fetchUsers();
+    }, [open, orgId]);
 
 
-    /* ---------------------------------------------
-       Assign RFID
-    --------------------------------------------- */
+    const filteredUsers = useMemo(() => {
+        return users.filter(
+            (user) => user.userType === assignType
+        );
+    }, [users, assignType]);
 
-    const checkRFIDGlobally = async (rfidCode: string) => {
-        if (!rfidCode) return;
 
-        setCheckingRFID(true);
 
-        const collectionsToCheck = ["students", "faculty", "staff"];
-
-        try {
-            for (const col of collectionsToCheck) {
-                const snapshot = await getDocs(collection(db, col));
-
-                const found = snapshot.docs.find(
-                    (doc) => doc.data().rfidCode === rfidCode
-                );
-
-                if (found) {
-                    setRfidConflict(true);
-
-                    toast.error("RFID already assigned", {
-                        description: `This RFID is already assigned to a ${col.slice(0, -1)}.`
-                    });
-
-                    setCheckingRFID(false);
-                    return;
-                }
-            }
-
-            // ✅ RFID is free
-            setRfidConflict(false);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setCheckingRFID(false);
-        }
-    };
+    const selectedUser = filteredUsers.find(
+        (u) => u.userId === selectedUserId
+    );
 
 
     const handleAssign = async () => {
-        if (!selectedPerson || !rfidCard || !date) {
+        if (!selectedUserId || !rfidCard) {
             toast.warning("Missing information", {
-                description: "Please fill all required fields."
+                description: "Please select user and enter RFID.",
             });
             return;
         }
@@ -146,39 +96,37 @@ export const AssignRFIDSidebar = ({
         try {
             setLoading(true);
 
-            const collectionName =
-                assignType === "student"
-                    ? "students"
-                    : assignType === "faculty"
-                        ? "faculty"
-                        : "staff";
-
-            await updateDoc(
-                doc(db, collectionName, selectedPerson),
-                {
-                    rfidCode: rfidCard,
-                    rfidAssignedAt: Timestamp.fromDate(date)
-                }
+            const res = await assignOrUpdateRFID(
+                orgId,
+                selectedUserId,
+                rfidCard
             );
 
-            toast.success("RFID Assigned", {
-                description: `RFID card assigned successfully.`
-            });
+            toast.success(res.message);
 
             onOpenChange(false);
-        } catch (error) {
-            console.error(error);
-
-            toast.error("Assignment failed", {
-                description: "Something went wrong while assigning RFID."
-            });
+            resetForm();
+        } catch (error: any) {
+            toast.error(
+                error.message || "RFID assignment failed"
+            );
         } finally {
             setLoading(false);
         }
     };
 
+    const resetForm = () => {
+        setAssignType("STUDENT");
+        setSelectedUserId("");
+        setRfidCard("");
+    };
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
+        <Sheet
+            modal={false}
+            open={open}
+            onOpenChange={onOpenChange}
+        >
             <SheetContent
                 side="right"
                 className="w-full sm:max-w-lg px-8 py-6"
@@ -186,50 +134,101 @@ export const AssignRFIDSidebar = ({
                 <SheetHeader className="-ml-4">
                     <SheetTitle>Assign RFID Card</SheetTitle>
                     <SheetDescription>
-                        Assign an RFID card to a student, faculty, or staff
+                        Assign RFID to a student, faculty, or staff
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="space-y-5">
-
+                <div className="space-y-6 mt-6">
                     {/* Assign Type */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Assign RFID To</label>
+                        <label className="text-sm font-medium">
+                            Assign RFID To
+                        </label>
                         <Select
                             value={assignType}
-                            onValueChange={(v) => setAssignType(v as AssignType)}
+                            onValueChange={(v) =>
+                                setAssignType(v as UserType)
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="student">Student</SelectItem>
-                                <SelectItem value="faculty">Faculty</SelectItem>
-                                <SelectItem value="staff">Staff</SelectItem>
+                                <SelectItem value="STUDENT">
+                                    Student
+                                </SelectItem>
+                                <SelectItem value="STAFF">
+                                    Staff
+                                </SelectItem>
+                                <SelectItem value="FACULTY">
+                                    Faculty
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Select Person */}
+                    {/* Combobox User Select */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium">
                             Select {assignType}
                         </label>
-                        <Select
-                            value={selectedPerson}
-                            onValueChange={setSelectedPerson}
+
+                        <Combobox
+                            items={filteredUsers.map(
+                                (u) => `${u.name}::${u.userId}`
+                            )}
+                            value={
+                                selectedUserId
+                                    ? (() => {
+                                        const user = users.find(
+                                            (u) => u.userId === selectedUserId
+                                        );
+                                        return user
+                                            ? `${user.name}::${user.userId}`
+                                            : "";
+                                    })()
+                                    : ""
+                            }
+
+                            onValueChange={(value) => {
+                                if (!value) return;
+
+                                const [, userId] = value.split("::");
+                                setSelectedUserId(userId);
+                            }}
                         >
-                            <SelectTrigger>
-                                <SelectValue placeholder={`Select ${assignType}`} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {people.map((p) => (
-                                    <SelectItem key={p.docId} value={p.docId}>
-                                        {p.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            <ComboboxInput
+                                placeholder={`Search ${assignType.toLowerCase()} by name or ID`}
+                            />
+
+                            <ComboboxContent className="max-h-60 overflow-y-auto">
+                                <ComboboxEmpty>
+                                    No users found.
+                                </ComboboxEmpty>
+
+                                <ComboboxList>
+                                    {(id) => {
+                                        const [, userId] = id.split("::");
+
+                                        const user = users.find(
+                                            (u) => u.userId === userId
+                                        );
+                                        if (!user) return null;
+
+                                        return (
+                                            <ComboboxItem
+                                                key={user.userId}
+                                                value={`${user.name}::${user.userId}`}
+                                            >
+                                                {user.name} ({user.userId})
+                                            </ComboboxItem>
+                                        );
+                                    }}
+                                </ComboboxList>
+
+                            </ComboboxContent>
+                        </Combobox>
+
                     </div>
 
                     {/* RFID Card */}
@@ -240,37 +239,14 @@ export const AssignRFIDSidebar = ({
                         <Input
                             placeholder="Scan or enter RFID card number"
                             value={rfidCard}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setRfidCard(value);
-
-                                if (value.length >= 6) {
-                                    checkRFIDGlobally(value);
-                                }
-                            }}
-                        />
-
-                    </div>
-
-                    {/* Effective Date */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Effective From
-                        </label>
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            className="rounded-md border"
-                            classNames={{
-                                day_selected:
-                                    "bg-primary text-primary-foreground hover:bg-primary"
-                            }}
+                            onChange={(e) =>
+                                setRfidCard(e.target.value)
+                            }
                         />
                     </div>
 
                     {/* Actions */}
-                    <div className="flex justify-end gap-3 pt-6">
+                    <div className="flex justify-end gap-3 pt-4">
                         <Button
                             variant="outline"
                             onClick={() => {
@@ -282,21 +258,18 @@ export const AssignRFIDSidebar = ({
                             Cancel
                         </Button>
 
-
                         <Button
-                            className="bg-primary"
                             onClick={handleAssign}
                             disabled={
                                 loading ||
-                                rfidConflict ||
-                                !rfidCard ||
-                                !selectedPerson ||
-                                !date
+                                !selectedUserId ||
+                                !rfidCard
                             }
                         >
-                            {loading ? "Assigning..." : "Assign RFID"}
+                            {loading
+                                ? "Assigning..."
+                                : "Assign RFID"}
                         </Button>
-
                     </div>
                 </div>
             </SheetContent>
