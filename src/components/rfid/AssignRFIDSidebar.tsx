@@ -254,6 +254,7 @@ export const AssignRFIDSidebar = ({
                         </Button>
 
                         <Button
+                            className="bg-primary"
                             onClick={() => setConfirmOpen(true)}
                             disabled={
                                 loading ||

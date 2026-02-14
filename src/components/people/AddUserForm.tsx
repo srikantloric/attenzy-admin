@@ -203,6 +203,7 @@ const AddUserForm = ({
                         </Button>
 
                         <Button
+                            className="bg-primary"
                             type="submit"
                             disabled={!isValid || isSubmitting || (mode === "edit" && !isDirty)}
                         >
