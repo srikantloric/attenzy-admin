@@ -212,7 +212,6 @@ const StudentsPage: React.FC = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>#</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Contact</TableHead>
                                     <TableHead>Class & Section</TableHead>
@@ -269,9 +268,6 @@ const StudentsPage: React.FC = () => {
                                                 </div>
 
                                             </TableCell>
-                                            {/* <TableCell className="font-medium">
-                                                {user.name}
-                                            </TableCell> */}
 
                                             <TableCell>{user.phone}</TableCell>
 
@@ -363,6 +359,7 @@ const StudentsPage: React.FC = () => {
                         rowsPerPage={rowsPerPage}
                         setRowsPerPage={setRowsPerPage}
                     />
+                    
                 </Card>
             </div>
 

@@ -1,5 +1,5 @@
 import type { UserFormValues } from "@/schemas/user.schema";
-import type { UpdateUserPayload } from "@/types/users";
+import type { AssignRFIDResponse, UpdateUserPayload } from "@/types/users";
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -55,6 +55,33 @@ export async function updateUser(
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error?.message || "Failed to update user");
+  }
+
+  return res.json();
+}
+
+
+export async function assignOrUpdateRFID(
+  orgId: string,
+  userId: string,
+  rfidCode: string
+): Promise<AssignRFIDResponse> {
+  const res = await fetch(
+    `${BACKEND_BASE_URL}/orgs/${orgId}/users/${userId}/rfid`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ rfidCode }),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(
+      error?.message || "Failed to assign RFID"
+    );
   }
 
   return res.json();

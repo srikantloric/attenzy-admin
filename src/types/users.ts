@@ -29,7 +29,13 @@ export interface StaffProfile {
 
 export interface FacultyProfile {
   department: string;
-  subjects: string[];
+  subjects: string;
+}
+
+export interface AssignRFIDResponse {
+  message: string;
+  userId: string;
+  rfidCode: string;
 }
 
 /* ================= FULL USER (DISCRIMINATED UNION) ================= */
@@ -118,3 +124,4 @@ export type UpdateUserPayload =
     profile?: Partial<FacultyProfile>;
     isActive?: boolean;
   };
+
