@@ -36,6 +36,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type FormMode = "add" | "edit";
 
@@ -211,6 +212,7 @@ const StudentsPage: React.FC = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>#</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Contact</TableHead>
                                     <TableHead>Class & Section</TableHead>
@@ -247,9 +249,29 @@ const StudentsPage: React.FC = () => {
                                                     : ""
                                             }
                                         >
-                                            <TableCell className="font-medium">
-                                                {user.name}
+                                            <TableCell className="flex gap-2 items-center">
+                                                <Avatar>
+                                                    <AvatarImage
+                                                        src="https://github.com/shadcn.png"
+                                                        alt="@shadcn"
+                                                    >
+
+                                                    </AvatarImage>
+                                                    <AvatarFallback>CN</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <p className="font-bold">
+                                                        {user.name.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-foreground text-xs font-normal">
+                                                        {user.userId}
+                                                    </p>
+                                                </div>
+
                                             </TableCell>
+                                            {/* <TableCell className="font-medium">
+                                                {user.name}
+                                            </TableCell> */}
 
                                             <TableCell>{user.phone}</TableCell>
 
