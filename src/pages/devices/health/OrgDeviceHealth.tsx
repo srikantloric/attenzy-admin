@@ -35,7 +35,6 @@ import { listOrgDevices } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
 import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
-import { Pagination } from "@/components/ui/pagination"
 import DataPagination from "@/components/Pagination"
 
 
@@ -64,6 +63,7 @@ const OrgDeviceHealth: React.FC = () => {
                 setError(null)
 
                 const res = await listOrgDevices(orgId)
+                console.log(res)
                 setDevices(res.items ?? [])
             } catch (err: any) {
                 setError(err.message || "Failed to load device health")
@@ -78,6 +78,7 @@ const OrgDeviceHealth: React.FC = () => {
 
     const deviceHealthData = useMemo(() => {
         return devices.map((device) => {
+            console.log(device)
             const uiStatus = mapStatusToUi(device.status)
 
             const signalBars =

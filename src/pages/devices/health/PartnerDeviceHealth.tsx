@@ -34,7 +34,7 @@ import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
 import type { Device } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
-import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
+import { formatLastActivity, formatUptime, mapStatusToUi, rssiToBars } from "@/utils/device"
 import DataPagination from "@/components/Pagination"
 
 
@@ -47,8 +47,7 @@ const PartnerDeviceHealth: React.FC = () => {
     const [error, setError] = useState<string | null>(null)
 
     const [search, setSearch] = useState("")
-    const [filter, setFilter] =
-        useState<"all" | "online" | "idle" | "offline" | "alerts">("all")
+    const [filter, setFilter] = useState<"ALL" | "ONLINE" | "IDLE" | "OFFLINE" | "ALERTS">("ALL")
 
     const [currentPage, setCurrentPage] = useState(1)
     const [rowsPerPage, setRowsPerPage] = useState(8)
@@ -63,16 +62,7 @@ const PartnerDeviceHealth: React.FC = () => {
                 setError(null)
 
                 const res = await getDevicesByPartner(partnerId)
-
-                // const items = (res.items ?? []) as Device[]
-
-                // const uniqueDevices: Device[] = Array.from(
-                //     new Map(
-                //         items.map((d) => [d.deviceId, d])
-                //     ).values()
-                // )
-
-                // setDevices(uniqueDevices)
+                console.log(res)
 
                 setDevices(res.items ?? [])
             } catch (err: any) {
@@ -122,9 +112,9 @@ const PartnerDeviceHealth: React.FC = () => {
                 device.location.toLowerCase().includes(q)
 
             const matchesFilter =
-                filter === "all"
+                filter === "ALL"
                     ? true
-                    : filter === "alerts"
+                    : filter === "ALERTS"
                         ? device.alerts > 0
                         : device.uiStatus === filter
 
@@ -144,9 +134,9 @@ const PartnerDeviceHealth: React.FC = () => {
 
 
     const totalDevices = deviceHealthData.length
-    const onlineCount = deviceHealthData.filter(d => d.uiStatus === "online").length
-    const idleCount = deviceHealthData.filter(d => d.uiStatus === "idle").length
-    const offlineCount = deviceHealthData.filter(d => d.uiStatus === "offline").length
+    const onlineCount = deviceHealthData.filter(d => d.uiStatus === "ONLINE").length
+    const idleCount = deviceHealthData.filter(d => d.uiStatus === "IDLE").length
+    const offlineCount = deviceHealthData.filter(d => d.uiStatus === "OFFLINE").length
 
 
     if (!partnerId) {
@@ -207,16 +197,16 @@ const PartnerDeviceHealth: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <Button
                         size="sm"
-                        variant={filter === "all" ? "default" : "outline"}
-                        onClick={() => setFilter("all")}
+                        variant={filter === "ALL" ? "default" : "outline"}
+                        onClick={() => setFilter("ALL")}
                     >
                         All
                     </Button>
 
                     <Button
                         size="sm"
-                        variant={filter === "online" ? "default" : "outline"}
-                        onClick={() => setFilter("online")}
+                        variant={filter === "ONLINE" ? "default" : "outline"}
+                        onClick={() => setFilter("ONLINE")}
                     >
                         Online
                         <Badge variant="secondary" className="ml-2">
@@ -226,8 +216,8 @@ const PartnerDeviceHealth: React.FC = () => {
 
                     <Button
                         size="sm"
-                        variant={filter === "idle" ? "default" : "outline"}
-                        onClick={() => setFilter("idle")}
+                        variant={filter === "IDLE" ? "default" : "outline"}
+                        onClick={() => setFilter("IDLE")}
                     >
                         Idle
                         <Badge className="ml-2 bg-yellow-100 text-yellow-700">
@@ -237,8 +227,8 @@ const PartnerDeviceHealth: React.FC = () => {
 
                     <Button
                         size="sm"
-                        variant={filter === "offline" ? "default" : "outline"}
-                        onClick={() => setFilter("offline")}
+                        variant={filter === "OFFLINE" ? "default" : "outline"}
+                        onClick={() => setFilter("OFFLINE")}
                     >
                         Offline
                         <Badge variant="destructive" className="ml-2">
@@ -297,6 +287,7 @@ const PartnerDeviceHealth: React.FC = () => {
                                     <TableHead>Location</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Signal</TableHead>
+                                    <TableHead>Uptime</TableHead>
                                     <TableHead className="text-center">
                                         Last Activity
                                     </TableHead>
@@ -314,16 +305,15 @@ const PartnerDeviceHealth: React.FC = () => {
                                         <TableCell>
                                             <Badge
                                                 className={
-                                                    device.uiStatus === "online"
-                                                        ? "bg-primary"
-                                                        : device.uiStatus === "idle"
-                                                            ? "bg-yellow-100 text-yellow-700"
-                                                            : "bg-destructive"
+                                                    device.uiStatus === "ONLINE"
+                                                        ? "bg-green-600! text-white! hover:bg-green-600!"
+                                                        : device.uiStatus === "IDLE"
+                                                            ? "bg-yellow-500! text-black! hover:bg-yellow-500!"
+                                                            : "bg-red-600! text-white! hover:bg-red-600!"
                                                 }
                                             >
                                                 {device.uiStatus}
                                             </Badge>
-
                                         </TableCell>
 
                                         <TableCell>
@@ -336,6 +326,9 @@ const PartnerDeviceHealth: React.FC = () => {
                                                     />
                                                 )}
                                             </TableCell>
+                                        </TableCell>
+                                        <TableCell>
+                                            {formatUptime(device.uptime)}
                                         </TableCell>
                                         <TableCell className="text-center text-muted-foreground">
                                             {formatLastActivity(device.updatedAt)}

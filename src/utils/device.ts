@@ -11,21 +11,21 @@ export const rssiToBars = (rssi?: number): number => {
 
 export const mapStatusToUi = (
     status: Device["status"]
-): "online" | "idle" | "offline" => {
+): "ONLINE" | "IDLE" | "OFFLINE" => {
     switch (status) {
         case "ONLINE":
-            return "online"
+            return "ONLINE"
 
         case "IDLE":
         case "SYNCHRONIZING":
-            return "idle"
+            return "IDLE"
 
         case "OFFLINE":
         case "INACTIVE":
         case "MAINTENANCE":
         case "DECOMMISSIONED":
         default:
-            return "offline"
+            return "OFFLINE"
     }
 }
 
@@ -49,4 +49,18 @@ export const formatLastActivity = (timestamp?: number) => {
     if (days < 7) return `${days} days ago`
 
     return new Date(timestamp).toDateString()
+}
+
+export const formatUptime = (uptimeSeconds: number): string => {
+    if (!uptimeSeconds || uptimeSeconds <= 0) return "—"
+
+    const days = Math.floor(uptimeSeconds / 86400)
+    const hours = Math.floor((uptimeSeconds % 86400) / 3600)
+    const minutes = Math.floor((uptimeSeconds % 3600) / 60)
+    const seconds = Math.floor(uptimeSeconds % 60)
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`
+    if (hours > 0) return `${hours}h ${minutes}m`
+    if (minutes > 0) return `${minutes}m ${seconds}s`
+    return `${seconds}s`
 }

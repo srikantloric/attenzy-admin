@@ -30,6 +30,10 @@ export interface Device {
   }
 
   lastSeen: number
+  uptime: number
+
+  freeHeap: number
+  totalHeap: number
 
   createdAt: number
   updatedAt: number
