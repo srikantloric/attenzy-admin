@@ -34,6 +34,7 @@ import {
     getUsersByOrg,
     assignOrUpdateRFID,
 } from "@/api/users";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 interface AssignRFIDSidebarProps {
     open: boolean;
@@ -56,7 +57,7 @@ export const AssignRFIDSidebar = ({
     const [rfidCard, setRfidCard] = useState("");
 
     const [loading, setLoading] = useState(false);
-
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -77,12 +78,6 @@ export const AssignRFIDSidebar = ({
             (user) => user.userType === assignType
         );
     }, [users, assignType]);
-
-
-
-    const selectedUser = filteredUsers.find(
-        (u) => u.userId === selectedUserId
-    );
 
 
     const handleAssign = async () => {
@@ -259,20 +254,34 @@ export const AssignRFIDSidebar = ({
                         </Button>
 
                         <Button
-                            onClick={handleAssign}
+                            onClick={() => setConfirmOpen(true)}
                             disabled={
                                 loading ||
                                 !selectedUserId ||
                                 !rfidCard
                             }
                         >
-                            {loading
-                                ? "Assigning..."
-                                : "Assign RFID"}
+                            Assign RFID
                         </Button>
+
                     </div>
                 </div>
             </SheetContent>
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="Confirm RFID Assignment"
+                description="Are you sure you want to assign this RFID card to the selected user?"
+                confirmText="Assign"
+                cancelText="Cancel"
+                variant="default"
+                onConfirm={async () => {
+                    setConfirmOpen(false);
+                    await handleAssign();
+                }}
+                onCancel={() => setConfirmOpen(false)}
+            />
+
         </Sheet>
     );
 };

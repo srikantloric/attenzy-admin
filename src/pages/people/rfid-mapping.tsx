@@ -1,6 +1,4 @@
-import { useMemo, useState } from "react";
-import { rfidMappingData } from "@/data/rfidMapping";
-import type { RFIDMapping, RFIDStatus } from "@/data/rfidMapping";
+import { useEffect, useMemo, useState } from "react";
 import { AssignRFIDSidebar } from "@/components/rfid/AssignRFIDSidebar";
 
 import {
@@ -9,7 +7,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table";
 
 import { Input } from "@/components/ui/input";
@@ -17,77 +15,102 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-
 import { Search, Plus } from "lucide-react";
 
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
-
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious
-} from "@/components/ui/pagination";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import useAuth from "@/hooks/useAuth";
+import { toast } from "sonner";
 
-const TOTAL_STUDENTS = 1200;
-const RFID_ISSUED = 950;
+import type { User, UserType } from "@/types/users";
+import { getUsersByOrg } from "@/api/users";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+import DataPagination from "@/components/Pagination";
 
 const RFIDMappingPage: React.FC = () => {
-    const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState<RFIDStatus | "all">("all");
-    const [assignOpen, setAssignOpen] = useState(false);
-
     const { user } = useAuth();
     const orgId = user?.orgId;
 
-    if (!orgId) {
-        return null; // or loading spinner
-    }
+    const [users, setUsers] = useState<User[]>([]);
+    const [activeTab, setActiveTab] =
+        useState<UserType>("STUDENT");
+    const [assignOpen, setAssignOpen] = useState(false);
 
 
-    const filteredData = useMemo<RFIDMapping[]>(() => {
-        return rfidMappingData.filter((item) => {
-            const matchesSearch = item.name
-                .toLowerCase()
-                .includes(search.toLowerCase());
+    useEffect(() => {
+        if (!orgId) return;
 
-            const matchesFilter =
-                filter === "all" ? true : item.status === filter;
+        const fetchUsers = async () => {
+            try {
+                const data = await getUsersByOrg(orgId);
+                setUsers(data);
+            } catch {
+                toast.error("Failed to load users");
+            }
+        };
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [search, filter]);
+        fetchUsers();
+    }, [orgId]);
 
-    const countByStatus = (status: RFIDStatus) =>
-        rfidMappingData.filter((d) => d.status === status).length;
+    const tabFilteredUsers = useMemo(() => {
+        return users.filter(
+            (u) => u.userType === activeTab
+        );
+    }, [users, activeTab]);
+
+    const {
+        search,
+        setSearch,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: tabFilteredUsers,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
+
+    if (!orgId) return null;
+
+    const totalByType = (type: UserType) =>
+        users.filter((u) => u.userType === type).length;
+
+
+    const stats = useMemo(() => {
+        return users.reduce(
+            (acc, user) => {
+                acc.totalUsers++;
+
+                if (user.userType === "STUDENT")
+                    acc.totalStudents++;
+
+                if (user.userType === "FACULTY")
+                    acc.totalFaculty++;
+
+                if (user.userType === "STAFF")
+                    acc.totalStaff++;
+
+                return acc;
+            },
+            {
+                totalUsers: 0,
+                totalStudents: 0,
+                totalFaculty: 0,
+                totalStaff: 0,
+            }
+        );
+    }, [users]);
+
 
     return (
         <>
             <div className="space-y-6 p-6">
-                <AppBreadcrumb />
-
                 {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        RFID Device Mapping
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-semibold">
+                        User RFID Mapping
                     </h1>
 
                     <Button
@@ -95,207 +118,215 @@ const RFIDMappingPage: React.FC = () => {
                         onClick={() => setAssignOpen(true)}
                     >
                         <Plus className="h-4 w-4" />
-                        Assign RFID Card
+                        Assign RFID
                     </Button>
                 </div>
 
-                {/* Meta info */}
-                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                    {/* Total Students + Added/Removed */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span>
-                            Total Students:
-                            <span className="ml-1 font-medium text-foreground">
-                                {TOTAL_STUDENTS}
-                            </span>
-                        </span>
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
 
-                        <span className="flex items-center gap-1 text-green-600">
-                            +8
-                            <span className="text-muted-foreground">added</span>
-                        </span>
+                    Students:{" "}
+                    <span className="text-primary font-medium">
+                        {stats.totalStudents}
+                    </span>
 
-                        <span className="flex items-center gap-1 text-red-500">
-                            -3
-                            <span className="text-muted-foreground">removed</span>
+                    <span className="ml-4">
+                        Faculty:{" "}
+                        <span className="text-primary font-medium">
+                            {stats.totalFaculty}
                         </span>
-                    </div>
+                    </span>
 
-                    {/* RFID Issued */}
-                    <div>
-                        RFID Issued:
-                        <span className="ml-1 font-medium text-foreground">
-                            {RFID_ISSUED}
+                    <span className="ml-4">
+                        Staff:{" "}
+                        <span className="text-primary font-medium">
+                            {stats.totalStaff}
                         </span>
-                        <span className="ml-2 flex inline-flex items-center gap-1 text-green-600">
-                            +5
-                            <span className="text-muted-foreground">added</span>
-                        </span>
-                    </div>
+                    </span>
                 </div>
 
                 <Separator />
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    {/* Toggle */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            variant={filter === "all" ? "default" : "outline"}
-                            onClick={() => setFilter("all")}
-                        >
-                            All
-                        </Button>
+                {/* Tabs */}
+                <div className="flex gap-2">
+                    {(["STUDENT", "FACULTY", "STAFF"] as UserType[]).map(
+                        (type) => (
+                            <Button
+                                key={type}
+                                size="sm"
+                                variant={
+                                    activeTab === type
+                                        ? "default"
+                                        : "outline"
+                                }
+                                onClick={() => setActiveTab(type)}
+                            >
+                                {type}
+                                <Badge
+                                    variant="secondary"
+                                    className="ml-2"
+                                >
+                                    {totalByType(type)}
+                                </Badge>
+                            </Button>
+                        )
+                    )}
+                </div>
 
-                        <Button
-                            size="sm"
-                            variant={filter === "assigned" ? "default" : "outline"}
-                            onClick={() => setFilter("assigned")}
-                        >
-                            Assigned
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "unassigned" ? "default" : "outline"}
-                            onClick={() => setFilter("unassigned")}
-                        >
-                            Unassigned
-                            <Badge variant="secondary" className="ml-2">
-                                {countByStatus("unassigned")}
-                            </Badge>
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "invalid" ? "default" : "outline"}
-                            onClick={() => setFilter("invalid")}
-                        >
-                            Invalid
-                            <Badge variant="destructive" className="ml-2">
-                                {countByStatus("invalid")}
-                            </Badge>
-                        </Button>
-                    </div>
-
-                    {/* Search + Class Filter */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    Class
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Class 8</DropdownMenuItem>
-                                <DropdownMenuItem>Class 9</DropdownMenuItem>
-                                <DropdownMenuItem>Class 10</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                {/* Search */}
+                <div className="relative w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        className="pl-8"
+                        placeholder="Search by name or ID..."
+                        value={search}
+                        onChange={(e) =>
+                            setSearch(e.target.value)
+                        }
+                    />
                 </div>
 
                 {/* Table */}
                 <Card>
-                    <CardContent className="">
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Student Name</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Class & Section</TableHead>
-                                    <TableHead>RFID Card Number</TableHead>
-                                    <TableHead>RFID Device</TableHead>
-                                    <TableHead className="text-right">
-                                        Last Seen
-                                    </TableHead>
+
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Phone</TableHead>
+
+                                    {/* Dynamic Column */}
+                                    {activeTab === "STUDENT" && (
+                                        <>
+                                            <TableHead>Class</TableHead>
+                                            <TableHead>Section</TableHead>
+                                            <TableHead>Roll No</TableHead>
+                                        </>
+                                    )}
+
+                                    {activeTab === "FACULTY" && (
+                                        <>
+                                            <TableHead>Department</TableHead>
+                                            <TableHead>Subjects</TableHead>
+                                        </>
+                                    )}
+
+                                    {activeTab === "STAFF" && (
+                                        <>
+                                            <TableHead>Department</TableHead>
+                                            <TableHead>Designation</TableHead>
+                                        </>
+                                    )}
+
+                                    <TableHead>RFID</TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                                {filteredData.map((row) => (
-                                    <TableRow key={row.id}>
-                                        <TableCell>{row.id}</TableCell>
-                                        <TableCell className="font-medium">
-                                            {row.name}
+                                {paginatedData.map((user) => (
+                                    <TableRow key={user.userId}>
+
+                                        <TableCell className="flex gap-2 items-center">
+                                            <Avatar>
+                                                <AvatarImage
+                                                    src="https://github.com/shadcn.png"
+                                                    alt="@shadcn"
+                                                >
+                                                </AvatarImage>
+                                                <AvatarFallback>CN</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col">
+                                                <p className="font-bold">
+                                                    {user.name.toUpperCase()}
+                                                </p>
+                                                <p className="text-foreground text-xs font-normal">
+                                                    {user.userId}
+                                                </p>
+                                            </div>
+
                                         </TableCell>
-                                        <TableCell>{row.contact}</TableCell>
+
+                                        <TableCell>{user.phone}</TableCell>
+
+                                        {/* Student */}
+                                        {user.userType === "STUDENT" && (
+                                            <>
+                                                <TableCell>
+                                                    {user.profile.class}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {user.profile.section}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {user.profile.rollNumber}
+                                                </TableCell>
+                                            </>
+                                        )}
+
+                                        {/* Faculty */}
+                                        {user.userType === "FACULTY" && (
+                                            <>
+                                                <TableCell>
+                                                    {user.profile.department}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {user.profile.subjects}
+                                                </TableCell>
+                                            </>
+                                        )}
+
+                                        {/* Staff */}
+                                        {user.userType === "STAFF" && (
+                                            <>
+                                                <TableCell>
+                                                    {user.profile.department}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {user.profile.designation}
+                                                </TableCell>
+                                            </>
+                                        )}
 
                                         <TableCell>
-                                            {row.classSection ?? (
-                                                <Badge variant="secondary">Unassigned</Badge>
+                                            {user.rfidCode ? (
+                                                <Badge variant="default">
+                                                    {user.rfidCode}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary">
+                                                    Unassigned
+                                                </Badge>
                                             )}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {row.rfidCard ?? "Invalid Card"}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {row.rfidDevice ?? "—"}
-                                        </TableCell>
-
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {row.lastSeen}
                                         </TableCell>
                                     </TableRow>
                                 ))}
+
+                                {filteredData.length === 0 && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={8}
+                                            className="text-center text-muted-foreground"
+                                        >
+                                            No users found
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
 
                     <Separator />
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end gap-6 px-4">
-                        <Field orientation="horizontal" className="w-fit gap-2">
-                            <FieldLabel htmlFor="select-rows-per-page">
-                                Rows per page
-                            </FieldLabel>
-
-                            <Select defaultValue="25">
-                                <SelectTrigger className="h-8 w-20" id="select-rows-per-page">
-                                    <SelectValue />
-                                </SelectTrigger>
-
-                                <SelectContent align="start">
-                                    <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
 
                 </Card>
-
             </div>
 
             <AssignRFIDSidebar
@@ -303,7 +334,6 @@ const RFIDMappingPage: React.FC = () => {
                 onOpenChange={setAssignOpen}
                 orgId={orgId}
             />
-
         </>
     );
 };

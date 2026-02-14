@@ -36,6 +36,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type FormMode = "add" | "edit";
 
@@ -239,28 +240,45 @@ const FacultyPage: React.FC = () => {
                                 )}
 
                                 {!loading &&
-                                    paginatedData.map((u) => (
+                                    paginatedData.map((user) => (
                                         <TableRow
-                                            key={u.userId}
+                                            key={user.userId}
                                             className={
-                                                u.isActive === false
+                                                user.isActive === false
                                                     ? "opacity-60"
                                                     : ""
                                             }
                                         >
-                                            <TableCell className="font-medium">
-                                                {u.name}
+                                            <TableCell className="flex gap-2 items-center">
+                                                <Avatar>
+                                                    <AvatarImage
+                                                        src="https://github.com/shadcn.png"
+                                                        alt="@shadcn"
+                                                    >
+
+                                                    </AvatarImage>
+                                                    <AvatarFallback>CN</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <p className="font-bold">
+                                                        {user.name.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-foreground text-xs font-normal">
+                                                        {user.userId}
+                                                    </p>
+                                                </div>
+
                                             </TableCell>
 
                                             <TableCell>
-                                                {(u.profile as FacultyProfile)
+                                                {(user.profile as FacultyProfile)
                                                     ?.department}
                                             </TableCell>
 
-                                            <TableCell>{u.phone}</TableCell>
+                                            <TableCell>{user.phone}</TableCell>
 
                                             <TableCell>
-                                                {u.rfidCode ?? (
+                                                {user.rfidCode ?? (
                                                     <Badge variant="destructive">
                                                         Invalid
                                                     </Badge>
@@ -268,7 +286,7 @@ const FacultyPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell>
-                                                {u.isActive !== false ? (
+                                                {user.isActive !== false ? (
                                                     <Badge className="bg-green-100 text-green-700">
                                                         Active
                                                     </Badge>
@@ -280,7 +298,7 @@ const FacultyPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                {timeAgo(u.updatedAt)}
+                                                {timeAgo(user.updatedAt)}
                                             </TableCell>
 
                                             <TableCell className="text-right">
@@ -297,7 +315,7 @@ const FacultyPage: React.FC = () => {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem
                                                             onClick={() => {
-                                                                setSelectedUser(u);
+                                                                setSelectedUser(user);
                                                                 setFormMode("edit");
                                                                 setSidebarOpen(true);
                                                             }}
@@ -308,16 +326,16 @@ const FacultyPage: React.FC = () => {
 
                                                         <DropdownMenuItem
                                                             className={
-                                                                u.isActive === false
+                                                                user.isActive === false
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
                                                             }
                                                             onClick={() =>
-                                                                setConfirmUser(u)
+                                                                setConfirmUser(user)
                                                             }
                                                         >
                                                             <Ban className="mr-2 h-4 w-4" />
-                                                            {u.isActive === false
+                                                            {user.isActive === false
                                                                 ? "Activate"
                                                                 : "Suspend"}
                                                         </DropdownMenuItem>

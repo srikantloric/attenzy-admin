@@ -29,7 +29,7 @@ export interface StaffProfile {
 
 export interface FacultyProfile {
   department: string;
-  subjects: string[];
+  subjects: string;
 }
 
 export interface AssignRFIDResponse {
