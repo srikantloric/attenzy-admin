@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { studentsData } from "@/data/students";
-import type { Student, StudentStatus } from "@/data/students";
-import { PeopleSidebar } from "@/components/people/PeopleSidebar";
+import { useEffect, useState } from "react";
+import type { StudentProfile, User } from "@/types/users";
+import { getUsersByOrg, updateUser } from "@/api/users";
+import { toast } from "sonner";
 
 import {
     Table,
@@ -9,7 +9,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table";
 
 import { Input } from "@/components/ui/input";
@@ -22,46 +22,109 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter, Plus } from "lucide-react";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
+import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { timeAgo } from "@/utils/timeAgo";
+import useAuth from "@/hooks/useAuth";
 
-const TOTAL_STUDENTS = 1200;
-const RFID_ISSUED = 950;
+import AddUserForm from "@/components/people/AddUserForm";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import DataPagination from "@/components/Pagination";
+
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+type FormMode = "add" | "edit";
 
 const StudentsPage: React.FC = () => {
-    const [search, setSearch] = useState<string>("");
-    const [filter, setFilter] = useState<StudentStatus | "all">("all");
+    const { user } = useAuth();
+    const orgId = user?.orgId;
+
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(false);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("add");
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
-    const filteredStudents = useMemo<Student[]>(() => {
-        return studentsData.filter((student) => {
-            const matchesSearch = student.name
-                .toLowerCase()
-                .includes(search.toLowerCase());
+    /* ================= FETCH ================= */
 
-            const matchesFilter =
-                filter === "all" ? true : student.status === filter;
+    const fetchUsers = () => {
+        if (!orgId) return;
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [search, filter]);
+        setLoading(true);
+        getUsersByOrg(orgId)
+            .then((data) => {
+                const students = data.filter(
+                    (u: User) => u.userType === "STUDENT"
+                );
+                setUsers(students);
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
 
-    const countByStatus = (status: StudentStatus) =>
-        studentsData.filter((s) => s.status === status).length;
+    useEffect(() => {
+        fetchUsers();
+    }, [orgId]);
+
+    /* ================= FILTER + PAGINATION ================= */
+
+    const {
+        search,
+        setSearch,
+        filterStatus,
+        setFilterStatus,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: users,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
+
+    /* ================= STATUS TOGGLE ================= */
+
+    const toggleUserStatus = async (user: User) => {
+        if (!orgId) return;
+
+        try {
+            await updateUser(orgId, user.userId, {
+                isActive: !user.isActive,
+            });
+
+            toast.success(
+                user.isActive
+                    ? "Student suspended"
+                    : "Student activated"
+            );
+
+            fetchUsers();
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to update status");
+        }
+    };
+
+    /* ================= COUNTS ================= */
+
+    const TOTAL = users.length;
+    const ACTIVE_COUNT = users.filter(
+        (u) => u.isActive !== false
+    ).length;
+    const INACTIVE_COUNT = users.filter(
+        (u) => u.isActive === false
+    ).length;
+
+    /* ================= RENDER ================= */
 
     return (
         <>
@@ -69,234 +132,275 @@ const StudentsPage: React.FC = () => {
                 <AppBreadcrumb />
 
                 {/* Header */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        {/* Left: Title + Count */}
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                Students
-                            </h1>
-
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-                                {TOTAL_STUDENTS}
-                            </span>
-                        </div>
-
-                        {/* Right: Action */}
-                        <Button
-                            className="gap-2 bg-primary"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Student
-                        </Button>
-                    </div>
-
-                    {/* Meta info */}
-                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                        {/* Total Students */}
-                        <div className="flex flex-row gap-2">
-                            <span>
-                                Total Students:
-                                <span className="ml-1 font-medium text-foreground">
-                                    {TOTAL_STUDENTS}
-                                </span>
-                            </span>
-
-                            {/* Added / Removed */}
-                            <div className="flex items-center gap-3">
-                                <span className="flex items-center gap-1 text-green-600">
-                                    +8
-                                    <span className="text-muted-foreground">added</span>
-                                </span>
-
-                                <span className="flex items-center gap-1 text-red-500">
-                                    -3
-                                    <span className="text-muted-foreground">removed
-                                    </span>
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* RFID Issued */}
-                        <span>
-                            RFID Issued:
-                            <span className="ml-1 font-medium text-foreground">
-                                {RFID_ISSUED}
-                            </span>
-                            <span className="ml-2 text-green-600">+5
-                                <span className="text-muted-foreground ml-1">added</span>
-                            </span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold">
+                            Students
+                        </h1>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                            {TOTAL}
                         </span>
                     </div>
+
+                    <Button
+                        className="gap-2 bg-primary"
+                        onClick={() => {
+                            setFormMode("add");
+                            setSelectedUser(null);
+                            setSidebarOpen(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Student
+                    </Button>
+                </div>
+
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
+                    Active:{" "}
+                    <span className="text-green-600 font-medium">
+                        {ACTIVE_COUNT}
+                    </span>
+                    <span className="ml-4">
+                        Inactive:{" "}
+                        <span className="font-medium">
+                            {INACTIVE_COUNT}
+                        </span>
+                    </span>
                 </div>
 
                 <Separator />
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    {/* Toggle Filters */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            variant={filter === "all" ? "default" : "outline"}
-                            onClick={() => setFilter("all")}
-                        >
-                            All
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "assigned" ? "default" : "outline"}
-                            onClick={() => setFilter("assigned")}
-                        >
-                            Assigned
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "unassigned" ? "default" : "outline"}
-                            onClick={() => setFilter("unassigned")}
-                        >
-                            Unassigned
-                            <Badge variant="secondary" className="ml-2">
-                                {countByStatus("unassigned")}
-                            </Badge>
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant={filter === "invalid" ? "default" : "outline"}
-                            onClick={() => setFilter("invalid")}
-                        >
-                            Invalid
-                            <Badge variant="destructive" className="ml-2">
-                                {countByStatus("invalid")}
-                            </Badge>
-                        </Button>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        {(["all", "active", "inactive"] as const).map(
+                            (status) => (
+                                <Button
+                                    key={status}
+                                    size="sm"
+                                    variant={
+                                        filterStatus === status
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    onClick={() => setFilterStatus(status)}
+                                >
+                                    {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                </Button>
+                            )
+                        )}
                     </div>
 
-                    {/* Search + Class Filter */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Class 8</DropdownMenuItem>
-                                <DropdownMenuItem>Class 9</DropdownMenuItem>
-                                <DropdownMenuItem>Class 10</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-8 w-64"
+                            placeholder="Search students..."
+                            value={search}
+                            onChange={(e) =>
+                                setSearch(e.target.value)
+                            }
+                        />
                     </div>
                 </div>
 
                 {/* Table */}
                 <Card>
-                    <CardContent className="">
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Contact</TableHead>
                                     <TableHead>Class & Section</TableHead>
-                                    <TableHead>RFID Card Number</TableHead>
-                                    <TableHead className="text-right">Last Seen</TableHead>
+                                    <TableHead>RFID</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">
+                                        Last Updated
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                                {filteredStudents.map((student) => (
-                                    <TableRow key={student.id}>
-                                        <TableCell>{student.id}</TableCell>
-                                        <TableCell className="font-medium">
-                                            {student.name}
-                                        </TableCell>
-                                        <TableCell>{student.contact}</TableCell>
-                                        <TableCell>
-                                            {student.classSection ?? (
-                                                <Badge variant="secondary">Unassigned</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {student.rfid ?? (
-                                                <Badge variant="destructive">Invalid</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {student.lastSeen}
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center"
+                                        >
+                                            Loading students...
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
+
+                                {!loading &&
+                                    paginatedData.map((user) => (
+                                        <TableRow
+                                            key={user.userId}
+                                            className={
+                                                user.isActive === false
+                                                    ? "opacity-60"
+                                                    : ""
+                                            }
+                                        >
+                                            <TableCell className="flex gap-2 items-center">
+                                                <Avatar>
+                                                    <AvatarImage
+                                                        src="https://github.com/shadcn.png"
+                                                        alt="@shadcn"
+                                                    >
+
+                                                    </AvatarImage>
+                                                    <AvatarFallback>CN</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <p className="font-bold">
+                                                        {user.name.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-foreground text-xs font-normal">
+                                                        {user.userId}
+                                                    </p>
+                                                </div>
+
+                                            </TableCell>
+
+                                            <TableCell>{user.phone}</TableCell>
+
+                                            <TableCell>
+                                                {(user.profile as StudentProfile)
+                                                    ?.class}
+                                                -
+                                                {(user.profile as StudentProfile)
+                                                    ?.section}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {user.rfidCode ?? (
+                                                    <Badge variant="destructive">
+                                                        Invalid
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {user.isActive !== false ? (
+                                                    <Badge className="bg-green-100 text-green-700">
+                                                        Active
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary">
+                                                        Inactive
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                {timeAgo(user.updatedAt)}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedUser(user);
+                                                                setFormMode("edit");
+                                                                setSidebarOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuItem
+                                                            className={
+                                                                user.isActive === false
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                            }
+                                                            onClick={() =>
+                                                                setConfirmUser(user)
+                                                            }
+                                                        >
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {user.isActive === false
+                                                                ? "Activate"
+                                                                : "Suspend"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                             </TableBody>
                         </Table>
                     </CardContent>
 
                     <Separator />
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end gap-6 px-4">
-                        <Field orientation="horizontal" className="w-fit gap-2">
-                            <FieldLabel htmlFor="select-rows-per-page">
-                                Rows per page
-                            </FieldLabel>
-
-                            <Select defaultValue="25">
-                                <SelectTrigger className="h-8 w-20" id="select-rows-per-page">
-                                    <SelectValue />
-                                </SelectTrigger>
-
-                                <SelectContent align="start">
-                                    <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
-
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
+                    
                 </Card>
-
             </div>
 
-            <PeopleSidebar
+            {/* Sidebar Form */}
+            <AddUserForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
-                type="student"
+                mode={formMode}
+                user={selectedUser}
+                onSuccess={fetchUsers}
+                defaultUserType="STUDENT"
             />
 
+            {/* Confirm Dialog */}
+            <ConfirmDialog
+                open={!!confirmUser}
+                title={
+                    confirmUser?.isActive === false
+                        ? "Activate Student"
+                        : "Suspend Student"
+                }
+                description={
+                    confirmUser?.isActive === false
+                        ? "This student will become active again."
+                        : "This student will be suspended."
+                }
+                confirmText={
+                    confirmUser?.isActive === false
+                        ? "Activate"
+                        : "Suspend"
+                }
+                onCancel={() => setConfirmUser(null)}
+                onConfirm={() => {
+                    if (confirmUser) {
+                        toggleUserStatus(confirmUser);
+                        setConfirmUser(null);
+                    }
+                }}
+            />
         </>
     );
 };
-
-
 
 export default StudentsPage;

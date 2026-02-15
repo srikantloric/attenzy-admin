@@ -33,24 +33,16 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-    SelectGroup,
 } from "@/components/ui/select"
-import { Field, FieldLabel } from "@/components/ui/field"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
 
 import type { Device, DeviceStatus } from "@/types/device"
-import AddDevice from "@/components/device/AddDevice"
+import AddDevice from "@/components/device/PartnerAddDevice"
 import useAuth from "@/hooks/useAuth"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import { getDevicesByPartner } from "@/api/device"
+import DataPagination from "@/components/Pagination"
 
-function DevicePage() {
+function PartnerDevice() {
     const { user } = useAuth()
     const partnerId = user?.partnerId
 
@@ -63,6 +55,9 @@ function DevicePage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const [currentPage, setCurrentPage] = useState(1)
+    const [rowsPerPage, setRowsPerPage] = useState(8)
+
     const fetchDevices = useCallback(async () => {
         if (!partnerId) return
 
@@ -71,7 +66,19 @@ function DevicePage() {
             setError(null)
 
             const data = await getDevicesByPartner(partnerId)
+
+            // const items = (data.items ?? []) as Device[]
+
+            // const uniqueDevices: Device[] = Array.from(
+            //     new Map(
+            //         items.map((d) => [d.deviceId, d])
+            //     ).values()
+            // )
+
+            // setAllDevices(uniqueDevices)
+
             setAllDevices(data.items ?? [])
+
         } catch (err: any) {
             console.error(err)
             setError(err.message || "Failed to load devices")
@@ -85,14 +92,15 @@ function DevicePage() {
     }, [fetchDevices])
 
     const filteredDevices = useMemo(() => {
-        const search = searchString.toLowerCase()
+        const search = searchString.trim().toLowerCase()
 
         return allDevices.filter((device) => {
             const matchesSearch =
-                device.deviceId.toLowerCase().includes(search) ||
-                device.serialNumber.toLowerCase().includes(search) ||
-                device.location.toLowerCase().includes(search) ||
-                device.orgName.toLowerCase().includes(search)
+                !search ||
+                device.deviceId?.toLowerCase().includes(search) ||
+                device.serialNumber?.toLowerCase().includes(search) ||
+                device.location?.toLowerCase().includes(search) ||
+                device.orgName?.toLowerCase().includes(search)
 
             const matchesStatus =
                 selectedDeviceStatus === "all" ||
@@ -101,6 +109,36 @@ function DevicePage() {
             return matchesSearch && matchesStatus
         })
     }, [allDevices, searchString, selectedDeviceStatus])
+
+    const paginatedDevices = useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage
+        const end = currentPage * rowsPerPage
+        return filteredDevices.slice(start, end)
+    }, [filteredDevices, currentPage, rowsPerPage])
+
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchString, selectedDeviceStatus])
+
+
+    const statusCounts = useMemo(() => {
+        return allDevices.reduce(
+            (acc, device) => {
+                acc.all++
+                acc[device.status]++
+                return acc
+            },
+            {
+                all: 0,
+                ONLINE: 0,
+                IDLE: 0,
+                OFFLINE: 0,
+                INACTIVE: 0,
+            } as Record<DeviceStatus | "all", number>
+        )
+    }, [allDevices])
+
 
     const statusBadge = (status: DeviceStatus) => {
         switch (status) {
@@ -126,7 +164,7 @@ function DevicePage() {
     }
 
     return (
-        <div className="space-y-4 mt-4">
+        <div className="space-y-6 p-6">
             <AppBreadcrumb />
 
             {/* HEADER */}
@@ -142,6 +180,26 @@ function DevicePage() {
                     <Plus className="h-4 w-4 mr-1" />
                     Add Device
                 </Button>
+            </div>
+
+            {/* Status Counts */}
+            <div className="flex flex-wrap gap-2">
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                    Online: {statusCounts.ONLINE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                    Idle: {statusCounts.IDLE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                    Offline: {statusCounts.OFFLINE}
+                </span>
+
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
+                    Inactive: {statusCounts.INACTIVE}
+                </span>
             </div>
 
             {/* FILTERS */}
@@ -209,7 +267,7 @@ function DevicePage() {
                         </TableHeader>
 
                         <TableBody>
-                            {filteredDevices.map((device) => (
+                            {paginatedDevices.map((device) => (
                                 <TableRow key={device.deviceId}>
                                     <TableCell className="font-medium">
                                         {device.deviceId}
@@ -264,46 +322,26 @@ function DevicePage() {
 
                 <Separator />
 
-                {/* PAGINATION (UI only for now) */}
-                <div className="flex items-center justify-end gap-4 mr-4 py-3">
-                    <Field orientation="horizontal" className="w-fit">
-                        <FieldLabel>Rows per page</FieldLabel>
-                        <Select defaultValue="25">
-                            <SelectTrigger className="w-20">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent align="start">
-                                <SelectGroup>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
+                <DataPagination
+                    totalItems={filteredDevices.length}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    rowsPerPage={rowsPerPage}
+                    setRowsPerPage={setRowsPerPage}
+                />
 
-                    <Pagination className="mx-0 w-auto">
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious href="#" />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationNext href="#" />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
             </Card>
 
             <AddDevice
                 open={addDeviceOpen}
                 setOpen={setAddDeviceOpen}
-                onClose={() => setAddDeviceOpen(false)}
-                existingDevices={allDevices}
+                onSuccess={() => {
+                    fetchDevices()
+                }}
             />
+
         </div>
     )
 }
 
-export default DevicePage
+export default PartnerDevice

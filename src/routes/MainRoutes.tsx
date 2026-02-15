@@ -9,23 +9,22 @@ import StudentsPage from "@/pages/people/students"
 import StaffPage from "@/pages/people/staff"
 import RFIDMappingPage from "@/pages/people/rfid-mapping"
 
-import DeviceHealthPage from "@/pages/devices/deviceHealth"
-import DevicePageNew from "@/pages/devices/devicePage"
 
 import ManualAttendancePage from "@/pages/attendance/attendance"
 
 import PartnersPage from "@/pages/partners/PartnersPage"
-import PartnerDetailsPage from "@/pages/partners/PartnerDetailsPage"
+import PartnerDetailsPage from "@/components/partners/PartnerDetailsPage"
 
 import Organizations from "@/pages/organizations/organizationsPage"
-import OrganizationDetailsPage from "@/pages/organizations/OrganizationDetailsPage"
+import OrganizationDetailsPage from "@/components/organizations/OrganizationDetailsPage"
 
 import DevelopersPage from "@/pages/developers/DevelopersPage"
 import OverviewTab from "@/pages/developers/OverviewTab"
 import ApiKeysTab from "@/pages/developers/ApiKeysTab"
 import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
-import DevicePage from "@/pages/devices/devicePage"
+import DevicePage from "@/pages/devices"
+import DeviceHealth from "@/pages/devices/health"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -95,7 +94,7 @@ const MainRoutes = {
         },
         {
             path: "device-health",
-            element: <DeviceHealthPage />,
+            element: <DeviceHealth />,
             handle: { breadcrumb: "Device Health" },
         },
 

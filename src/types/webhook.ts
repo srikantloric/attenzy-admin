@@ -2,12 +2,40 @@
  * Enums / Unions
  * --------------------------------------------- */
 
-export type WebhookOwnerType = 'PLATFORM_ADMIN' | 'CHANNEL_PARTNER' | 'ORGNIZATION'
+export type WebhookOwnerType =
+  | 'PLATFORM_ADMIN'
+  | 'CHANNEL_PARTNER'
+  | 'ORGANIZATION'
 
 export type WebhookEvent =
   | 'RFID_SCAN'
   | 'DEVICE_ONLINE'
   | 'DEVICE_OFFLINE'
+
+export type WebhookVerificationStatus =
+  | 'PENDING'
+  | 'VERIFIED'
+  | 'FAILED'
+
+export type WebhookAuthType =
+  | 'NONE'
+  | 'API_KEY'
+  | 'BEARER'
+  | 'HMAC'
+
+export interface WebhookAuth {
+  type: WebhookAuthType
+
+  // API_KEY
+  headerName?: string        // e.g. x-api-key
+  token?: string             // encrypted at rest
+
+  // HMAC
+  secret?: string            // encrypted at rest
+  signatureHeader?: string   // default: X-Attenzy-Signature
+  timestampHeader?: string   // default: X-Attenzy-Timestamp
+}
+
 
 /* ---------------------------------------------
  * Core Webhook Type (API Response)
@@ -15,17 +43,24 @@ export type WebhookEvent =
 
 export interface Webhook {
   webhookId: string
+
   url: string
-  events: string[]
+  events: WebhookEvent[]
+
+  ownerType: WebhookOwnerType
+  ownerId: string
+
+  auth: WebhookAuth
 
   isActive: boolean
-  verificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+  verificationStatus: WebhookVerificationStatus
 
   lastVerificationError?: string
 
   createdAt: number
   updatedAt: number
 }
+
 
 
 /* ---------------------------------------------
@@ -39,13 +74,16 @@ export interface CreateWebhookPayload {
   ownerType: WebhookOwnerType
   ownerId: string
 
-  headers?: Record<string, string>
+  auth?: WebhookAuth
 }
+
 
 export interface CreateWebhookResponse {
   message: string
+  secret: string
   webhook: Webhook
 }
+
 
 /* ---------------------------------------------
  * Update Webhook
@@ -57,7 +95,8 @@ export interface UpdateWebhookPayload {
   url?: string
   events?: WebhookEvent[]
   isActive?: boolean
-  headers?: Record<string, string>
+
+  auth?: WebhookAuth
 }
 
 /* ---------------------------------------------

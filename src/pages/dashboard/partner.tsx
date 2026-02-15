@@ -1,13 +1,8 @@
+import { useEffect, useMemo, useState } from "react"
 import { Cpu, Building2, Activity } from "lucide-react"
 
 import StatCard from "@/components/StatCard"
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle
-} from "@/components/ui/card"
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Table,
     TableBody,
@@ -16,50 +11,153 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table"
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
+import useAuth from "@/hooks/useAuth"
+import { getOrganizationsByPartner } from "@/api/organization"
+import { getDevicesByPartner } from "@/api/device"
+
+import type { OrganizationApi } from "@/types/organization"
+import type { Device } from "@/types/device"
+
 function PartnerDashboard() {
+    const { user } = useAuth()
+    const partnerId = user?.partnerId
+
+    const [organizations, setOrganizations] = useState<OrganizationApi[]>([])
+    const [devices, setDevices] = useState<Device[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    /* ================= FETCH DATA ================= */
+
+    useEffect(() => {
+        if (!partnerId) return
+
+        const pid: string = partnerId
+
+        async function loadDashboard() {
+            try {
+                setLoading(true)
+                setError(null)
+
+                const [orgRes, deviceRes] = await Promise.all([
+                    getOrganizationsByPartner(pid),
+                    getDevicesByPartner(pid)
+                ])
+
+                setOrganizations(orgRes.items ?? [])
+                setDevices(deviceRes.items ?? [])
+            } catch (err) {
+                console.error(err)
+                setError("Failed to load dashboard data")
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadDashboard()
+    }, [partnerId])
+
+
+
+    /* ================= STATS ================= */
+
+    const totalOrganizations = organizations.length
+    const totalDevices = devices.length
+
+    const activeDevices = useMemo(
+        () =>
+            devices.filter(
+                d => d.status === "ONLINE" || d.status === "IDLE"
+            ).length,
+        [devices]
+    )
+
+    const inactiveDevices = totalDevices - activeDevices
+
+    /* ================= TABLE DATA ================= */
+
+    const topOrganizations = useMemo(() => {
+        return [...organizations]
+            .sort((a, b) => b.deviceCount - a.deviceCount)
+            .slice(0, 4)
+    }, [organizations])
+
+    const recentOrganizations = useMemo(() => {
+        return [...organizations]
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 4)
+    }, [organizations])
+
+    /* ================= GUARDS ================= */
+
+    if (!partnerId) {
+        return (
+            <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                Partner information not available. Please login again.
+            </div>
+        )
+    }
+
+    if (loading) {
+        return (
+            <div className="p-6 text-sm text-muted-foreground">
+                Loading dashboard...
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 text-sm text-red-600">
+                {error}
+            </div>
+        )
+    }
+
+    /* ================= RENDER ================= */
+
     return (
         <div className="space-y-6">
             <AppBreadcrumb />
 
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Channel Partner</h1>
                 <Button variant="secondary">Today</Button>
             </div>
 
-            {/* Stats */}
+            {/* STATS */}
             <div className="grid gap-4 md:grid-cols-3">
                 <StatCard
                     title="Total Organizations"
-                    value="18"
-                    trend="+2 this month"
+                    value={totalOrganizations}
+                    trend="Registered"
                     icon={<Building2 />}
                 />
 
                 <StatCard
                     title="Total Devices"
-                    value="123"
-                    trend="+24 added"
+                    value={totalDevices}
+                    trend="Provisioned"
                     icon={<Cpu />}
                 />
 
                 <StatCard
                     title="Active Devices"
-                    value="118 / 123"
-                    trend="5 offline"
+                    value={`${activeDevices} / ${totalDevices}`}
+                    trend={`${inactiveDevices} inactive`}
                     icon={<Activity />}
-                    negative
+                    negative={inactiveDevices > 0}
                 />
             </div>
 
-            {/* Tables */}
+            {/* TABLES */}
             <div className="grid gap-4 md:grid-cols-2">
-                {/* Top Organizations */}
+                {/* TOP ORGANIZATIONS */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Top Organizations by Devices</CardTitle>
@@ -74,16 +172,15 @@ function PartnerDashboard() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {[
-                                    ["Unified Tech", 53, "2023-04-25"],
-                                    ["Connect Solutions", 45, "2024-01-12"],
-                                    ["EduSmart Technologies", 37, "2023-08-09"],
-                                    ["Trackify Systems", 15, "2024-04-09"]
-                                ].map(([name, devices, date]) => (
-                                    <TableRow key={name as string}>
-                                        <TableCell className="font-medium">{name}</TableCell>
-                                        <TableCell>{devices}</TableCell>
-                                        <TableCell>{date}</TableCell>
+                                {topOrganizations.map(org => (
+                                    <TableRow key={org.orgId}>
+                                        <TableCell className="font-medium">
+                                            {org.orgName}
+                                        </TableCell>
+                                        <TableCell>{org.deviceCount}</TableCell>
+                                        <TableCell>
+                                            {new Date(org.createdAt).toLocaleDateString()}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -91,7 +188,7 @@ function PartnerDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Recent Organizations */}
+                {/* RECENT ORGANIZATIONS */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Recent Organizations</CardTitle>
@@ -106,16 +203,15 @@ function PartnerDashboard() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {[
-                                    ["Main Gate", 59, "2024-01-29"],
-                                    ["Admin Building", 45, "2024-01-12"],
-                                    ["Oakwood Academy", 28, "2023-08-05"],
-                                    ["Trackify Systems", 15, "2024-04-09"]
-                                ].map(([name, devices, date]) => (
-                                    <TableRow key={name as string}>
-                                        <TableCell className="font-medium">{name}</TableCell>
-                                        <TableCell>{devices}</TableCell>
-                                        <TableCell>{date}</TableCell>
+                                {recentOrganizations.map(org => (
+                                    <TableRow key={org.orgId}>
+                                        <TableCell className="font-medium">
+                                            {org.orgName}
+                                        </TableCell>
+                                        <TableCell>{org.deviceCount}</TableCell>
+                                        <TableCell>
+                                            {new Date(org.createdAt).toLocaleDateString()}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -124,42 +220,43 @@ function PartnerDashboard() {
                 </Card>
             </div>
 
-            {/* Device Health Overview */}
+            {/* DEVICE HEALTH OVERVIEW */}
             <Card>
                 <CardHeader>
                     <CardTitle>Device Health Overview</CardTitle>
                 </CardHeader>
+
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Organization</TableHead>
                                 <TableHead>Location</TableHead>
-                                <TableHead>Devices</TableHead>
+                                <TableHead>Serial No</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
                         </TableHeader>
+
                         <TableBody>
-                            {[
-                                ["Greenfield High School", "Main Gate", 59, "Active"],
-                                ["Connect Solutions", "Admin Building", 45, "Active"],
-                                ["EduSmart Technologies", "Learning Center", 37, "Active"],
-                                ["Trackify Systems", "-", 15, "Inactive"]
-                            ].map(([org, location, devices, status]) => (
-                                <TableRow key={org as string}>
-                                    <TableCell className="font-medium">{org}</TableCell>
-                                    <TableCell>{location}</TableCell>
-                                    <TableCell>{devices}</TableCell>
+                            {devices.slice(0, 4).map(device => (
+                                <TableRow key={device.deviceId}>
+                                    <TableCell className="font-medium">
+                                        {device.orgName}
+                                    </TableCell>
+                                    <TableCell>{device.location || "-"}</TableCell>
+                                    <TableCell>{device.serialNumber}</TableCell>
                                     <TableCell>
                                         <Badge
                                             variant="outline"
                                             className={
-                                                status === "Active"
+                                                device.status === "ONLINE"
                                                     ? "border-green-500 text-green-600 bg-green-50"
-                                                    : "border-red-500 text-red-600 bg-red-50"
+                                                    : device.status === "IDLE"
+                                                        ? "border-yellow-500 text-yellow-700 bg-yellow-50"
+                                                        : "border-red-500 text-red-600 bg-red-50"
                                             }
                                         >
-                                            {status}
+                                            {device.status}
                                         </Badge>
 
                                     </TableCell>
@@ -169,6 +266,7 @@ function PartnerDashboard() {
                     </Table>
                 </CardContent>
             </Card>
+
         </div>
     )
 }

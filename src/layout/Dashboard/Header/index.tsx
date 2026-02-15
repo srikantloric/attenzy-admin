@@ -1,4 +1,5 @@
 import { CommandSearch } from "@/components/CommandSearch"
+import { ModeToggle } from "@/components/mode-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -6,12 +7,22 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
-import { Bell } from "lucide-react"
+import { Bell, Radio } from "lucide-react"
 
 
 function AppBar() {
     const { user, logout } = useAuth()
     console.log(user)
+
+
+    const handleLiveFeed = () => {
+        (window as any).AttenzyWidget?.boot({
+            publicKey: "pk_test_123",
+            externalOrgId: "ATT-O-898892",
+            sessionUrl: "https://4qzf491261.execute-api.ap-south-1.amazonaws.com",
+            wsUrl: "wss://r5ixagc6t3.execute-api.ap-south-1.amazonaws.com/prod"
+        });
+    }
 
     return (
         <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -28,6 +39,12 @@ function AppBar() {
                 <div className="flex items-center gap-3">
 
                     <Badge variant={"outline"}>{user?.role}</Badge>
+
+                    <Button variant={"outline"} onClick={handleLiveFeed}>
+                        <Radio />IoT
+                    </Button>
+
+                    <ModeToggle />
 
                     <Button variant="outline" size="icon">
                         <Bell className="h-5 w-5" />

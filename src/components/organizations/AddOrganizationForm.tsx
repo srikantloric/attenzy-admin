@@ -171,7 +171,7 @@ function AddOrganizationForm({ onSuccess }: AddOrganizationFormProps) {
         <Button type="button" variant="outline" onClick={onSuccess}>
           Cancel
         </Button>
-        <Button className="bg-primary"  type="submit" disabled={isSubmitting}>
+        <Button className="bg-primary" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Adding..." : "Add Organization"}
         </Button>
       </div>

@@ -18,6 +18,7 @@ export async function createWebhook(
     payload: CreateWebhookPayload
 ): Promise<CreateWebhookResponse> {
     const res = await axiosServices.post('/webhooks', payload)
+    console.log('createWebhook response:', res)
     return res.data
 }
 

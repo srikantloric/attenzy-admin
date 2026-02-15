@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { facultyData } from "@/data/faculty";
-import type { Faculty } from "@/data/faculty";
-import { PeopleSidebar } from "@/components/people/PeopleSidebar";
+import { useEffect, useState } from "react";
+import type { FacultyProfile, User } from "@/types/users";
+import { getUsersByOrg, updateUser } from "@/api/users";
+import { toast } from "sonner";
 
 import {
     Table,
@@ -9,7 +9,7 @@ import {
     TableCell,
     TableHead,
     TableHeader,
-    TableRow
+    TableRow,
 } from "@/components/ui/table";
 
 import { Input } from "@/components/ui/input";
@@ -22,36 +22,110 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Filter, Plus } from "lucide-react";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
 
-const TOTAL_FACULTY = 84;
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { timeAgo } from "@/utils/timeAgo";
+import useAuth from "@/hooks/useAuth";
+
+import AddUserForm from "@/components/people/AddUserForm";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import DataPagination from "@/components/Pagination";
+
+import { useFilterPagination } from "@/hooks/useFilterPagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+type FormMode = "add" | "edit";
 
 const FacultyPage: React.FC = () => {
-    const [search, setSearch] = useState<string>("");
-    type FilterType = "all" | "invalid";
+    const { user } = useAuth();
+    const orgId = user?.orgId;
 
-    const [filter, setFilter] = useState<FilterType>("all");
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(false);
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("add");
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
-    const filteredFaculty = useMemo<Faculty[]>(() => {
-        return facultyData.filter((faculty) => {
-            const matchesSearch = faculty.name
-                .toLowerCase()
-                .includes(search.toLowerCase());
+    /* ================= FETCH ================= */
 
-            const matchesFilter =
-                filter === "all" ? true : faculty.rfid === null;
+    const fetchUsers = () => {
+        if (!orgId) return;
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [search, filter]);
+        setLoading(true);
+
+        getUsersByOrg(orgId)
+            .then((data) => {
+                const faculty = data.filter(
+                    (u: User) => u.userType === "FACULTY"
+                );
+                setUsers(faculty);
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, [orgId]);
+
+    /* ================= FILTER + PAGINATION ================= */
+
+    const {
+        search,
+        setSearch,
+        filterStatus,
+        setFilterStatus,
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination<User>({
+        data: users,
+        searchKey: "name",
+        getIsActive: (u) => u.isActive !== false,
+    });
+
+    /* ================= STATUS TOGGLE ================= */
+
+    const toggleUserStatus = async (user: User) => {
+        if (!orgId) return;
+
+        try {
+            await updateUser(orgId, user.userId, {
+                isActive: !user.isActive,
+            });
+
+            toast.success(
+                user.isActive
+                    ? "Faculty suspended"
+                    : "Faculty activated"
+            );
+
+            fetchUsers();
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to update status");
+        }
+    };
+
+    /* ================= COUNTS ================= */
+
+    const TOTAL = users.length;
+    const ACTIVE_COUNT = users.filter(
+        (u) => u.isActive !== false
+    ).length;
+    const INACTIVE_COUNT = users.filter(
+        (u) => u.isActive === false
+    ).length;
+
+    /* ================= RENDER ================= */
 
     return (
         <>
@@ -59,188 +133,265 @@ const FacultyPage: React.FC = () => {
                 <AppBreadcrumb />
 
                 {/* Header */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        {/* Left: Title + Count */}
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-semibold tracking-tight">
-                                Faculty
-                            </h1>
-
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-sm text-muted-foreground">
-                                {TOTAL_FACULTY}
-                            </span>
-                        </div>
-
-                        {/* Right: Action */}
-                        <Button
-                            className="gap-2 bg-primary"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Plus className="h-4 w-4" />
-                            Add Faculty
-                        </Button>
-                    </div>
-
-
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>
-                            Total Faculty:
-                            <span className="ml-1 font-medium text-foreground">
-                                {TOTAL_FACULTY}
-                            </span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-green-600">
-                            +3
-                            <span className="text-muted-foreground">added</span>
-                        </span>
-
-                        <span className="flex items-center gap-1 text-red-500">
-                            -2
-                            <span className="text-muted-foreground">removed</span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-semibold">
+                            Faculty
+                        </h1>
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                            {TOTAL}
                         </span>
                     </div>
+
+                    <Button
+                        className="gap-2 bg-primary"
+                        onClick={() => {
+                            setSelectedUser(null);
+                            setFormMode("add");
+                            setSidebarOpen(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Faculty
+                    </Button>
                 </div>
 
+                {/* Meta */}
+                <div className="text-sm text-muted-foreground">
+                    Active:{" "}
+                    <span className="text-green-600 font-medium">
+                        {ACTIVE_COUNT}
+                    </span>
+                    <span className="ml-4">
+                        Inactive:{" "}
+                        <span className="font-medium">
+                            {INACTIVE_COUNT}
+                        </span>
+                    </span>
+                </div>
 
                 <Separator />
 
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    {/* Left: Toggle Filters */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant={filter === "all" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFilter("all")}
-                        >
-                            All
-                        </Button>
-
-                        <Button
-                            variant={filter === "invalid" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setFilter("invalid")}
-                        >
-                            Invalid
-                        </Button>
+                {/* Filters */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        {(["all", "active", "inactive"] as const).map(
+                            (status) => (
+                                <Button
+                                    key={status}
+                                    size="sm"
+                                    variant={
+                                        filterStatus === status
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    onClick={() => setFilterStatus(status)}
+                                >
+                                    {status.charAt(0).toUpperCase() +
+                                        status.slice(1)}
+                                </Button>
+                            )
+                        )}
                     </div>
 
-                    {/* Right: Search + Advanced Filter */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="w-64 pl-8"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Filter className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Department</DropdownMenuItem>
-                                <DropdownMenuItem>RFID Status</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-8 w-64"
+                            placeholder="Search faculty..."
+                            value={search}
+                            onChange={(e) =>
+                                setSearch(e.target.value)
+                            }
+                        />
                     </div>
                 </div>
 
                 {/* Table */}
                 <Card>
-                    <CardContent className="">
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID</TableHead>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Contact</TableHead>
                                     <TableHead>Department</TableHead>
-                                    <TableHead>RFID Card Number</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead>RFID</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">
-                                        Last Seen
+                                        Last Updated
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        Actions
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                                {filteredFaculty.map((faculty) => (
-                                    <TableRow key={faculty.id}>
-                                        <TableCell>{faculty.id}</TableCell>
-
-                                        <TableCell className="font-medium">
-                                            {faculty.name}
-                                        </TableCell>
-
-                                        <TableCell>{faculty.contact}</TableCell>
-
-                                        <TableCell>{faculty.department}</TableCell>
-
-                                        <TableCell>
-                                            {faculty.rfid ? (
-                                                faculty.rfid
-                                            ) : (
-                                                <Badge variant="destructive">Invalid</Badge>
-                                            )}
-                                        </TableCell>
-
-                                        <TableCell className="text-right text-muted-foreground">
-                                            {faculty.lastSeen}
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center"
+                                        >
+                                            Loading faculty...
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )}
+
+                                {!loading &&
+                                    paginatedData.map((user) => (
+                                        <TableRow
+                                            key={user.userId}
+                                            className={
+                                                user.isActive === false
+                                                    ? "opacity-60"
+                                                    : ""
+                                            }
+                                        >
+                                            <TableCell className="flex gap-2 items-center">
+                                                <Avatar>
+                                                    <AvatarImage
+                                                        src="https://github.com/shadcn.png"
+                                                        alt="@shadcn"
+                                                    >
+
+                                                    </AvatarImage>
+                                                    <AvatarFallback>CN</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <p className="font-bold">
+                                                        {user.name.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-foreground text-xs font-normal">
+                                                        {user.userId}
+                                                    </p>
+                                                </div>
+
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {(user.profile as FacultyProfile)
+                                                    ?.department}
+                                            </TableCell>
+
+                                            <TableCell>{user.phone}</TableCell>
+
+                                            <TableCell>
+                                                {user.rfidCode ?? (
+                                                    <Badge variant="destructive">
+                                                        Invalid
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell>
+                                                {user.isActive !== false ? (
+                                                    <Badge className="bg-green-100 text-green-700">
+                                                        Active
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary">
+                                                        Inactive
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                {timeAgo(user.updatedAt)}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedUser(user);
+                                                                setFormMode("edit");
+                                                                setSidebarOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuItem
+                                                            className={
+                                                                user.isActive === false
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                            }
+                                                            onClick={() =>
+                                                                setConfirmUser(user)
+                                                            }
+                                                        >
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {user.isActive === false
+                                                                ? "Activate"
+                                                                : "Suspend"}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                             </TableBody>
                         </Table>
                     </CardContent>
 
                     <Separator />
 
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end gap-4 mr-4">
-                        <Field orientation="horizontal" className="w-fit">
-                            <FieldLabel htmlFor="select-rows-per-page">Rows per page</FieldLabel>
-                            <Select defaultValue="25">
-                                <SelectTrigger className="w-20" id="select-rows-per-page">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent align="start">
-                                    <SelectGroup>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                        <Pagination className="mx-0 w-auto">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious href="#" />
-                                </PaginationItem>
-                                <PaginationItem>
-                                    <PaginationNext href="#" />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
                 </Card>
-
             </div>
 
-            <PeopleSidebar
+            {/* Sidebar Form */}
+            <AddUserForm
                 open={sidebarOpen}
                 onOpenChange={setSidebarOpen}
-                type="faculty"
+                mode={formMode}
+                user={selectedUser}
+                onSuccess={fetchUsers}
+                defaultUserType="FACULTY"
             />
 
+            {/* Confirm Dialog */}
+            <ConfirmDialog
+                open={!!confirmUser}
+                title={
+                    confirmUser?.isActive === false
+                        ? "Activate Faculty"
+                        : "Suspend Faculty"
+                }
+                description="Are you sure?"
+                confirmText={
+                    confirmUser?.isActive === false
+                        ? "Activate"
+                        : "Suspend"
+                }
+                onCancel={() => setConfirmUser(null)}
+                onConfirm={() => {
+                    if (confirmUser) {
+                        toggleUserStatus(confirmUser);
+                        setConfirmUser(null);
+                    }
+                }}
+            />
         </>
     );
 };

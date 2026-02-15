@@ -3,6 +3,9 @@ export type DeviceStatus =
   | "OFFLINE"
   | "IDLE"
   | "INACTIVE"
+  | "MAINTENANCE"
+  | "DECOMMISSIONED"
+  | "SYNCHRONIZING"
 
 export interface Device {
   deviceId: string
@@ -18,7 +21,20 @@ export interface Device {
   description?: string
 
   status: DeviceStatus
-  
+
+  wifi?: {
+    rssi: number        
+    ssid?: string
+    ip?: string
+    updatedAt: number
+  }
+
+  lastSeen: number
+  uptime: number
+
+  freeHeap: number
+  totalHeap: number
+
   createdAt: number
   updatedAt: number
 }
