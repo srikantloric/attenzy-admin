@@ -48,7 +48,7 @@ const OrgDeviceHealth: React.FC = () => {
 
     const [search, setSearch] = useState("")
     const [filter, setFilter] =
-        useState<"all" | "online" | "idle" | "offline" | "alerts">("all")
+        useState<"ALL" | "ONLINE" | "IDLE" | "OFFLINE" | "ALERTS">("ALL")
 
     const [currentPage, setCurrentPage] = useState(1)
     const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -113,9 +113,9 @@ const OrgDeviceHealth: React.FC = () => {
                 device.location.toLowerCase().includes(q)
 
             const matchesFilter =
-                filter === "all"
+                filter === "ALL"
                     ? true
-                    : filter === "alerts"
+                    : filter === "ALERTS"
                         ? device.alerts > 0
                         : device.uiStatus === filter
 
@@ -135,9 +135,9 @@ const OrgDeviceHealth: React.FC = () => {
 
 
     const totalDevices = deviceHealthData.length
-    const onlineCount = deviceHealthData.filter(d => d.uiStatus === "online").length
-    const idleCount = deviceHealthData.filter(d => d.uiStatus === "idle").length
-    const offlineCount = deviceHealthData.filter(d => d.uiStatus === "offline").length
+    const onlineCount = deviceHealthData.filter(d => d.uiStatus === "ONLINE").length
+    const idleCount = deviceHealthData.filter(d => d.uiStatus === "IDLE").length
+    const offlineCount = deviceHealthData.filter(d => d.uiStatus === "OFFLINE").length
 
     if (!orgId) {
         return (
@@ -197,16 +197,16 @@ const OrgDeviceHealth: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <Button
                         size="sm"
-                        variant={filter === "all" ? "default" : "outline"}
-                        onClick={() => setFilter("all")}
+                        variant={filter === "ALL" ? "default" : "outline"}
+                        onClick={() => setFilter("ALL")}
                     >
                         All
                     </Button>
 
                     <Button
                         size="sm"
-                        variant={filter === "online" ? "default" : "outline"}
-                        onClick={() => setFilter("online")}
+                        variant={filter === "ALL" ? "default" : "outline"}
+                        onClick={() => setFilter("ONLINE")}
                     >
                         Online
                         <Badge variant="secondary" className="ml-2">
@@ -216,8 +216,8 @@ const OrgDeviceHealth: React.FC = () => {
 
                     <Button
                         size="sm"
-                        variant={filter === "idle" ? "default" : "outline"}
-                        onClick={() => setFilter("idle")}
+                        variant={filter === "IDLE" ? "default" : "outline"}
+                        onClick={() => setFilter("IDLE")}
                     >
                         Idle
                         <Badge className="ml-2 bg-yellow-100 text-yellow-700">
@@ -227,8 +227,8 @@ const OrgDeviceHealth: React.FC = () => {
 
                     <Button
                         size="sm"
-                        variant={filter === "offline" ? "default" : "outline"}
-                        onClick={() => setFilter("offline")}
+                        variant={filter === "OFFLINE" ? "default" : "outline"}
+                        onClick={() => setFilter("OFFLINE")}
                     >
                         Offline
                         <Badge variant="destructive" className="ml-2">
@@ -304,9 +304,9 @@ const OrgDeviceHealth: React.FC = () => {
                                         <TableCell>
                                             <Badge
                                                 className={
-                                                    device.uiStatus === "online"
+                                                    device.uiStatus === "ONLINE"
                                                         ? "bg-primary"
-                                                        : device.uiStatus === "idle"
+                                                        : device.uiStatus === "IDLE"
                                                             ? "bg-yellow-100 text-yellow-700"
                                                             : "bg-destructive"
                                                 }
