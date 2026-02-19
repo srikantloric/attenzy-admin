@@ -359,7 +359,7 @@ const StudentsPage: React.FC = () => {
                         rowsPerPage={rowsPerPage}
                         setRowsPerPage={setRowsPerPage}
                     />
-                    
+
                 </Card>
             </div>
 

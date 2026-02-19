@@ -56,6 +56,11 @@ const pages: NavItemType = {
                     title: "Manual Entry",
                     url: "manual-entry",
                 },
+                {
+                    id: "attendance-dashboard",
+                    title: "Attendance Dashboard",
+                    url: "attendance-dashboard",
+                },
             ]
         },
         {
@@ -110,7 +115,7 @@ const pages: NavItemType = {
                     id: "device-health",
                     title: "Device Health",
                     url: "/device-health",
-                    roles: ['ORGANIZATION',"CHANNEL_PARTNER"]
+                    roles: ['ORGANIZATION', "CHANNEL_PARTNER"]
                 },
             ]
         },

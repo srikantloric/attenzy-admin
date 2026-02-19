@@ -25,6 +25,7 @@ import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
 import DevicePage from "@/pages/devices"
 import DeviceHealth from "@/pages/devices/health"
+import SmartAttendanceDashboard from "@/pages/attendance/attendanceDashboard"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -62,6 +63,11 @@ const MainRoutes = {
             path: "manual-entry",
             element: <ManualAttendancePage />,
             handle: { breadcrumb: "Manual Entry" },
+        },
+        {
+            path: "attendance-dashboard",
+            element: <SmartAttendanceDashboard />,
+            handle: { breadcrumb: "Attendance Dashboard" },
         },
 
         // People
