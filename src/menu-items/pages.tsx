@@ -58,7 +58,7 @@ const pages: NavItemType = {
                 },
                 {
                     id: "attendance-dashboard",
-                    title: "Attendance Dashboard",
+                    title: "IoT Attendance",
                     url: "attendance-dashboard",
                 },
             ]
