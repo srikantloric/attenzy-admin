@@ -32,11 +32,26 @@ import SignalBars from "@/components/SignalBars"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 
 import { listOrgDevices } from "@/api/device"
-import type { Device } from "@/types/device"
+import type { Device, DeviceStatus } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
-import { formatLastActivity, mapStatusToUi, rssiToBars } from "@/utils/device"
+import { formatLastActivity, formatUptime, mapStatusToUi, rssiToBars } from "@/utils/device"
 import DataPagination from "@/components/Pagination"
 
+
+const statusBadge = (status: DeviceStatus) => {
+    switch (status) {
+        case "ONLINE":
+            return "bg-green-100 text-green-700"
+        case "IDLE":
+            return "bg-yellow-100 text-yellow-700"
+        case "OFFLINE":
+            return "bg-red-100 text-red-700"
+        case "INACTIVE":
+            return "bg-gray-200 text-gray-700"
+        default:
+            return "bg-muted text-muted-foreground"
+    }
+}
 
 const OrgDeviceHealth: React.FC = () => {
     const { user } = useAuth()
@@ -287,6 +302,7 @@ const OrgDeviceHealth: React.FC = () => {
                                     <TableHead>Location</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Signal</TableHead>
+                                    <TableHead>Uptime</TableHead>
                                     <TableHead className="text-center">
                                         Last Activity
                                     </TableHead>
@@ -302,17 +318,13 @@ const OrgDeviceHealth: React.FC = () => {
                                         <TableCell>{device.location}</TableCell>
 
                                         <TableCell>
-                                            <Badge
-                                                className={
-                                                    device.uiStatus === "ONLINE"
-                                                        ? "bg-primary"
-                                                        : device.uiStatus === "IDLE"
-                                                            ? "bg-yellow-100 text-yellow-700"
-                                                            : "bg-destructive"
-                                                }
+                                            <span
+                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(
+                                                    device.status
+                                                )}`}
                                             >
-                                                {device.uiStatus}
-                                            </Badge>
+                                                {device.status}
+                                            </span>
 
                                         </TableCell>
 
@@ -325,7 +337,7 @@ const OrgDeviceHealth: React.FC = () => {
                                                 />
                                             )}
                                         </TableCell>
-
+                                        <TableCell>  {formatUptime(device.uptime)}</TableCell>
                                         <TableCell className="text-center text-muted-foreground">
                                             {formatLastActivity(device.updatedAt)}
                                         </TableCell>
