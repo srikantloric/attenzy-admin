@@ -26,6 +26,7 @@ import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
 import DevicePage from "@/pages/devices"
 import DeviceHealth from "@/pages/devices/health"
 import SmartAttendanceDashboard from "@/pages/attendance/attendanceDashboard"
+import ReportPage from "@/pages/reports/ReportPage"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -121,6 +122,11 @@ const MainRoutes = {
             path: "organizations",
             element: <Organizations />,
             handle: { breadcrumb: "Organizations" },
+        },
+        {
+            path: "reports",
+            element: <ReportPage />,
+            handle: { breadcrumb: "Reports" },
         },
         {
             path: "organizations/:organizationId",

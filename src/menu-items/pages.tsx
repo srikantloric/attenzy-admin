@@ -139,7 +139,7 @@ const pages: NavItemType = {
             id: 'reports',
             title: 'Reports',
             type: 'item',
-            url: '/dashboard',
+            url: '/reports',
             icon: icons.report,
         },
 
