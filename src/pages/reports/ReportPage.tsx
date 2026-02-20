@@ -145,9 +145,12 @@ function ReportPage() {
             <AppBreadcrumb />
 
             {/* HEADER */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">
-                    Reports ({totalReports})
+            <div className="flex items-center justify-between mb-3">
+                <h1 className="text-2xl font-semibold items-center flex gap-2">
+                    Reports
+                    <span className="rounded-md bg-muted px-2 py-0.5 text-sm">
+                        {totalReports}
+                    </span>
                 </h1>
             </div>
 

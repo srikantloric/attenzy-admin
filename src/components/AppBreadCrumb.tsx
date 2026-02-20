@@ -13,7 +13,7 @@ export function AppBreadcrumb() {
     const breadcrumbs = useBreadcrumbs()
 
     return (
-        <Breadcrumb>
+        <Breadcrumb className="mb-3">
             <BreadcrumbList>
                 {breadcrumbs.map((bc, index) => {
                     const isLast = index === breadcrumbs.length - 1
