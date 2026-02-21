@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format } from "date-fns"
-import { v4 as uuidv4 } from "uuid"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,77 +25,150 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Plus, MoreVertical } from "lucide-react"
 
+import useAuth from "@/hooks/useAuth"
+import {
+  listGrades,
+  listSections,
+  listDepartments,
+  createGrade,
+  createSection,
+  createDepartment,
+  updateGrade,
+  updateSection,
+  updateDepartment,
+  deleteGrade,
+  deleteSection,
+  deleteDepartment
+} from "@/api/academics"
+import type { AcademicItem } from "@/types/academics"
+
 type MasterItem = {
-  id: string
+  gradeId?: string
+  sectionId?: string
+  departmentId?: string
   name: string
   isActive: boolean
-  createdAt: string
+  createdAt: number
 }
 
 function AcademicSetupTab() {
 
-  const [grades, setGrades] = useState<MasterItem[]>([])
-  const [sections, setSections] = useState<MasterItem[]>([])
-  const [departments, setDepartments] = useState<MasterItem[]>([])
+  const auth = useAuth()
+  const orgId = auth.user?.orgId ?? ""
+
+  const [grades, setGrades] = useState<AcademicItem[]>([])
+  const [sections, setSections] = useState<AcademicItem[]>([])
+  const [departments, setDepartments] = useState<AcademicItem[]>([])
 
   const [gradeInput, setGradeInput] = useState("")
   const [sectionInput, setSectionInput] = useState("")
   const [departmentInput, setDepartmentInput] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  /* ================= ADD FUNCTIONS ================= */
+  /* ================= FETCH ================= */
 
-  const createItem = (name: string): MasterItem => ({
-    id: uuidv4(),
-    name,
-    isActive: true,
-    createdAt: format(new Date(), "dd MMM yyyy HH:mm"),
-  })
+  const fetchAll = async () => {
+    if (!orgId) return
 
-  const addGrade = () => {
-    if (!gradeInput.trim()) return
-    setGrades([...grades, createItem(gradeInput.trim())])
-    setGradeInput("")
+    try {
+      setLoading(true)
+
+      const [g, s, d] = await Promise.all([
+        listGrades(orgId),
+        listSections(orgId),
+        listDepartments(orgId)
+      ])
+
+      setGrades(g || [])
+      setSections(s || [])
+      setDepartments(d || [])
+
+      console.log(g)
+
+    } catch (err) {
+      console.error("Failed to load academic masters", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const addSection = () => {
-    if (!sectionInput.trim()) return
-    setSections([...sections, createItem(sectionInput.trim())])
-    setSectionInput("")
-  }
+  useEffect(() => {
+    fetchAll()
+  }, [orgId])
 
-  const addDepartment = () => {
-    if (!departmentInput.trim()) return
-    setDepartments([...departments, createItem(departmentInput.trim())])
-    setDepartmentInput("")
-  }
+  /* ================= CREATE ================= */
 
-  /* ================= ACTIONS ================= */
-
-  const toggleActive = (
-    id: string,
-    items: MasterItem[],
-    setter: (val: MasterItem[]) => void
+  const handleCreate = async (
+    type: "grade" | "section" | "department",
+    name: string,
+    clear: () => void
   ) => {
-    setter(
-      items.map((item) =>
-        item.id === id ? { ...item, isActive: !item.isActive } : item
-      )
-    )
+    if (!name.trim() || !orgId) return
+
+    try {
+      setLoading(true)
+
+      if (type === "grade") await createGrade({ orgId, name })
+      if (type === "section") await createSection({ orgId, name })
+      if (type === "department") await createDepartment({ orgId, name })
+
+      clear()
+      await fetchAll()
+
+    } catch (err) {
+      console.error("Create failed", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const deleteItem = (
+  /* ================= UPDATE ================= */
+
+  const handleToggle = async (
+    type: "grade" | "section" | "department",
     id: string,
-    items: MasterItem[],
-    setter: (val: MasterItem[]) => void
+    current: boolean
   ) => {
-    setter(items.filter((item) => item.id !== id))
+    if (!orgId) return
+
+    try {
+      if (type === "grade") await updateGrade({ orgId, id, isActive: !current })
+      if (type === "section") await updateSection({ orgId, id, isActive: !current })
+      if (type === "department") await updateDepartment({ orgId, id, isActive: !current })
+
+      await fetchAll()
+
+    } catch (err) {
+      console.error("Toggle failed", err)
+    }
   }
 
-  /* ================= TABLE RENDER ================= */
+  /* ================= DELETE ================= */
+
+  const handleDelete = async (
+    type: "grade" | "section" | "department",
+    id: string
+  ) => {
+    if (!orgId) return
+
+    try {
+      if (type === "grade") await deleteGrade(orgId, id)
+      if (type === "section") await deleteSection(orgId, id)
+      if (type === "department") await deleteDepartment(orgId, id)
+
+      await fetchAll()
+
+    } catch (err) {
+      console.error("Delete failed", err)
+    }
+  }
+
+  /* ================= TABLE ================= */
 
   const renderTable = (
     items: MasterItem[],
-    setter: (val: MasterItem[]) => void
+    type: "grade" | "section" | "department",
+    idKey: "gradeId" | "sectionId" | "departmentId"
   ) => (
     <Table>
       <TableHeader>
@@ -107,56 +179,68 @@ function AcademicSetupTab() {
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
+
       <TableBody>
         {items.length === 0 && (
           <TableRow>
             <TableCell colSpan={4} className="text-center text-muted-foreground">
-              No records added yet
+              No records found
             </TableCell>
           </TableRow>
         )}
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>{item.name}</TableCell>
-            <TableCell>
-              <span
-                className={`text-xs px-2 py-1 rounded ${
-                  item.isActive
-                    ? "bg-green-100 text-green-600"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                {item.isActive ? "Active" : "Disabled"}
-              </span>
-            </TableCell>
-            <TableCell>{item.createdAt}</TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="ghost">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => toggleActive(item.id, items, setter)}
-                  >
-                    {item.isActive ? "Disable" : "Enable"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-500"
-                    onClick={() => deleteItem(item.id, items, setter)}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
+
+        {items.map((item) => {
+          const id = item[idKey] as string
+
+          return (
+            <TableRow key={id}>
+              <TableCell>{item.name}</TableCell>
+
+              <TableCell>
+                <span className={`text-xs px-2 py-1 rounded ${item.isActive
+                  ? "bg-green-100 text-green-600"
+                  : "bg-gray-200 text-gray-600"
+                  }`}>
+                  {item.isActive ? "Active" : "Disabled"}
+                </span>
+              </TableCell>
+
+              <TableCell>
+                {format(new Date(item.createdAt), "dd MMM yyyy HH:mm")}
+              </TableCell>
+
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => handleToggle(type, id, item.isActive)}
+                    >
+                      {item.isActive ? "Disable" : "Enable"}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="text-red-500"
+                      onClick={() => handleDelete(type, id)}
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          )
+        })}
       </TableBody>
     </Table>
   )
+
+  /* ================= UI ================= */
 
   return (
     <div className="p-6 space-y-6 max-w-6xl">
@@ -164,7 +248,7 @@ function AcademicSetupTab() {
       <div>
         <h1 className="text-2xl font-semibold">Academic Master Configuration</h1>
         <p className="text-sm text-muted-foreground">
-          Manage grades, sections and departments for your organization.
+          Manage grades, sections and departments.
         </p>
       </div>
 
@@ -190,21 +274,25 @@ function AcademicSetupTab() {
                 <div className="flex-1 space-y-2">
                   <Label>Grade Name</Label>
                   <Input
-                    placeholder="e.g. Grade 10"
                     value={gradeInput}
                     onChange={(e) => setGradeInput(e.target.value)}
                   />
                 </div>
+
                 <div className="flex items-end">
-                  <Button onClick={addGrade}>
+                  <Button
+                    disabled={loading}
+                    onClick={() =>
+                      handleCreate("grade", gradeInput, () => setGradeInput(""))
+                    }
+                  >
                     <Plus className="mr-2 h-4 w-4" /> Add
                   </Button>
                 </div>
               </div>
 
               <Separator />
-
-              {renderTable(grades, setGrades)}
+              {renderTable(grades, "grade", "gradeId")}
 
             </CardContent>
           </Card>
@@ -219,24 +307,21 @@ function AcademicSetupTab() {
             <CardContent className="space-y-6">
 
               <div className="flex gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label>Section Name</Label>
-                  <Input
-                    placeholder="e.g. A"
-                    value={sectionInput}
-                    onChange={(e) => setSectionInput(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={addSection}>
-                    <Plus className="mr-2 h-4 w-4" /> Add
-                  </Button>
-                </div>
+                <Input
+                  value={sectionInput}
+                  onChange={(e) => setSectionInput(e.target.value)}
+                />
+                <Button
+                  onClick={() =>
+                    handleCreate("section", sectionInput, () => setSectionInput(""))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add
+                </Button>
               </div>
 
               <Separator />
-
-              {renderTable(sections, setSections)}
+              {renderTable(sections, "section", "sectionId")}
 
             </CardContent>
           </Card>
@@ -251,24 +336,21 @@ function AcademicSetupTab() {
             <CardContent className="space-y-6">
 
               <div className="flex gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label>Department Name</Label>
-                  <Input
-                    placeholder="e.g. Science"
-                    value={departmentInput}
-                    onChange={(e) => setDepartmentInput(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={addDepartment}>
-                    <Plus className="mr-2 h-4 w-4" /> Add
-                  </Button>
-                </div>
+                <Input
+                  value={departmentInput}
+                  onChange={(e) => setDepartmentInput(e.target.value)}
+                />
+                <Button
+                  onClick={() =>
+                    handleCreate("department", departmentInput, () => setDepartmentInput(""))
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add
+                </Button>
               </div>
 
               <Separator />
-
-              {renderTable(departments, setDepartments)}
+              {renderTable(departments, "department", "departmentId")}
 
             </CardContent>
           </Card>

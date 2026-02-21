@@ -274,7 +274,7 @@ const StudentsPage: React.FC = () => {
                                             <TableCell>
                                                 {(user.profile as StudentProfile)
                                                     ?.class}
-                                                -
+                                                /
                                                 {(user.profile as StudentProfile)
                                                     ?.section}
                                             </TableCell>

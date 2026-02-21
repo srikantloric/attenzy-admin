@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
     Sheet,
     SheetContent,
@@ -32,6 +32,8 @@ import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { createUser, updateUser } from "@/api/users";
 import type { UserType } from "@/types/users";
+import { listDepartments, listGrades, listSections } from "@/api/academics";
+import type { AcademicItem } from "@/types/academics";
 
 interface AddUserFormProps {
     open: boolean;
@@ -52,7 +54,9 @@ const AddUserForm = ({
 }: AddUserFormProps) => {
     const { user: authUser } = useAuth();
     const orgId = authUser?.orgId;
-
+    const [grades, setGrades] = useState<AcademicItem[]>([])
+    const [sections, setSections] = useState<AcademicItem[]>([])
+    const [departments, setDepartments] = useState<AcademicItem[]>([])
     const {
         register,
         handleSubmit,
@@ -105,6 +109,24 @@ const AddUserForm = ({
             toast.error(error?.message || "Operation failed");
         }
     };
+
+    useEffect(() => {
+        if (!orgId) return;
+
+        const init = async () => {
+            const [g, s, d] = await Promise.all([
+                listGrades(orgId),
+                listSections(orgId),
+                listDepartments(orgId),
+            ]);
+
+            setGrades(g || []);
+            setSections(s || []);
+            setDepartments(d || []);
+        };
+
+        init();
+    }, [orgId]);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -171,26 +193,109 @@ const AddUserForm = ({
 
                     {selectedType === "STUDENT" && (
                         <>
-                            <Input placeholder="Class" {...register("profile.class")} />
-                            <Input placeholder="Section" {...register("profile.section")} />
+                            <div className="flex gap-2 items-end">
+                                {/* Grade */}
+                                <div className="space-y-1.5">
+                                    <Label>Grade *</Label>
+                                    <Select
+                                        onValueChange={(val) => setValue("profile.class", val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Grade" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {grades
+                                                .filter((g) => g.isActive)
+                                                .map((item) => (
+                                                    <SelectItem key={item.gradeId} value={item.name}>
+                                                        {item.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Section */}
+                                <div className="space-y-1.5">
+                                    <Label>Section *</Label>
+                                    <Select
+                                        onValueChange={(val) => setValue("profile.section", val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Section" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {sections
+                                                .filter((s) => s.isActive)
+                                                .map((item) => (
+                                                    <SelectItem key={item.sectionId} value={item.name}>
+                                                        {item.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                             <Input placeholder="Roll Number" {...register("profile.rollNumber")} />
                         </>
                     )}
 
                     {selectedType === "STAFF" && (
                         <>
-                            <Input placeholder="Designation" {...register("profile.designation")} />
-                            <Input placeholder="Department" {...register("profile.department")} />
+                            <Input
+                                placeholder="Designation"
+                                {...register("profile.designation")}
+                            />
+
+                            <div className="space-y-1.5">
+                                <Label>Department *</Label>
+                                <Select
+                                    onValueChange={(val) => setValue("profile.department", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Department" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {departments
+                                            .filter((d) => d.isActive)
+                                            .map((item) => (
+                                                <SelectItem key={item.departmentId} value={item.name}>
+                                                    {item.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </>
                     )}
-
                     {selectedType === "FACULTY" && (
                         <>
-                            <Input placeholder="Department" {...register("profile.department")} />
-                            <Input placeholder="Subjects (comma separated)" {...register("profile.subjects")} />
+                            <div className="space-y-1.5">
+                                <Label>Department *</Label>
+                                <Select
+                                    onValueChange={(val) => setValue("profile.department", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Department" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {departments
+                                            .filter((d) => d.isActive)
+                                            .map((item) => (
+                                                <SelectItem key={item.departmentId} value={item.name}>
+                                                    {item.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <Input
+                                placeholder="Subjects (comma separated)"
+                                {...register("profile.subjects")}
+                            />
                         </>
                     )}
-
                     <Separator />
 
                     <div className="flex justify-end gap-3">
