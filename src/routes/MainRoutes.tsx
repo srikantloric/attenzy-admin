@@ -25,13 +25,16 @@ import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
 import DevicePage from "@/pages/devices"
 import DeviceHealth from "@/pages/devices/health"
-import SmartAttendanceDashboard from "@/pages/attendance/iotAttendance"
 import ReportPage from "@/pages/reports/ReportPage"
 import SettingsPage from "@/pages/settings/SettingsPage"
 import AcademicSetupTab from "@/pages/settings/AcademicSetupTab"
+
 import StudentsDetailsPage from "@/pages/people/students-details/StudentDetailsPage"
 import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsProfileTab"
 import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
+
+import IotAttendance from "@/pages/attendance/iotAttendance"
+import StudentAttendance from "@/components/reports/StudentAttendance"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -72,7 +75,7 @@ const MainRoutes = {
         },
         {
             path: "attendance-dashboard",
-            element: <SmartAttendanceDashboard />,
+            element: <IotAttendance />,
             handle: { breadcrumb: "Attendance Dashboard" },
         },
 
@@ -150,11 +153,21 @@ const MainRoutes = {
             element: <Organizations />,
             handle: { breadcrumb: "Organizations" },
         },
+
         {
             path: "reports",
             element: <ReportPage />,
             handle: { breadcrumb: "Reports" },
+
+            children: [
+                {
+                    path: "student-attendance-percentage",
+                    element: <StudentAttendance />,
+                    handle: { breadcrumb: "Student Attendance" },
+                }
+            ]
         },
+
         {
             path: "organizations/:organizationId",
             element: <OrganizationDetailsPage />,
