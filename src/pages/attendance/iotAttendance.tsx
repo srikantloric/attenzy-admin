@@ -36,6 +36,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 const IotAttendance: React.FC = () => {
     const { user } = useAuth()
@@ -52,19 +53,35 @@ const IotAttendance: React.FC = () => {
 
     const [classFilter, setClassFilter] = useState("all")
     const [userTypeFilter, setUserTypeFilter] = useState("all")
+    const [autoRefresh, setAutoRefresh] = useState(false)
 
-
-    useEffect(() => {
+    const fetchAttendance = async () => {
         if (!orgId) return
 
-        setLoading(true)
+        try {
+            setLoading(true)
+            const data = await getAttendanceByOrg(orgId)
+            setAttendance(data)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
 
-        getAttendanceByOrg(orgId)
-            .then(setAttendance)
-            .catch(console.error)
-            .finally(() => setLoading(false))
+    useEffect(() => {
+        fetchAttendance()
     }, [orgId])
 
+    useEffect(() => {
+        if (!autoRefresh) return
+
+        const interval = setInterval(() => {
+            fetchAttendance()
+        }, 10000) // 10 sec
+
+        return () => clearInterval(interval)
+    }, [autoRefresh, orgId])
 
     const formattedDate = useMemo(() => {
         return format(selectedDate, "yyyy-MM-dd")
@@ -246,7 +263,7 @@ const IotAttendance: React.FC = () => {
                         value={classFilter}
                         onValueChange={setClassFilter}
                     >
-                        <SelectTrigger className="w-[150px]">
+                        <SelectTrigger className="w-37.5">
                             <SelectValue placeholder="Class" />
                         </SelectTrigger>
                         <SelectContent>
@@ -265,7 +282,7 @@ const IotAttendance: React.FC = () => {
                         value={userTypeFilter}
                         onValueChange={setUserTypeFilter}
                     >
-                        <SelectTrigger className="w-[160px]">
+                        <SelectTrigger className="w-40">
                             <SelectValue placeholder="User Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -299,12 +316,19 @@ const IotAttendance: React.FC = () => {
 
             {/* Table */}
             <Card>
-                <CardHeader>
-                    <CardTitle>
-                        Attendance Logs
-                    </CardTitle>
-                </CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Attendance Logs</CardTitle>
 
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                            Auto Refresh
+                        </span>
+                        <Switch
+                            checked={autoRefresh}
+                            onCheckedChange={setAutoRefresh}
+                        />
+                    </div>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
