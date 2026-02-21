@@ -29,6 +29,9 @@ import SmartAttendanceDashboard from "@/pages/attendance/attendanceDashboard"
 import ReportPage from "@/pages/reports/ReportPage"
 import SettingsPage from "@/pages/settings/SettingsPage"
 import AcademicSetupTab from "@/pages/settings/AcademicSetupTab"
+import StudentsDetailsPage from "@/pages/people/students-details/StudentDetailsPage"
+import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsProfileTab"
+import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -76,8 +79,30 @@ const MainRoutes = {
         // People
         {
             path: "students",
-            element: <StudentsPage />,
             handle: { breadcrumb: "Students" },
+            children: [
+                {
+                    index: true,
+                    element: <StudentsPage />,
+                },
+                {
+                    path: ":id",
+                    element: <StudentsDetailsPage />,
+                    handle: {
+                        breadcrumb: ({ params }: any) => params.id ?? "Details",
+                    },
+                    children: [
+                        {
+                            index: true,
+                            element: <StudentsProfileTab />,
+                        },
+                        {
+                            path: "attendance",
+                            element: <StudentAttendanceTab />,
+                        }
+                    ]
+                },
+            ],
         },
         {
             path: "faculty",

@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
+import { Search, Plus, MoreVertical, Ban, Pencil, Eye } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
@@ -37,6 +37,7 @@ import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 type FormMode = "add" | "edit";
 
@@ -51,6 +52,8 @@ const StudentsPage: React.FC = () => {
     const [formMode, setFormMode] = useState<FormMode>("add");
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [confirmUser, setConfirmUser] = useState<User | null>(null);
+
+    const navigate = useNavigate()
 
     /* ================= FETCH ================= */
 
@@ -258,13 +261,19 @@ const StudentsPage: React.FC = () => {
                                                     </AvatarImage>
                                                     <AvatarFallback>CN</AvatarFallback>
                                                 </Avatar>
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col items-start">
                                                     <p className="font-bold">
                                                         {user.name.toUpperCase()}
                                                     </p>
-                                                    <p className="text-foreground text-xs font-normal">
+                                                    <Button
+                                                        variant={"link"}
+                                                        onClick={() => {
+                                                            navigate(user.userId)
+                                                        }}
+                                                        className="p-0 text-xs m-0 text-gray-500 h-5"
+                                                    >
                                                         {user.userId}
-                                                    </p>
+                                                    </Button>
                                                 </div>
 
                                             </TableCell>
@@ -304,6 +313,13 @@ const StudentsPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
+                                                <Button variant={"ghost"}
+                                                    onClick={() => {
+                                                        navigate(user.userId)
+                                                    }}
+                                                >
+                                                    <Eye />
+                                                </Button>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
@@ -315,6 +331,7 @@ const StudentsPage: React.FC = () => {
                                                     </DropdownMenuTrigger>
 
                                                     <DropdownMenuContent align="end">
+
                                                         <DropdownMenuItem
                                                             onClick={() => {
                                                                 setSelectedUser(user);
