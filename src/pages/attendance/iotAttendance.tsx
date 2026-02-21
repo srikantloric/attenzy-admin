@@ -37,7 +37,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-const SmartAttendanceDashboard: React.FC = () => {
+const IotAttendance: React.FC = () => {
     const { user } = useAuth()
     const orgId = user?.orgId
 
@@ -69,14 +69,6 @@ const SmartAttendanceDashboard: React.FC = () => {
     const formattedDate = useMemo(() => {
         return format(selectedDate, "yyyy-MM-dd")
     }, [selectedDate])
-
-
-    const getUserType = (userId: string) => {
-        if (userId.startsWith("STU")) return "STUDENT"
-        if (userId.startsWith("FAC")) return "FACULTY"
-        if (userId.startsWith("STA")) return "STAFF"
-        return "OTHER"
-    }
 
 
     const availableClasses = useMemo(() => {
@@ -115,7 +107,7 @@ const SmartAttendanceDashboard: React.FC = () => {
         if (userTypeFilter !== "all") {
             data = data.filter(
                 (a) =>
-                    getUserType(a.userId) === userTypeFilter
+                    a.userType?.toUpperCase() === userTypeFilter
             )
         }
 
@@ -393,4 +385,4 @@ const SmartAttendanceDashboard: React.FC = () => {
     )
 }
 
-export default SmartAttendanceDashboard
+export default IotAttendance

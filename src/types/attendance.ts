@@ -1,6 +1,7 @@
 export interface AttendanceItem {
   orgId: string
   userId: string
+  userType: string
   userName: string
   userProfile: {
     rollNumber: string
