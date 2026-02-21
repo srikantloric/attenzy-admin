@@ -27,6 +27,8 @@ import DevicePage from "@/pages/devices"
 import DeviceHealth from "@/pages/devices/health"
 import SmartAttendanceDashboard from "@/pages/attendance/attendanceDashboard"
 import ReportPage from "@/pages/reports/ReportPage"
+import SettingsPage from "@/pages/settings/SettingsPage"
+import AcademicSetupTab from "@/pages/settings/AcademicSetupTab"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -133,7 +135,6 @@ const MainRoutes = {
             element: <OrganizationDetailsPage />,
             handle: { breadcrumb: "Organization Details" },
         },
-
         // Developers (nested tabs)
         {
             path: "developers",
@@ -163,7 +164,19 @@ const MainRoutes = {
                 },
             ],
         },
+        {
+            path: "settings",
+            element: <SettingsPage />,
+            handle: { breadcrumb: "Settings" },
 
+            children: [
+                {
+                    index: true,
+                    element: <AcademicSetupTab />,
+                    handle: { breadcrumb: "academics" },
+                },
+            ]
+        },
         // 404
         {
             path: "*",
