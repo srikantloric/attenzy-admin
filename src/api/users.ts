@@ -12,6 +12,7 @@ export async function getUsersByOrg(orgId: string) {
   if (!res.ok) throw new Error("Failed to fetch users");
 
   const data = await res.json();
+  data.items.sort((a: any, b: any) => b.createdAt - a.createdAt);
   return data.items;
 }
 

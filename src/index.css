@@ -144,3 +144,48 @@
     font-family: var(--font-sans);
   }
 }
+
+/* ===== FullCalendar → shadcn bridge ===== */
+
+.fc {
+  @apply text-sm text-foreground;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  @apply border-border;
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  @apply border border-border rounded-lg overflow-hidden;
+}
+
+.fc-col-header-cell {
+  @apply bg-muted/50 text-muted-foreground font-medium;
+}
+
+.fc-day-today {
+  @apply bg-muted;
+}
+
+.fc-daygrid-day-number {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Toolbar */
+.fc-toolbar {
+  @apply flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4;
+}
+
+.fc-button {
+  @apply h-8 px-3 rounded-md border border-border bg-background text-foreground shadow-sm hover:bg-muted;
+}
+
+.fc-button-primary:not(:disabled).fc-button-active {
+  @apply bg-primary text-primary-foreground;
+}
+
+/* Events = shadcn badge look */
+.fc-daygrid-event {
+  @apply rounded-md border-0 px-1 py-0.5 text-[10px] font-medium text-white;
+}

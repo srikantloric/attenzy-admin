@@ -9,7 +9,6 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 
-import { Button } from "@/components/ui/button"
 import LiveAttendance from "@/components/LiveAttendance"
 import LiveAttendanceWithDevice from "@/components/LiveAttendanceWithDevice"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
@@ -31,13 +30,12 @@ function OrganizationDashboard() {
 
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-2 lg:p-6 md:p-3">
             <AppBreadcrumb />
 
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold">Orgnization Dashboard</h1>
-                <Button variant="secondary">Today</Button>
             </div>
 
             {/* Stats */}
@@ -94,7 +92,7 @@ function OrganizationDashboard() {
                                         <div key={item.label} className="flex flex-col items-center w-full">
                                             <div
                                                 className="w-full rounded-md bg-primary"
-                                               style={{
+                                                style={{
                                                     height: `${(item.value / maxAttendance) * chartHeight}px`
                                                 }}
                                                 title={`${item.value} organizations`}

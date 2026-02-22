@@ -25,6 +25,16 @@ import WebhooksTab from "@/pages/developers/WebhooksTab"
 import ApiReferenceTab from "@/pages/developers/ApiReferenceTab"
 import DevicePage from "@/pages/devices"
 import DeviceHealth from "@/pages/devices/health"
+import ReportPage from "@/pages/reports/ReportPage"
+import SettingsPage from "@/pages/settings/SettingsPage"
+import AcademicSetupTab from "@/pages/settings/AcademicSetupTab"
+
+import StudentsDetailsPage from "@/pages/people/students-details/StudentDetailsPage"
+import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsProfileTab"
+import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
+
+import IotAttendance from "@/pages/attendance/iotAttendance"
+import StudentAttendance from "@/components/reports/StudentAttendance"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -63,12 +73,39 @@ const MainRoutes = {
             element: <ManualAttendancePage />,
             handle: { breadcrumb: "Manual Entry" },
         },
+        {
+            path: "attendance-dashboard",
+            element: <IotAttendance />,
+            handle: { breadcrumb: "Attendance Dashboard" },
+        },
 
         // People
         {
             path: "students",
-            element: <StudentsPage />,
             handle: { breadcrumb: "Students" },
+            children: [
+                {
+                    index: true,
+                    element: <StudentsPage />,
+                },
+                {
+                    path: ":id",
+                    element: <StudentsDetailsPage />,
+                    handle: {
+                        breadcrumb: ({ params }: any) => params.id ?? "Details",
+                    },
+                    children: [
+                        {
+                            index: true,
+                            element: <StudentsProfileTab />,
+                        },
+                        {
+                            path: "attendance",
+                            element: <StudentAttendanceTab />,
+                        }
+                    ]
+                },
+            ],
         },
         {
             path: "faculty",
@@ -116,12 +153,26 @@ const MainRoutes = {
             element: <Organizations />,
             handle: { breadcrumb: "Organizations" },
         },
+
+        {
+            path: "reports",
+            element: <ReportPage />,
+            handle: { breadcrumb: "Reports" },
+
+            children: [
+                {
+                    path: "student-attendance-percentage",
+                    element: <StudentAttendance />,
+                    handle: { breadcrumb: "Student Attendance" },
+                }
+            ]
+        },
+
         {
             path: "organizations/:organizationId",
             element: <OrganizationDetailsPage />,
             handle: { breadcrumb: "Organization Details" },
         },
-
         // Developers (nested tabs)
         {
             path: "developers",
@@ -151,7 +202,19 @@ const MainRoutes = {
                 },
             ],
         },
+        {
+            path: "settings",
+            element: <SettingsPage />,
+            handle: { breadcrumb: "Settings" },
 
+            children: [
+                {
+                    index: true,
+                    element: <AcademicSetupTab />,
+                    handle: { breadcrumb: "academics" },
+                },
+            ]
+        },
         // 404
         {
             path: "*",

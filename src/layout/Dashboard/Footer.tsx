@@ -32,9 +32,9 @@ function Footer() {
 
   return (
     <footer className="flex justify-end">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-4 text-sm text-muted-foreground md:flex-row">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-4 text-xs text-muted-foreground md:flex-row">
         <p>
-          © {year} <span className="font-medium text-foreground">Loric Software</span>. All rights reserved.
+          © {year} <span className="font-medium text-foreground">Loric Softwares</span>. All rights reserved.
         </p>
         <div className="flex items-center gap-2">
           <div className={`h-3 w-3 rounded-full ${config.color}`}></div>

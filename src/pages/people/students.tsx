@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
+import { Search, Plus, MoreVertical, Ban, Pencil, Eye } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
@@ -37,6 +37,7 @@ import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 type FormMode = "add" | "edit";
 
@@ -51,6 +52,8 @@ const StudentsPage: React.FC = () => {
     const [formMode, setFormMode] = useState<FormMode>("add");
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [confirmUser, setConfirmUser] = useState<User | null>(null);
+
+    const navigate = useNavigate()
 
     /* ================= FETCH ================= */
 
@@ -128,7 +131,7 @@ const StudentsPage: React.FC = () => {
 
     return (
         <>
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 lg:p-6 md:p-3">
                 <AppBreadcrumb />
 
                 {/* Header */}
@@ -172,7 +175,7 @@ const StudentsPage: React.FC = () => {
                 <Separator />
 
                 {/* Filters */}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex gap-2">
                         {(["all", "active", "inactive"] as const).map(
                             (status) => (
@@ -193,10 +196,10 @@ const StudentsPage: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="relative">
+                    <div className="relative w-full sm:w-64">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            className="pl-8 w-64"
+                            className="pl-8 w-full"
                             placeholder="Search students..."
                             value={search}
                             onChange={(e) =>
@@ -258,13 +261,19 @@ const StudentsPage: React.FC = () => {
                                                     </AvatarImage>
                                                     <AvatarFallback>CN</AvatarFallback>
                                                 </Avatar>
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col items-start">
                                                     <p className="font-bold">
                                                         {user.name.toUpperCase()}
                                                     </p>
-                                                    <p className="text-foreground text-xs font-normal">
+                                                    <Button
+                                                        variant={"link"}
+                                                        onClick={() => {
+                                                            navigate(user.userId)
+                                                        }}
+                                                        className="p-0 text-xs m-0 text-gray-500 h-5"
+                                                    >
                                                         {user.userId}
-                                                    </p>
+                                                    </Button>
                                                 </div>
 
                                             </TableCell>
@@ -274,7 +283,7 @@ const StudentsPage: React.FC = () => {
                                             <TableCell>
                                                 {(user.profile as StudentProfile)
                                                     ?.class}
-                                                -
+                                                /
                                                 {(user.profile as StudentProfile)
                                                     ?.section}
                                             </TableCell>
@@ -304,6 +313,13 @@ const StudentsPage: React.FC = () => {
                                             </TableCell>
 
                                             <TableCell className="text-right">
+                                                <Button variant={"ghost"}
+                                                    onClick={() => {
+                                                        navigate(user.userId)
+                                                    }}
+                                                >
+                                                    <Eye />
+                                                </Button>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
@@ -315,6 +331,7 @@ const StudentsPage: React.FC = () => {
                                                     </DropdownMenuTrigger>
 
                                                     <DropdownMenuContent align="end">
+
                                                         <DropdownMenuItem
                                                             onClick={() => {
                                                                 setSelectedUser(user);
@@ -359,7 +376,7 @@ const StudentsPage: React.FC = () => {
                         rowsPerPage={rowsPerPage}
                         setRowsPerPage={setRowsPerPage}
                     />
-                    
+
                 </Card>
             </div>
 
