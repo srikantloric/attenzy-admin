@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
 import FullCalendar from "@fullcalendar/react"
 import dayGridPlugin from "@fullcalendar/daygrid"
 import interactionPlugin from "@fullcalendar/interaction"
@@ -18,74 +17,97 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
+import useAuth from "@/hooks/useAuth"
+import axiosServices from "@/utils/axios"
+import { useParams } from "react-router-dom"
 
-type AttendanceItem = {
-  date: string
-  status: "PRESENT" | "ABSENT" | "LEAVE" | "HOLIDAY"
-}
+type AttendanceStatus = "PRESENT" | "ABSENT" | "LEAVE" | "HOLIDAY"
 
-
-
-function generateMockAttendance(month: string) {
-  const [year, monthIndex] = month.split("-").map(Number)
-  const totalDays = new Date(year, monthIndex, 0).getDate()
-
-  const results = []
-
-  for (let day = 1; day <= totalDays; day++) {
-    const date = new Date(year, monthIndex - 1, day)
-
-    const isoDate = date.toISOString().split("T")[0]
-    const weekday = date.getDay()
-
-    // Weekend = Holiday
-    if (weekday === 0 || weekday === 6) {
-      results.push({
-        date: isoDate,
-        status: "HOLIDAY",
-      })
-      continue
+type ApiResponse = {
+  month: string
+  days: string[]
+  users: {
+    userId: string
+    name: string
+    attendance: Record<string, AttendanceStatus>
+    summary: {
+      present: number
+      absent: number
+      leave: number
+      holiday: number
+      attendancePercentage: number
     }
-
-    // Random distribution
-    const random = Math.random()
-
-    let status: "PRESENT" | "ABSENT" | "LEAVE"
-
-    if (random < 0.8) {
-      status = "PRESENT"
-    } else if (random < 0.9) {
-      status = "ABSENT"
-    } else {
-      status = "LEAVE"
-    }
-
-    results.push({
-      date: isoDate,
-      status,
-    })
-  }
-
-  return results
+  }[]
 }
 
 function StudentAttendanceTab() {
 
+  const { user } = useAuth()
+  const orgId = user?.orgId
 
+  const {id} = useParams()
 
-  const [attendance, setAttendance] = useState<AttendanceItem[]>([])
+ 
+
+  const [attendance, setAttendance] = useState<{ date: string; status: AttendanceStatus }[]>([])
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
   const [loading, setLoading] = useState(false)
 
   /* ================= FETCH ================= */
 
-  useEffect(() => {
-    setLoading(true)
-    const month = new Date().toISOString().slice(0, 7)
+  const fetchAttendance = async (selectedMonth: string) => {
+    if (!orgId || !id) return
 
-    const mock = generateMockAttendance(month)
-    setAttendance(mock)
-    setLoading(false)
-  }, [])
+    try {
+      setLoading(true)
+
+      const res = await axiosServices.get<ApiResponse>(
+        `/orgs/${orgId}/calendar-view`,
+        {
+          params: {
+            month: selectedMonth,
+            userId:id
+          }
+        }
+      )
+
+      const data = res.data
+
+      if (!data.users?.length) {
+        setAttendance([])
+        return
+      }
+
+      const userAttendance = data.users[0].attendance
+      const year = Number(selectedMonth.split("-")[0])
+      const monthIndex = Number(selectedMonth.split("-")[1])
+      const daysInMonth = new Date(year, monthIndex, 0).getDate()
+
+      const formatted: any[] = []
+
+      for (let i = 1; i <= daysInMonth; i++) {
+        const day = String(i).padStart(2, "0")
+        const dateObj = new Date(year, monthIndex - 1, i)
+
+        formatted.push({
+          date: dateObj.toISOString().split("T")[0],
+          status: userAttendance[day] || "HOLIDAY"
+        })
+      }
+
+      setAttendance(formatted)
+
+    } catch (error) {
+      console.error("Failed to fetch attendance", error)
+      setAttendance([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAttendance(month)
+  }, [month, orgId, id])
 
   /* ================= CALENDAR EVENTS ================= */
 
@@ -97,7 +119,8 @@ function StudentAttendanceTab() {
   }))
 
   return (
-    <div className="p-3">
+    <div className="p-3 space-y-4">
+
       <Tabs defaultValue="calendar">
 
         <TabsList>
@@ -107,16 +130,25 @@ function StudentAttendanceTab() {
 
         {/* ================= CALENDAR ================= */}
         <TabsContent value="calendar">
+
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             events={events}
             height="auto"
+            datesSet={(arg) => {
+              const newMonth = arg.startStr.slice(0, 7)
+              if (newMonth !== month) {
+                setMonth(newMonth)
+              }
+            }}
           />
+
         </TabsContent>
 
         {/* ================= TABLE ================= */}
         <TabsContent value="table">
+
           <div className="rounded-md border mt-4">
             <Table>
               <TableHeader>
@@ -127,6 +159,7 @@ function StudentAttendanceTab() {
               </TableHeader>
 
               <TableBody>
+
                 {attendance.length === 0 && !loading && (
                   <TableRow>
                     <TableCell colSpan={2} className="text-center text-muted-foreground">
@@ -151,9 +184,11 @@ function StudentAttendanceTab() {
                     </TableCell>
                   </TableRow>
                 ))}
+
               </TableBody>
             </Table>
           </div>
+
         </TabsContent>
 
       </Tabs>
