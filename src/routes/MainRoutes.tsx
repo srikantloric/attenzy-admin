@@ -35,6 +35,7 @@ import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAt
 
 import IotAttendance from "@/pages/attendance/iotAttendance"
 import StudentAttendance from "@/components/reports/StudentAttendance"
+import CalendarViewPage from "@/pages/reports/CalendarViewPage"
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -163,6 +164,11 @@ const MainRoutes = {
                 {
                     path: "student-attendance-percentage",
                     element: <StudentAttendance />,
+                    handle: { breadcrumb: "Student Attendance" },
+                },
+                {
+                    path: "calendar-view",
+                    element: <CalendarViewPage />,
                     handle: { breadcrumb: "Student Attendance" },
                 }
             ]
