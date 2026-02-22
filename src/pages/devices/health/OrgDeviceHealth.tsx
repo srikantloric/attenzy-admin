@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
-import { Search } from "lucide-react"
+import { Search, MoreVertical, Eye, Pencil, RotateCw } from "lucide-react"
 
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,28 +10,18 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-import {
-    MoreVertical,
-    Eye,
-    Pencil,
-    RotateCw
-} from "lucide-react"
 
 import SignalBars from "@/components/SignalBars"
 import { AppBreadcrumb } from "@/components/AppBreadCrumb"
-
 import { listOrgDevices } from "@/api/device"
 import type { Device, DeviceStatus } from "@/types/device"
 import useAuth from "@/hooks/useAuth"
-import { formatLastActivity, formatUptime, mapStatusToUi, rssiToBars } from "@/utils/device"
+import {
+    formatLastActivity, formatUptime, mapStatusToUi, rssiToBars,
+} from "@/utils/device"
 import DataPagination from "@/components/Pagination"
-
 
 const statusBadge = (status: DeviceStatus) => {
     switch (status) {
@@ -68,7 +53,6 @@ const OrgDeviceHealth: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1)
     const [rowsPerPage, setRowsPerPage] = useState(10)
 
-
     useEffect(() => {
         if (!orgId) return
 
@@ -76,9 +60,7 @@ const OrgDeviceHealth: React.FC = () => {
             try {
                 setLoading(true)
                 setError(null)
-
                 const res = await listOrgDevices(orgId)
-                console.log(res)
                 setDevices(res.items ?? [])
             } catch (err: any) {
                 setError(err.message || "Failed to load device health")
@@ -90,10 +72,8 @@ const OrgDeviceHealth: React.FC = () => {
         fetchDevices()
     }, [orgId])
 
-
     const deviceHealthData = useMemo(() => {
         return devices.map((device) => {
-            console.log(device)
             const uiStatus = mapStatusToUi(device.status)
 
             const signalBars =
@@ -108,15 +88,9 @@ const OrgDeviceHealth: React.FC = () => {
                     ? 1
                     : 0
 
-            return {
-                ...device,
-                uiStatus,
-                signalBars,
-                alerts,
-            }
+            return { ...device, uiStatus, signalBars, alerts }
         })
     }, [devices])
-
 
     const filteredDevices = useMemo(() => {
         const q = search.trim().toLowerCase()
@@ -148,7 +122,6 @@ const OrgDeviceHealth: React.FC = () => {
         setCurrentPage(1)
     }, [search, filter])
 
-
     const totalDevices = deviceHealthData.length
     const onlineCount = deviceHealthData.filter(d => d.uiStatus === "ONLINE").length
     const idleCount = deviceHealthData.filter(d => d.uiStatus === "IDLE").length
@@ -163,102 +136,45 @@ const OrgDeviceHealth: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 p-2 md:p-3 lg:p-5">
             <AppBreadcrumb />
 
             <h1 className="text-2xl font-semibold tracking-tight">
                 Device Health
             </h1>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Total Devices</p>
-                        <p className="text-2xl font-semibold">{totalDevices}</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Online Devices</p>
-                        <p className="text-2xl font-semibold text-green-600">
-                            {onlineCount}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Offline Devices</p>
-                        <p className="text-2xl font-semibold text-red-500">
-                            {offlineCount}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <p className="text-sm text-muted-foreground">Idle</p>
-                        <p className="text-2xl font-semibold text-yellow-600">
-                            {idleCount}
-                        </p>
-                    </CardContent>
-                </Card>
+            {/* STATS */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard label="Total Devices" value={totalDevices} />
+                <StatCard label="Online Devices" value={onlineCount} color="text-green-600" />
+                <StatCard label="Offline Devices" value={offlineCount} color="text-red-500" />
+                <StatCard label="Idle" value={idleCount} color="text-yellow-600" />
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <Button
-                        size="sm"
-                        variant={filter === "ALL" ? "default" : "outline"}
-                        onClick={() => setFilter("ALL")}
-                    >
-                        All
-                    </Button>
+            {/* FILTERS */}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-                    <Button
-                        size="sm"
-                        variant={filter === "ALL" ? "default" : "outline"}
-                        onClick={() => setFilter("ONLINE")}
-                    >
-                        Online
-                        <Badge variant="secondary" className="ml-2">
-                            {onlineCount}
-                        </Badge>
-                    </Button>
+                <div className="flex flex-wrap gap-2">
+                    <FilterBtn active={filter === "ALL"} onClick={() => setFilter("ALL")}>All</FilterBtn>
 
-                    <Button
-                        size="sm"
-                        variant={filter === "IDLE" ? "default" : "outline"}
-                        onClick={() => setFilter("IDLE")}
-                    >
-                        Idle
-                        <Badge className="ml-2 bg-yellow-100 text-yellow-700">
-                            {idleCount}
-                        </Badge>
-                    </Button>
+                    <FilterBtn active={filter === "ONLINE"} onClick={() => setFilter("ONLINE")}>
+                        Online <Badge variant="secondary" className="ml-2">{onlineCount}</Badge>
+                    </FilterBtn>
 
-                    <Button
-                        size="sm"
-                        variant={filter === "OFFLINE" ? "default" : "outline"}
-                        onClick={() => setFilter("OFFLINE")}
-                    >
-                        Offline
-                        <Badge variant="destructive" className="ml-2">
-                            {offlineCount}
-                        </Badge>
-                    </Button>
+                    <FilterBtn active={filter === "IDLE"} onClick={() => setFilter("IDLE")}>
+                        Idle <Badge className="ml-2 bg-yellow-100 text-yellow-700">{idleCount}</Badge>
+                    </FilterBtn>
 
+                    <FilterBtn active={filter === "OFFLINE"} onClick={() => setFilter("OFFLINE")}>
+                        Offline <Badge variant="destructive" className="ml-2">{offlineCount}</Badge>
+                    </FilterBtn>
                 </div>
 
-
-                <div className="flex items-center gap-2">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-2">
+                    <div className="relative w-full sm:w-64">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            className="w-64 pl-8"
+                            className="w-full pl-8"
                             placeholder="Search..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -267,7 +183,9 @@ const OrgDeviceHealth: React.FC = () => {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">Location</Button>
+                            <Button variant="outline" className="w-full sm:w-auto">
+                                Location
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem>Main Entrance</DropdownMenuItem>
@@ -280,6 +198,7 @@ const OrgDeviceHealth: React.FC = () => {
 
             <Separator />
 
+            {/* TABLE */}
             <Card>
                 <CardContent>
                     {loading && (
@@ -295,100 +214,124 @@ const OrgDeviceHealth: React.FC = () => {
                     )}
 
                     {!loading && !error && (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Location</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Signal</TableHead>
-                                    <TableHead>Uptime</TableHead>
-                                    <TableHead className="text-center">
-                                        Last Activity
-                                    </TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-
-                            <TableBody>
-                                {paginatedDevices.map((device) => (
-                                    <TableRow key={device.deviceId}>
-                                        <TableCell>{device.deviceId}</TableCell>
-
-                                        <TableCell>{device.location}</TableCell>
-
-                                        <TableCell>
-                                            <span
-                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(
-                                                    device.status
-                                                )}`}
-                                            >
-                                                {device.status}
-                                            </span>
-
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {device.signalBars === 0 ? (
-                                                <SignalBars strength={0} />
-                                            ) : (
-                                                <SignalBars
-                                                    strength={device.signalBars}
-                                                />
-                                            )}
-                                        </TableCell>
-                                        <TableCell>  {formatUptime(device.uptime)}</TableCell>
-                                        <TableCell className="text-center text-muted-foreground">
-                                            {formatLastActivity(device.updatedAt)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => console.log("View", device.deviceId)}>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View
-                                                    </DropdownMenuItem>
-
-                                                    <DropdownMenuItem onClick={() => console.log("Edit", device.deviceId)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-
-                                                    <DropdownMenuItem onClick={() => console.log("Restart", device.deviceId)}>
-                                                        <RotateCw className="mr-2 h-4 w-4" />
-                                                        Restart
-                                                    </DropdownMenuItem>
-
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-
+                        <div className="w-full overflow-x-auto">
+                            <Table className="min-w-187.5">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>ID</TableHead>
+                                        <TableHead>Location</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Signal</TableHead>
+                                        <TableHead>Uptime</TableHead>
+                                        <TableHead className="text-center">Last Activity</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+
+                                <TableBody>
+                                    {paginatedDevices.map((device) => (
+                                        <TableRow key={device.deviceId}>
+                                            <TableCell className="whitespace-nowrap">{device.deviceId}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{device.location}</TableCell>
+
+                                            <TableCell>
+                                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(device.status)}`}>
+                                                    {device.status}
+                                                </span>
+                                            </TableCell>
+
+                                            <TableCell>
+                                                <SignalBars strength={device.signalBars} />
+                                            </TableCell>
+
+                                            <TableCell className="whitespace-nowrap">
+                                                {formatUptime(device.uptime)}
+                                            </TableCell>
+
+                                            <TableCell className="text-center whitespace-nowrap text-muted-foreground">
+                                                {formatLastActivity(device.updatedAt)}
+                                            </TableCell>
+
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            View
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <RotateCw className="mr-2 h-4 w-4" />
+                                                            Restart
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
 
                 <Separator />
 
-                <DataPagination
-                    totalItems={filteredDevices.length}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    rowsPerPage={rowsPerPage}
-                    setRowsPerPage={setRowsPerPage}
-                />
-
+                <div className="p-3">
+                    <DataPagination
+                        totalItems={filteredDevices.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
+                </div>
             </Card>
         </div>
     )
 }
 
 export default OrgDeviceHealth
+
+/* ================= SMALL COMPONENTS ================= */
+
+function StatCard({
+    label,
+    value,
+    color,
+}: {
+    label: string
+    value: number
+    color?: string
+}) {
+    return (
+        <Card>
+            <CardContent className="px-3 py-2 sm:px-4 sm:py-3">
+                <div className="flex flex-col leading-tight">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">
+                        {label}
+                    </p>
+                    <p className={`text-lg sm:text-xl font-semibold ${color ?? ""}`}>
+                        {value}
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+function FilterBtn({ active, children, onClick }: any) {
+    return (
+        <Button size="sm" variant={active ? "default" : "outline"} onClick={onClick}>
+            {children}
+        </Button>
+    )
+}

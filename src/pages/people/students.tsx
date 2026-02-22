@@ -131,7 +131,7 @@ const StudentsPage: React.FC = () => {
 
     return (
         <>
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 lg:p-6 md:p-3">
                 <AppBreadcrumb />
 
                 {/* Header */}
@@ -175,7 +175,7 @@ const StudentsPage: React.FC = () => {
                 <Separator />
 
                 {/* Filters */}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex gap-2">
                         {(["all", "active", "inactive"] as const).map(
                             (status) => (
@@ -196,10 +196,10 @@ const StudentsPage: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="relative">
+                    <div className="relative w-full sm:w-64">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            className="pl-8 w-64"
+                            className="pl-8 w-full"
                             placeholder="Search students..."
                             value={search}
                             onChange={(e) =>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useIsMobile } from "@/hooks/use-mobile"
 import useAuth from "@/hooks/useAuth"
 import { Bell, Radio } from "lucide-react"
 
@@ -13,6 +14,7 @@ import { Bell, Radio } from "lucide-react"
 function AppBar() {
     const { user, logout } = useAuth()
     console.log(user)
+    const isMobile = useIsMobile()
 
 
     const handleLiveFeed = () => {
@@ -33,12 +35,17 @@ function AppBar() {
                         orientation="vertical"
                         className="mr-2 data-[orientation=vertical]:h-4"
                     />
-                    <CommandSearch />
+                    {!isMobile
+                        &&
+                        <CommandSearch />
+                    }
                 </div>
 
                 <div className="flex items-center gap-3">
-
-                    <Badge variant={"outline"}>{user?.role}</Badge>
+                    {
+                        !isMobile &&
+                        <Badge variant={"outline"}>{user?.role}</Badge>
+                    }
 
                     <Button variant={"outline"} onClick={handleLiveFeed}>
                         <Radio />IoT
