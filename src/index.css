@@ -130,6 +130,7 @@
   color: black;
 }
 
+
 @theme {
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
 }
@@ -145,6 +146,27 @@
   }
 }
 
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  button {
+    display: none !important;
+  }
 /* ===== FullCalendar → shadcn bridge ===== */
 
 .fc {
