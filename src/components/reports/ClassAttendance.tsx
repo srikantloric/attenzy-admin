@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react"
 import { format } from "date-fns"
 import * as XLSX from "xlsx"
-// import { saveAs } from "file-saver"
+import { saveAs } from "file-saver"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import {
@@ -143,22 +143,22 @@ export default function ClassAttendance() {
             type: "application/octet-stream",
         })
 
-        // saveAs(blob, `Attendance-${selectedMonth}.xlsx`)
+        saveAs(blob, `Attendance-${selectedMonth}.xlsx`)
     }
 
     /* ================= PDF EXPORT ================= */
 
-    // const exportToPDF = async () => {
-    //     const input = document.getElementById("print-area")
-    //     if (!input) return
+    const exportToPDF = async () => {
+        const input = document.getElementById("print-area")
+        if (!input) return
 
-    //     const canvas = await html2canvas(input)
-    //     const imgData = canvas.toDataURL("image/png")
+        const canvas = await html2canvas(input)
+        const imgData = canvas.toDataURL("image/png")
 
-    //     const pdf = new jsPDF("l", "mm", "a4")
-    //     pdf.addImage(imgData, "PNG", 10, 10, 280, 180)
-    //     pdf.save(`Attendance-${selectedMonth}.pdf`)
-    // }
+        const pdf = new jsPDF("l", "mm", "a4")
+        pdf.addImage(imgData, "PNG", 10, 10, 280, 180)
+        pdf.save(`Attendance-${selectedMonth}.pdf`)
+    }
 
     /* ================= GRAPH DATA ================= */
 
