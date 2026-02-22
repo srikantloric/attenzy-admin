@@ -1,4 +1,4 @@
-import { Badge } from "lucide-react";
+import { Badge, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
@@ -23,8 +23,8 @@ export default function LiveAttendance() {
                             <TableCell>09:02</TableCell>
                             <TableCell>Rahul S</TableCell>
                             <TableCell>Student</TableCell>
-                            <TableCell>
-                                <Badge  >Present</Badge>
+                            <TableCell >
+                                <CheckCircle2 className="text-primary"/>
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -32,7 +32,7 @@ export default function LiveAttendance() {
                             <TableCell>Dr. Meena</TableCell>
                             <TableCell>Faculty</TableCell>
                             <TableCell>
-                                <Badge  >Late</Badge>
+                                <CheckCircle2 className="text-primary"/>
                             </TableCell>
                         </TableRow>
                     </TableBody>

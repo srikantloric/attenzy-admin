@@ -20,3 +20,23 @@ export interface AttendanceResponse {
   count: number
   items: AttendanceItem[]
 }
+
+
+export type AttendanceStatus = "PRESENT" | "ABSENT" | "LEAVE" | "HOLIDAY"
+
+export type CalanderApiResponse = {
+  month: string
+  days: string[]
+  users: {
+    userId: string
+    name: string
+    attendance: Record<string, AttendanceStatus>
+    summary: {
+      present: number
+      absent: number
+      leave: number
+      holiday: number
+      attendancePercentage: number
+    }
+  }[]
+}

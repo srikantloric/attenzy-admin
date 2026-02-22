@@ -152,7 +152,7 @@ function OrganizationDevice() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-2 lg:p-6 md:p-4">
       <AppBreadcrumb />
 
       {/* HEADER */}

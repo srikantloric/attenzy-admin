@@ -6,11 +6,17 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 import { useBreadcrumbs } from "@/hooks/useBreadcrumbs"
 
 export function AppBreadcrumb() {
     const breadcrumbs = useBreadcrumbs()
+    const isMobile = useIsMobile()
+
+    if (isMobile) {
+        return
+    }
 
     return (
         <Breadcrumb className="mb-3">
