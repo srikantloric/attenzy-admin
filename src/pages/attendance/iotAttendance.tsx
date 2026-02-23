@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+"use client"
+
+import React, { useEffect, useMemo, useState } from "react"
 import useAuth from "@/hooks/useAuth"
 import { getAttendanceByOrg } from "@/api/attendance"
 import type { AttendanceItem } from "@/types/attendance"
@@ -28,7 +30,6 @@ import { CalendarIcon, Search } from "lucide-react"
 import { format } from "date-fns"
 import DataPagination from "@/components/Pagination"
 import { useFilterPagination } from "@/hooks/useFilterPagination"
- 
 import {
     Select,
     SelectContent,
@@ -37,6 +38,42 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+
+const AttendanceRow = React.memo(
+    ({ record }: { record: AttendanceItem }) => {
+        return (
+            <TableRow>
+                <TableCell className="flex items-center gap-3">
+                    <Avatar>
+                        <AvatarFallback>
+                            {record.userName.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+
+                    <div>
+                        <p className="font-medium">{record.userName}</p>
+                        <p className="text-xs text-muted-foreground">
+                            {record.userId}
+                        </p>
+                    </div>
+                </TableCell>
+
+                <TableCell>
+                    {record.userProfile.class} - {record.userProfile.section}
+                </TableCell>
+
+                <TableCell>{record.deviceName}</TableCell>
+                <TableCell>{record.time}</TableCell>
+
+                <TableCell>
+                    <Badge className="bg-green-100 text-green-700">
+                        Present
+                    </Badge>
+                </TableCell>
+            </TableRow>
+        )
+    }
+)
 
 const IotAttendance: React.FC = () => {
     const { user } = useAuth()
@@ -55,17 +92,25 @@ const IotAttendance: React.FC = () => {
     const [userTypeFilter, setUserTypeFilter] = useState("all")
     const [autoRefresh, setAutoRefresh] = useState(false)
 
-    const fetchAttendance = async () => {
+    // ✅ Fetch with silent mode
+    const fetchAttendance = async (isSilent = false) => {
         if (!orgId) return
 
         try {
-            setLoading(true)
+            if (!isSilent) setLoading(true)
+
             const data = await getAttendanceByOrg(orgId)
-            setAttendance(data)
+
+            setAttendance((prev) => {
+                if (JSON.stringify(prev) === JSON.stringify(data)) {
+                    return prev
+                }
+                return data
+            })
         } catch (err) {
             console.error(err)
         } finally {
-            setLoading(false)
+            if (!isSilent) setLoading(false)
         }
     }
 
@@ -73,12 +118,13 @@ const IotAttendance: React.FC = () => {
         fetchAttendance()
     }, [orgId])
 
+    // ✅ Silent auto refresh
     useEffect(() => {
         if (!autoRefresh) return
 
         const interval = setInterval(() => {
-            fetchAttendance()
-        }, 10000) // 10 sec
+            fetchAttendance(true)
+        }, 10000)
 
         return () => clearInterval(interval)
     }, [autoRefresh, orgId])
@@ -87,53 +133,35 @@ const IotAttendance: React.FC = () => {
         return format(selectedDate, "yyyy-MM-dd")
     }, [selectedDate])
 
-
     const availableClasses = useMemo(() => {
-        const set = new Set(
-            attendance.map((a) => a.userProfile.class)
-        )
+        const set = new Set(attendance.map((a) => a.userProfile.class))
         return ["all", ...Array.from(set)]
     }, [attendance])
 
-    const availableUserTypes = [
-        "all",
-        "STUDENT",
-        "FACULTY",
-        "STAFF",
-    ]
-
+    const availableUserTypes = ["all", "STUDENT", "FACULTY", "STAFF"]
 
     const filteredRecords = useMemo(() => {
-        let data = attendance.filter(
-            (a) => a.date === formattedDate
-        )
+        let data = attendance.filter((a) => a.date === formattedDate)
 
-        // Status filter
         if (filterStatus === "absent") {
             data = []
         }
 
-        // Class filter
         if (classFilter !== "all") {
             data = data.filter(
                 (a) => a.userProfile.class === classFilter
             )
         }
 
-        // UserType filter
         if (userTypeFilter !== "all") {
             data = data.filter(
-                (a) =>
-                    a.userType?.toUpperCase() === userTypeFilter
+                (a) => a.userType?.toUpperCase() === userTypeFilter
             )
         }
 
-        // Search filter
         if (search) {
             data = data.filter((a) =>
-                a.userName
-                    .toLowerCase()
-                    .includes(search.toLowerCase())
+                a.userName.toLowerCase().includes(search.toLowerCase())
             )
         }
 
@@ -146,7 +174,6 @@ const IotAttendance: React.FC = () => {
         userTypeFilter,
         search,
     ])
-
 
     const {
         currentPage,
@@ -161,16 +188,12 @@ const IotAttendance: React.FC = () => {
         getIsActive: () => true,
     })
 
-
     const totalPunches = filteredRecords.length
 
     const uniqueStudents = useMemo(() => {
-        const set = new Set(
-            filteredRecords.map((r) => r.userId)
-        )
+        const set = new Set(filteredRecords.map((r) => r.userId))
         return set.size
     }, [filteredRecords])
-
 
     return (
         <div className="space-y-6 p-6">
@@ -182,25 +205,33 @@ const IotAttendance: React.FC = () => {
                     Smart Attendance
                 </h1>
 
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                            <CalendarIcon className="h-4 w-4" />
-                            {format(selectedDate, "PPP")}
-                        </Button>
-                    </PopoverTrigger>
+                <div className="flex items-center gap-3">
+                    {autoRefresh && (
+                        <span className="text-xs text-muted-foreground">
+                            Live updating…
+                        </span>
+                    )}
 
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={(date) =>
-                                date && setSelectedDate(date)
-                            }
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className="gap-2">
+                                <CalendarIcon className="h-4 w-4" />
+                                {format(selectedDate, "PPP")}
+                            </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) =>
+                                    date && setSelectedDate(date)
+                                }
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
             </div>
 
             <Separator />
@@ -232,8 +263,6 @@ const IotAttendance: React.FC = () => {
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
-
-                {/* Status Buttons */}
                 <div className="flex gap-2">
                     {(["all", "present", "absent"] as const).map(
                         (status) => (
@@ -245,9 +274,7 @@ const IotAttendance: React.FC = () => {
                                         ? "default"
                                         : "outline"
                                 }
-                                onClick={() =>
-                                    setFilterStatus(status)
-                                }
+                                onClick={() => setFilterStatus(status)}
                             >
                                 {status.charAt(0).toUpperCase() +
                                     status.slice(1)}
@@ -257,8 +284,6 @@ const IotAttendance: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3 items-center">
-
-                    {/* Class Select */}
                     <Select
                         value={classFilter}
                         onValueChange={setClassFilter}
@@ -269,15 +294,12 @@ const IotAttendance: React.FC = () => {
                         <SelectContent>
                             {availableClasses.map((cls) => (
                                 <SelectItem key={cls} value={cls}>
-                                    {cls === "all"
-                                        ? "All Classes"
-                                        : cls}
+                                    {cls === "all" ? "All Classes" : cls}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    {/* UserType Select */}
                     <Select
                         value={userTypeFilter}
                         onValueChange={setUserTypeFilter}
@@ -288,15 +310,12 @@ const IotAttendance: React.FC = () => {
                         <SelectContent>
                             {availableUserTypes.map((type) => (
                                 <SelectItem key={type} value={type}>
-                                    {type === "all"
-                                        ? "All Types"
-                                        : type}
+                                    {type === "all" ? "All Types" : type}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    {/* Search */}
                     <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -308,11 +327,8 @@ const IotAttendance: React.FC = () => {
                             }
                         />
                     </div>
-
                 </div>
             </div>
-
-
 
             {/* Table */}
             <Card>
@@ -329,6 +345,7 @@ const IotAttendance: React.FC = () => {
                         />
                     </div>
                 </CardHeader>
+
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -344,7 +361,10 @@ const IotAttendance: React.FC = () => {
                         <TableBody>
                             {loading && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center">
+                                    <TableCell
+                                        colSpan={5}
+                                        className="text-center"
+                                    >
                                         Loading attendance...
                                     </TableCell>
                                 </TableRow>
@@ -352,44 +372,10 @@ const IotAttendance: React.FC = () => {
 
                             {!loading &&
                                 paginatedData.map((record) => (
-                                    <TableRow key={record.timestamp}>
-                                        <TableCell className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarFallback>
-                                                    {record.userName
-                                                        .slice(0, 2)
-                                                        .toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-medium">
-                                                    {record.userName}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {record.userId}
-                                                </p>
-                                            </div>
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {record.userProfile.class} -{" "}
-                                            {record.userProfile.section}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {record.deviceName}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            {record.time}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <Badge className="bg-green-100 text-green-700">
-                                                Present
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
+                                    <AttendanceRow
+                                        key={`${record.userId}-${record.date}-${record.time}`}
+                                        record={record}
+                                    />
                                 ))}
                         </TableBody>
                     </Table>
