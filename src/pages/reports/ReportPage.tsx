@@ -55,7 +55,7 @@ function ReportPage() {
                     title: "Attendance Trend Graph",
                     description:
                         "Daily or monthly attendance trend analysis",
-                    link: "attendance-trend"
+                    link: "attendance-trend-graph"
                 },
                 {
                     title: "Calendar View",
