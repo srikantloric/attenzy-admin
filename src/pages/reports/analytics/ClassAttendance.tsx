@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar"
 
 export default function ClassAttendance() {
     const { user } = useAuth()

@@ -34,11 +34,13 @@ import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsPro
 import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
 
 import IotAttendance from "@/pages/attendance/iotAttendance"
-import StudentAttendance from "@/components/reports/StudentAttendance"
+import StudentAttendance from "@/pages/reports/analytics/StudentAttendance"
 
-import ClassAttendance from "@/components/reports/ClassAttendance"
+import ClassAttendance from "@/pages/reports/analytics/ClassAttendance"
 
-import CalendarViewPage from "@/pages/reports/CalendarViewPage"
+import CalendarViewPage from "@/pages/reports/analytics/CalendarViewPage"
+import FacultyAttendance from "@/pages/reports/analytics/facultyAttendance"
+import StaffAttendance from "@/pages/reports/analytics/staffAttendance"
 
 
 // lazy pages
@@ -174,6 +176,16 @@ const MainRoutes = {
                     path: "class-attendance-percentage",
                     element: <ClassAttendance />,
                     handle: { breadcrumb: "Class Attendance" },
+                },
+                {
+                    path: "faculty-attendance-percentage",
+                    element: <FacultyAttendance />,
+                    handle: { breadcrumb: "Faculty Attendance" },
+                },
+                {
+                    path: "staff-attendance-percentage",
+                    element: <StaffAttendance />,
+                    handle: { breadcrumb: "Staff Attendance" },
                 },
                 {
                     path: "calendar-view",
