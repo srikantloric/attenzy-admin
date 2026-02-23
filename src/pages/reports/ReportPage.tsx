@@ -34,6 +34,18 @@ function ReportPage() {
                     link: "class-attendance-percentage"
                 },
                 {
+                    title: "Faculty Attendance %",
+                    description:
+                        "Overall faculty attendance percentage",
+                    link: "faculty-attendance-percentage"
+                },
+                {
+                    title: "Staff Attendance %",
+                    description:
+                        "Overall staff attendance percentage",
+                    link: "staff-attendance-percentage"
+                },
+                {
                     title: "Organization Attendance %",
                     description:
                         "Overall attendance percentage for the entire organization",
@@ -43,7 +55,7 @@ function ReportPage() {
                     title: "Attendance Trend Graph",
                     description:
                         "Daily or monthly attendance trend analysis",
-                    link: "attendance-trend"
+                    link: "attendance-trend-graph"
                 },
                 {
                     title: "Calendar View",
