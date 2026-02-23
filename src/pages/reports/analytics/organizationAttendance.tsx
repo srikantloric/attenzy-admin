@@ -14,10 +14,7 @@ import {
 } from "recharts"
 
 import useAuth from "@/hooks/useAuth"
-import { getFacultyCalendarView } from "@/api/reports/facultyAttendance"
-import { getStaffCalendarView } from "@/api/reports/staffAttendance"
 import { getCalendarView } from "@/api/reports/studentAttendance"
-
 import type { AttendanceCalendarResponse } from "@/types/reports/attendance"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,15 +26,14 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-export default function AttendanceTrendGraph() {
+export default function OrganizationAttendance() {
     const { user } = useAuth()
     const orgId = user?.orgId ?? ""
 
-    const [userType, setUserType] = useState<"STUDENT" | "FACULTY" | "STAFF">("STUDENT")
-    const [viewMode, setViewMode] = useState<"DAILY" | "MONTHLY">("DAILY")
     const [selectedMonth, setSelectedMonth] = useState(
         format(new Date(), "yyyy-MM")
     )
+    const [viewMode, setViewMode] = useState<"DAILY" | "MONTHLY">("DAILY")
 
     const [data, setData] = useState<AttendanceCalendarResponse | null>(null)
     const [loading, setLoading] = useState(false)
@@ -48,7 +44,7 @@ export default function AttendanceTrendGraph() {
         return format(date, "yyyy-MM")
     })
 
-    /* ================= FETCH DATA ================= */
+    /* ================= FETCH ORG STUDENT DATA ================= */
 
     useEffect(() => {
         if (!orgId) return
@@ -56,17 +52,8 @@ export default function AttendanceTrendGraph() {
         const fetchData = async () => {
             setLoading(true)
             try {
-                let res: AttendanceCalendarResponse | null = null
-
-                if (userType === "FACULTY") {
-                    res = await getFacultyCalendarView(orgId, selectedMonth)
-                } else if (userType === "STAFF") {
-                    res = await getStaffCalendarView(orgId, selectedMonth)
-                } else {
-                    // STUDENT (no class filter for trend overview)
-                    res = await getCalendarView(orgId, selectedMonth, "")
-                }
-
+                // Passing empty classId to fetch all students
+                const res = await getCalendarView(orgId, selectedMonth, "")
                 setData(res)
             } catch (err) {
                 console.error(err)
@@ -76,7 +63,7 @@ export default function AttendanceTrendGraph() {
         }
 
         fetchData()
-    }, [orgId, userType, selectedMonth])
+    }, [orgId, selectedMonth])
 
     /* ================= GRAPH DATA ================= */
 
@@ -87,28 +74,31 @@ export default function AttendanceTrendGraph() {
         if (viewMode === "DAILY") {
             return data.days.map((day) => {
                 let presentCount = 0
+                let absentCount = 0
 
                 data.users.forEach((user) => {
-                    if (user.attendance?.[day] === "PRESENT") {
-                        presentCount++
-                    }
+                    const status = user.attendance?.[day]
+
+                    if (status === "PRESENT") presentCount++
+                    if (status === "ABSENT") absentCount++
                 })
 
                 return {
                     label: day,
                     present: presentCount,
+                    absent: absentCount,
                 }
             })
         }
 
-        // MONTHLY TREND (aggregate summary)
+        // MONTHLY TREND (aggregate)
         const totalPresent = data.users.reduce(
             (acc, user) => acc + user.summary.present,
             0
         )
 
-        const totalWorking = data.users.reduce(
-            (acc, user) => acc + user.summary.workingDays,
+        const totalAbsent = data.users.reduce(
+            (acc, user) => acc + user.summary.absent,
             0
         )
 
@@ -116,7 +106,7 @@ export default function AttendanceTrendGraph() {
             {
                 label: selectedMonth,
                 present: totalPresent,
-                working: totalWorking,
+                absent: totalAbsent,
             },
         ]
     }, [data, viewMode, selectedMonth])
@@ -127,25 +117,10 @@ export default function AttendanceTrendGraph() {
             {/* FILTER CARD */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Attendance Trend Analytics</CardTitle>
+                    <CardTitle>Organization Student Attendance</CardTitle>
                 </CardHeader>
 
                 <CardContent className="flex flex-wrap gap-4 items-center">
-
-                    {/* User Type */}
-                    <Select
-                        value={userType}
-                        onValueChange={(v: any) => setUserType(v)}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="STUDENT">Student</SelectItem>
-                            <SelectItem value="FACULTY">Faculty</SelectItem>
-                            <SelectItem value="STAFF">Staff</SelectItem>
-                        </SelectContent>
-                    </Select>
 
                     {/* View Mode */}
                     <Select
@@ -181,25 +156,23 @@ export default function AttendanceTrendGraph() {
                 </CardContent>
             </Card>
 
-            {/* GRAPH */}
+            {/* GRAPH CARD */}
             <Card>
                 <CardHeader>
                     <CardTitle>
-                        {viewMode} Attendance Trend - {userType}
+                        {viewMode} Attendance Trend - Organization
                     </CardTitle>
                 </CardHeader>
 
                 <CardContent className="h-96">
-
                     {loading ? (
                         <div className="flex items-center justify-center h-full text-muted-foreground">
-                            Loading graph...
+                            Loading organization trend...
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
 
                             {viewMode === "DAILY" ? (
-
                                 <LineChart data={graphData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="label" />
@@ -212,10 +185,14 @@ export default function AttendanceTrendGraph() {
                                         stroke="#16a34a"
                                         strokeWidth={2}
                                     />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="absent"
+                                        stroke="#dc2626"
+                                        strokeWidth={2}
+                                    />
                                 </LineChart>
-
                             ) : (
-
                                 <BarChart data={graphData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="label" />
@@ -228,17 +205,15 @@ export default function AttendanceTrendGraph() {
                                         radius={[4, 4, 0, 0]}
                                     />
                                     <Bar
-                                        dataKey="working"
-                                        fill="#3b82f6"
+                                        dataKey="absent"
+                                        fill="#dc2626"
                                         radius={[4, 4, 0, 0]}
                                     />
                                 </BarChart>
-
                             )}
 
                         </ResponsiveContainer>
                     )}
-
                 </CardContent>
             </Card>
 

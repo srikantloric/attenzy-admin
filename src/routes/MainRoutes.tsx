@@ -42,6 +42,7 @@ import CalendarViewPage from "@/pages/reports/analytics/CalendarViewPage"
 import FacultyAttendance from "@/pages/reports/analytics/facultyAttendance"
 import StaffAttendance from "@/pages/reports/analytics/staffAttendance"
 import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph"
+import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance"
 
 
 // lazy pages
@@ -188,12 +189,17 @@ const MainRoutes = {
                     element: <StaffAttendance />,
                     handle: { breadcrumb: "Staff Attendance" },
                 },
-                 {
+                {
+                    path: "org-attendance-percentage",
+                    element: <OrganizationAttendance />,
+                    handle: { breadcrumb: "Organization Attendance" },
+                },
+                {
                     path: "attendance-trend-graph",
                     element: <AttendanceTrendGraph />,
                     handle: { breadcrumb: "Attendance Trend Graph" },
                 },
-                
+
                 {
                     path: "calendar-view",
                     element: <CalendarViewPage />,
