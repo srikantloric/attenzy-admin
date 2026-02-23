@@ -69,7 +69,7 @@
 
   --muted: oklch(0.965 0.002 286);
   --muted-foreground: oklch(0.55 0.02 285);
-  
+
   --accent: oklch(0.967 0.001 286.375);
   --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
@@ -167,6 +167,8 @@
   button {
     display: none !important;
   }
+}
+
 /* ===== FullCalendar → shadcn bridge ===== */
 
 .fc {

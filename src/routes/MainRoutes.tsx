@@ -174,6 +174,8 @@ const MainRoutes = {
                     path: "class-attendance-percentage",
                     element: <ClassAttendance />,
                     handle: { breadcrumb: "Class Attendance" },
+                },
+                {
                     path: "calendar-view",
                     element: <CalendarViewPage />,
                     handle: { breadcrumb: "Student Attendance" },
