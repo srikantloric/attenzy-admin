@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react"
-import { MonthlyAttendanceTable } from "@/components/attendance/MonthlyAttendanceTable"
+import { AttendanceTable } from "@/components/attendance/AttendanceTable"
 import { Loader2 } from "lucide-react"
 import axios from "axios"
 import useAuth from "@/hooks/useAuth"
@@ -77,8 +77,7 @@ function CalendarViewPage() {
 
     return (
         <div >
-            <MonthlyAttendanceTable
-                month={data.month}
+            <AttendanceTable
                 days={data.days}
                 users={data.users}
             />
