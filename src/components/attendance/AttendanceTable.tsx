@@ -52,14 +52,14 @@ function getBadge(status?: AttendanceStatus) {
 
 export function AttendanceTable({ days, users }: Props) {
   return (
-    <div className="w-full max-w-full overflow-x-auto rounded-lg border">
+    <div className=" overflow-x-auto rounded-lg border">
 
-      <Table className="w-full text-xs sm:text-sm">
+      <Table className=" text-xs sm:text-sm">
 
         {/* HEADER */}
         <TableHeader>
           <TableRow>
-            <TableHead className="sticky left-0 z-30 bg-background border-r min-w-[180px]">
+            <TableHead className="sticky left-0 z-30 bg-background border-r whitespace-nowrap">
               Name
             </TableHead>
 
@@ -69,7 +69,7 @@ export function AttendanceTable({ days, users }: Props) {
             {days.map((day) => (
               <TableHead
                 key={day}
-                className="text-center min-w-[40px]"
+                className="text-center"
               >
                 {day}
               </TableHead>
@@ -83,7 +83,7 @@ export function AttendanceTable({ days, users }: Props) {
             <TableRow key={user.userId}>
 
               {/* Sticky Name Column */}
-              <TableCell className="flex gap-2 items-center sticky left-0 z-20 bg-background border-r font-medium min-w-[180px]">
+              <TableCell className="flex gap-2 items-center sticky left-0 z-20 bg-background border-r font-medium min-w-[180px] whitespace-nowrap">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="https://github.com/shadcn.png"
