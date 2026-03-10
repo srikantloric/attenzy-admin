@@ -22,47 +22,47 @@ function ReportPage() {
             category: "Attendance Analytics",
             reports: [
                 {
-                    title: "Student Attendance %",
+                    title: "Daily Attendance Report",
                     description:
                         "Attendance percentage per student for selected date range",
                     link: "student-attendance-percentage"
                 },
                 {
-                    title: "Class Attendance %",
+                    title: "Monthly Class Attendance Report",
                     description:
                         "Overall attendance percentage for each class",
                     link: "class-attendance-percentage"
                 },
                 {
-                    title: "Faculty Attendance %",
+                    title: "Monthly Faculty Attendance Report",
                     description:
                         "Overall faculty attendance percentage",
                     link: "faculty-attendance-percentage"
                 },
                 {
-                    title: "Staff Attendance %",
+                    title: "Monthly Staff Attendance Report",
                     description:
                         "Overall staff attendance percentage",
                     link: "staff-attendance-percentage"
                 },
-                {
-                    title: "Organization Attendance %",
-                    description:
-                        "Overall attendance percentage for the entire organization",
-                    link: "org-attendance-percentage"
-                },
-                {
-                    title: "Attendance Trend Graph",
-                    description:
-                        "Daily or monthly attendance trend analysis",
-                    link: "attendance-trend-graph"
-                },
-                {
-                    title: "Calendar View",
-                    description:
-                        "Monthly matrix view of attendance per student",
-                    link: "calendar-view"
-                }
+                // {
+                //     title: "Organization Attendance %",
+                //     description:
+                //         "Overall attendance percentage for the entire organization",
+                //     link: "org-attendance-percentage"
+                // },
+                // {
+                //     title: "Attendance Trend Graph",
+                //     description:
+                //         "Daily or monthly attendance trend analysis",
+                //     link: "attendance-trend-graph"
+                // },
+                // {
+                //     title: "Calendar View",
+                //     description:
+                //         "Monthly matrix view of attendance per student",
+                //     link: "calendar-view"
+                // }
             ]
         },
         {
