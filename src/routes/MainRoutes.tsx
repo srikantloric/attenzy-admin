@@ -34,7 +34,7 @@ import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsPro
 import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
 
 import IotAttendance from "@/pages/attendance/iotAttendance"
-import StudentAttendance from "@/pages/reports/analytics/StudentAttendance"
+import StudentAttendance from "@/pages/reports/analytics/dailyAttendance"
 
 import ClassAttendance from "@/pages/reports/analytics/ClassAttendance"
 

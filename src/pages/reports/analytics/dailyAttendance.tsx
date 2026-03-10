@@ -158,7 +158,7 @@ export default function StudentAttendance() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Student Attendance Register</CardTitle>
+                    <CardTitle>Daily Attendance Record</CardTitle>
                 </CardHeader>
 
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
