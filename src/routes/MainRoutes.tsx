@@ -172,7 +172,7 @@ const MainRoutes = {
                 {
                     path: "student-attendance-percentage",
                     element: <StudentAttendance />,
-                    handle: { breadcrumb: "Student Attendance" },
+                    handle: { breadcrumb: "Daily Attendance" },
                 },
                 {
                     path: "class-attendance-percentage",

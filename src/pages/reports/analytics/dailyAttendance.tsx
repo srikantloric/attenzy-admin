@@ -1,20 +1,16 @@
-import { useEffect, useMemo, useState } from "react"
-import {
-    format,
-    startOfMonth,
-    endOfMonth,
-    eachDayOfInterval,
-} from "date-fns"
+import { useEffect, useState } from "react"
+import { format } from "date-fns"
 
 import useAuth from "@/hooks/useAuth"
-import { getAttendanceByStudent } from "@/api/reports/studentAttendance"
-import { getUsersByOrg } from "@/api/users"
 
-import type { AttendanceItem } from "@/types/attendance"
-import type { User } from "@/types/users"
+import { listGrades } from "@/api/academics"
+import { getClassAttendance } from "@/api/reports/studentAttendance"
+
+import type { AcademicItem } from "@/types/academics"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 import {
     Table,
     TableBody,
@@ -23,6 +19,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+
 import {
     Select,
     SelectContent,
@@ -30,303 +27,320 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-} from "@/components/ui/combobox"
 
-export default function StudentAttendance() {
+
+export default function DailyAttendance() {
+
     const { user } = useAuth()
     const orgId = user?.orgId
 
-    const [students, setStudents] = useState<User[]>([])
-    const [selectedUserId, setSelectedUserId] = useState("")
-    const [selectedMonth, setSelectedMonth] = useState(() => {
-        const now = new Date()
-        return format(now, "yyyy-MM")
-    })
 
-    const [attendance, setAttendance] = useState<AttendanceItem[]>([])
+    const [selectedDate, setSelectedDate] = useState(
+        format(new Date(), "yyyy-MM-dd")
+    )
+
+    const [grades, setGrades] = useState<AcademicItem[]>([])
+    const [selectedClass, setSelectedClass] = useState("")
+
+    const [attendanceData, setAttendanceData] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
 
-    /* ================= FETCH STUDENTS ================= */
+
+    /* ================= FETCH CLASSES ================= */
 
     useEffect(() => {
+
         if (!orgId) return
 
-        const fetchStudents = async () => {
+        const fetchGrades = async () => {
+
             try {
-                const users = await getUsersByOrg(orgId)
-                const studentsOnly = users.filter(
-                    (user: any) => user.userType === "STUDENT"
-                )
-                setStudents(studentsOnly)
+
+                const data = await listGrades(orgId)
+                setGrades(data)
+
             } catch (error) {
-                console.error("Failed to fetch students", error)
+
+                console.error("Failed to fetch grades", error)
+
             }
+
         }
 
-        fetchStudents()
+        fetchGrades()
+
     }, [orgId])
 
-    /* ================= MONTH OPTIONS ================= */
-
-    const monthOptions = useMemo(() => {
-        const options = []
-        const now = new Date()
-
-        const totalMonths = 12
-
-        for (let i = 0; i < totalMonths; i++) {
-            const date = new Date(
-                now.getFullYear(),
-                now.getMonth() - i,
-                1
-            )
-
-            options.push({
-                value: format(date, "yyyy-MM"),
-                label: format(date, "MMMM yyyy"),
-            })
-        }
-
-        return options
-    }, [])
 
     /* ================= GENERATE ATTENDANCE ================= */
 
     const handleGenerate = async () => {
-        if (!orgId || !selectedUserId) return
+
+        if (!orgId || !selectedClass) {
+            alert("Please select class")
+            return
+        }
 
         try {
+
             setLoading(true)
-            const data = await getAttendanceByStudent(
-                orgId,
-                selectedUserId
+
+
+            const formattedDate = format(
+                new Date(selectedDate),
+                "yyyyMMdd"
             )
-            setAttendance(data)
+
+
+
+            const res = await getClassAttendance(
+                orgId,
+                selectedClass,
+                formattedDate
+            )
+
+
+            const scans = res.items || []
+
+
+
+            /* GROUP MULTIPLE SCANS BY STUDENT */
+
+            const studentMap: any = {}
+
+            scans.forEach((item: any) => {
+
+                if (!studentMap[item.userId]) {
+
+                    studentMap[item.userId] = {
+                        userId: item.userId,
+                        name: item.userName,
+                        class: item.userProfile?.class,
+                        section: item.userProfile?.section,
+                        rollNumber: item.userProfile?.rollNumber,
+                        firstScan: item.time,
+                        status: "PRESENT",
+                    }
+
+                } else {
+
+                    if (item.time < studentMap[item.userId].firstScan) {
+                        studentMap[item.userId].firstScan = item.time
+                    }
+
+                }
+
+            })
+
+
+
+            setAttendanceData(Object.values(studentMap))
+
         } catch (error) {
-            console.error("Failed to fetch attendance", error)
+
+            console.error("Attendance fetch error:", error)
+
         } finally {
+
             setLoading(false)
+
         }
+
     }
 
-    /* ================= BUILD REGISTER ================= */
 
-    const registerData = useMemo(() => {
-        if (!selectedUserId || !selectedMonth) return []
 
-        const monthStart = startOfMonth(
-            new Date(selectedMonth + "-01")
-        )
-        const monthEnd = endOfMonth(monthStart)
+    /* ================= SUMMARY ================= */
 
-        const allDays = eachDayOfInterval({
-            start: monthStart,
-            end: monthEnd,
-        })
+    const total = attendanceData.length
 
-        const attendanceDates = new Set(
-            attendance.map((a) => a.date)
-        )
+    const present = attendanceData.filter(
+        (a) => a.status === "PRESENT"
+    ).length
 
-        return allDays.map((day) => {
-            const formatted = format(day, "yyyy-MM-dd")
-            const isSunday = day.getDay() === 0
 
-            if (isSunday) return { date: formatted, status: "H" }
-            if (attendanceDates.has(formatted))
-                return { date: formatted, status: "P" }
-
-            return { date: formatted, status: "-" }
-        })
-    }, [attendance, selectedUserId, selectedMonth])
-
-    const selectedStudent = students.find(
-        (s) => s.userId === selectedUserId
-    )
 
     return (
-        <div className="w-full max-w-6xl mx-auto px-3 py-4 sm:px-6 sm:py-6 space-y-6">
+
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+
+
 
             {/* ================= FILTER CARD ================= */}
 
             <Card>
+
                 <CardHeader>
-                    <CardTitle>Daily Attendance Record</CardTitle>
+                    <CardTitle>Daily Attendance</CardTitle>
                 </CardHeader>
 
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                    {/* Student Select */}
-                    <Combobox
-                        items={students.map((s) => s.userId)}
-                        value={selectedUserId}
-                        onValueChange={(value) => {
-                            if (!value) return
-                            setSelectedUserId(value)
-                        }}
-                    >
-                        <ComboboxInput
-                            className="w-full"
-                            placeholder="Search student..."
-                        />
-                        <ComboboxContent>
-                            <ComboboxEmpty>No student found.</ComboboxEmpty>
-                            <ComboboxList>
-                                {(userId) => {
-                                    const student = students.find(
-                                        (s) => s.userId === userId
-                                    )
-                                    return (
-                                        <ComboboxItem
-                                            key={userId}
-                                            value={userId}
-                                        >
-                                            {student?.name} ({userId})
-                                        </ComboboxItem>
-                                    )
-                                }}
-                            </ComboboxList>
-                        </ComboboxContent>
-                    </Combobox>
+                    {/* DATE */}
 
-                    {/* Month-Year Dropdown */}
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="border rounded-md px-3 py-2"
+                    />
+
+
+
+                    {/* CLASS SELECT */}
+
                     <Select
-                        value={selectedMonth}
-                        onValueChange={setSelectedMonth}
+                        value={selectedClass}
+                        onValueChange={(val) => setSelectedClass(val)}
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select month" />
+
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Class" />
                         </SelectTrigger>
 
                         <SelectContent>
-                            {monthOptions.map((month) => (
+
+                            {grades.map((grade) => (
+
                                 <SelectItem
-                                    key={month.value}
-                                    value={month.value}
+                                    key={grade.gradeId}
+                                    value={grade.name}
                                 >
-                                    {month.label}
+                                    {grade.name}
                                 </SelectItem>
+
                             ))}
+
                         </SelectContent>
+
                     </Select>
 
-                    {/* Generate Button */}
+
+
+                    {/* GENERATE */}
+
                     <Button
-                        className="w-full md:w-auto"
                         type="button"
                         onClick={handleGenerate}
                     >
-                        {loading ? "Generating..." : "Generate"}
+
+                        {loading ? "Loading..." : "Generate"}
+
                     </Button>
 
+
+
                 </CardContent>
+
             </Card>
 
-            {/* ================= REGISTER TABLE ================= */}
 
-            {selectedUserId && registerData.length > 0 && (
+
+            {/* ================= SUMMARY ================= */}
+
+            {attendanceData.length > 0 && (
+
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">
+                                Total Students Present
+                            </p>
+                            <p className="text-xl font-bold">{total}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">
+                                Present
+                            </p>
+                            <p className="text-xl font-bold text-green-600">
+                                {present}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                </div>
+
+            )}
+
+
+
+            {/* ================= TABLE ================= */}
+
+            {attendanceData.length > 0 && (
+
                 <Card>
+
                     <CardHeader>
-                        <CardTitle>
-                            {selectedStudent?.name} ({selectedUserId}) —{" "}
-                            {format(new Date(selectedMonth + "-01"), "MMMM yyyy")}
-                        </CardTitle>
+                        <CardTitle>Attendance Details</CardTitle>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="overflow-x-auto">
 
-                        {/* ================= DESKTOP VIEW ================= */}
-                        <div className="hidden md:block overflow-hidden">
-                            <div className="w-full overflow-x-auto border rounded-lg">
-                                <Table className="min-w-max">
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="sticky left-0 bg-background z-20 w-[200px] border-r">
-                                                Student Name
-                                            </TableHead>
+                        <Table>
 
-                                            {registerData.map((day) => (
-                                                <TableHead
-                                                    key={day.date}
-                                                    className="text-center w-10"
-                                                >
-                                                    {format(new Date(day.date), "dd")}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
+                            <TableHeader>
 
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell className="sticky left-0 bg-background z-10 font-medium border-r w-[200px]">
-                                                {selectedStudent?.name}
-                                            </TableCell>
+                                <TableRow>
 
-                                            {registerData.map((day) => (
-                                                <TableCell
-                                                    key={day.date}
-                                                    className="text-center w-10"
-                                                >
-                                                    <span
-                                                        className={`
-                        inline-flex items-center justify-center 
-                        h-7 w-7 rounded-md text-xs font-semibold
-                        ${day.status === "P"
-                                                                ? "bg-green-100 text-green-700"
-                                                                : day.status === "H"
-                                                                    ? "bg-blue-100 text-blue-700"
-                                                                    : "bg-muted text-muted-foreground"
-                                                            }
-                      `}
-                                                    >
-                                                        {day.status}
-                                                    </span>
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Class</TableHead>
+                                    <TableHead>Section</TableHead>
+                                    <TableHead>Roll No</TableHead>
+                                    <TableHead>First Scan</TableHead>
+                                    <TableHead>Status</TableHead>
 
-                        {/* ================= MOBILE VIEW ================= */}
-                        <div className="block md:hidden space-y-2">
-                            {registerData.map((day) => (
-                                <div
-                                    key={day.date}
-                                    className="flex justify-between items-center border rounded-md px-3 py-2"
-                                >
-                                    <span className="text-sm font-medium">
-                                        {format(new Date(day.date), "dd MMM")}
-                                    </span>
+                                </TableRow>
 
-                                    <span
-                                        className={`
-                h-7 w-7 flex items-center justify-center rounded-md text-xs font-semibold
-                ${day.status === "P"
-                                                ? "bg-green-100 text-green-700"
-                                                : day.status === "H"
-                                                    ? "bg-blue-100 text-blue-700"
-                                                    : "bg-muted text-muted-foreground"
-                                            }
-              `}
-                                    >
-                                        {day.status}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                            </TableHeader>
+
+
+
+                            <TableBody>
+
+                                {attendanceData.map((item: any) => (
+
+                                    <TableRow key={item.userId}>
+
+                                        <TableCell>{item.name}</TableCell>
+
+                                        <TableCell>{item.class}</TableCell>
+
+                                        <TableCell>{item.section}</TableCell>
+
+                                        <TableCell>{item.rollNumber}</TableCell>
+
+                                        <TableCell>{item.firstScan}</TableCell>
+
+                                        <TableCell>
+
+                                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+
+                                                {item.status}
+
+                                            </span>
+
+                                        </TableCell>
+
+                                    </TableRow>
+
+                                ))}
+
+                            </TableBody>
+
+                        </Table>
 
                     </CardContent>
+
                 </Card>
+
             )}
+
         </div>
+
     )
+
 }

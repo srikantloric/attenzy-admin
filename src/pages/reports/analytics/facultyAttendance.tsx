@@ -181,7 +181,7 @@ export default function FacultyAttendance() {
           </Select>
 
           <Button onClick={handleRefresh}>
-            {loading ? "Loading..." : "Refresh"}
+            {loading ? "Loading..." : "Generate"}
           </Button>
 
         </CardContent>
