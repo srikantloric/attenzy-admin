@@ -164,7 +164,7 @@ export default function ClassAttendance() {
     monthOptions.find((m) => m.value === appliedMonth)?.label
 
   return (
-    <div className="px-4 py-6 space-y-6 overflow-x-hidden">
+    <div className="px-4 py-6 space-y-6">
 
       {/* FILTER CARD */}
       <Card>
