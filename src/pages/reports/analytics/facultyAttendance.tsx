@@ -140,7 +140,7 @@ export default function FacultyAttendance() {
     monthOptions.find((m) => m.value === appliedMonth)?.label
 
   return (
-    <div className="w-full px-4 py-6 space-y-6">
+    <div className="w-full py-6 space-y-6">
 
       {/* FILTER CARD */}
       <Card>
