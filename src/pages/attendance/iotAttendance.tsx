@@ -361,16 +361,22 @@ const IotAttendance: React.FC = () => {
                         <TableBody>
                             {loading && (
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={5}
-                                        className="text-center"
-                                    >
+                                    <TableCell colSpan={5} className="text-center">
                                         Loading attendance...
                                     </TableCell>
                                 </TableRow>
                             )}
 
+                            {!loading && paginatedData.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                                        No data is available for this date
+                                    </TableCell>
+                                </TableRow>
+                            )}
+
                             {!loading &&
+                                paginatedData.length > 0 &&
                                 paginatedData.map((record) => (
                                     <AttendanceRow
                                         key={`${record.userId}-${record.date}-${record.time}`}
@@ -378,6 +384,7 @@ const IotAttendance: React.FC = () => {
                                     />
                                 ))}
                         </TableBody>
+
                     </Table>
                 </CardContent>
 

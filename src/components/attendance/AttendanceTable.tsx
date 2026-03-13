@@ -19,7 +19,6 @@ interface Props {
 }
 
 
-
 function getBadge(status?: AttendanceStatus) {
   let display = "-"
 

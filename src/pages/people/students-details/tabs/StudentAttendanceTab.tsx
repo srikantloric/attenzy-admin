@@ -28,7 +28,6 @@ import { AttendanceDonut } from "@/components/attendance/AttendanceDonut"
 import { AttendanceTrendChart } from "@/components/attendance/AttendanceTrendChart"
 
 
-
 function StudentAttendanceTab() {
 
   const { user } = useAuth()
