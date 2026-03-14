@@ -4,7 +4,7 @@ import { format } from "date-fns"
 import useAuth from "@/hooks/useAuth"
 
 import { listGrades } from "@/api/academics"
-import { getClassAttendance } from "@/api/reports/studentAttendance"
+import { getAttendanceByOrg } from "@/api/attendance"
 
 import type { AcademicItem } from "@/types/academics"
 
@@ -28,6 +28,16 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+
+
 
 export default function DailyAttendance() {
 
@@ -35,15 +45,16 @@ export default function DailyAttendance() {
     const orgId = user?.orgId
 
 
-    const [selectedDate, setSelectedDate] = useState(
-        format(new Date(), "yyyy-MM-dd")
-    )
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
 
     const [grades, setGrades] = useState<AcademicItem[]>([])
     const [selectedClass, setSelectedClass] = useState("")
+    const [selectedSection, setSelectedSection] = useState("")
 
     const [attendanceData, setAttendanceData] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
+    const [noData, setNoData] = useState(false)
+
 
 
     /* ================= FETCH CLASSES ================= */
@@ -72,43 +83,45 @@ export default function DailyAttendance() {
     }, [orgId])
 
 
+
     /* ================= GENERATE ATTENDANCE ================= */
 
     const handleGenerate = async () => {
 
-        if (!orgId || !selectedClass) {
-            alert("Please select class")
+        if (!orgId || !selectedClass || !selectedDate) {
+            alert("Please select date and class")
             return
         }
 
         try {
 
             setLoading(true)
+            setNoData(false)
+
+            const data = await getAttendanceByOrg(orgId)
+
+            const formattedDate = format(selectedDate, "yyyy-MM-dd")
+
+            /* FILTER BY DATE + CLASS + SECTION */
+
+            const filtered = data.filter((item: any) => {
+
+                return (
+                    item.date === formattedDate &&
+                    item.userProfile?.class === selectedClass &&
+                    (selectedSection === "" ||
+                        item.userProfile?.section === selectedSection)
+                )
+
+            })
 
 
-            const formattedDate = format(
-                new Date(selectedDate),
-                "yyyyMMdd"
-            )
 
-
-
-            const res = await getClassAttendance(
-                orgId,
-                selectedClass,
-                formattedDate
-            )
-
-
-            const scans = res.items || []
-
-
-
-            /* GROUP MULTIPLE SCANS BY STUDENT */
+            /* GROUP MULTIPLE SCANS */
 
             const studentMap: any = {}
 
-            scans.forEach((item: any) => {
+            filtered.forEach((item: any) => {
 
                 if (!studentMap[item.userId]) {
 
@@ -119,7 +132,7 @@ export default function DailyAttendance() {
                         section: item.userProfile?.section,
                         rollNumber: item.userProfile?.rollNumber,
                         firstScan: item.time,
-                        status: "PRESENT",
+                        status: "PRESENT"
                     }
 
                 } else {
@@ -132,9 +145,13 @@ export default function DailyAttendance() {
 
             })
 
+            const result = Object.values(studentMap)
 
+            if (result.length === 0) {
+                setNoData(true)
+            }
 
-            setAttendanceData(Object.values(studentMap))
+            setAttendanceData(result)
 
         } catch (error) {
 
@@ -165,7 +182,6 @@ export default function DailyAttendance() {
         <div className="max-w-7xl mx-auto p-6 space-y-6">
 
 
-
             {/* ================= FILTER CARD ================= */}
 
             <Card>
@@ -174,17 +190,42 @@ export default function DailyAttendance() {
                     <CardTitle>Daily Attendance</CardTitle>
                 </CardHeader>
 
-                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <CardContent className="flex flex-wrap gap-4 items-end">
 
-                    {/* DATE */}
 
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border rounded-md px-3 py-2"
-                    />
+                    {/* DATE PICKER */}
 
+                    <Popover>
+
+                        <PopoverTrigger asChild>
+
+                            <Button
+                                variant="outline"
+                                className="w-[180px] justify-start text-left font-normal"
+                            >
+
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+
+                                {selectedDate
+                                    ? format(selectedDate, "PPP")
+                                    : "Select Date"}
+
+                            </Button>
+
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-auto p-0">
+
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                initialFocus
+                            />
+
+                        </PopoverContent>
+
+                    </Popover>
 
 
                     {/* CLASS SELECT */}
@@ -194,21 +235,19 @@ export default function DailyAttendance() {
                         onValueChange={(val) => setSelectedClass(val)}
                     >
 
-                        <SelectTrigger>
+                        <SelectTrigger className="w-[150px]">
                             <SelectValue placeholder="Select Class" />
                         </SelectTrigger>
 
                         <SelectContent>
 
                             {grades.map((grade) => (
-
                                 <SelectItem
                                     key={grade.gradeId}
                                     value={grade.name}
                                 >
                                     {grade.name}
                                 </SelectItem>
-
                             ))}
 
                         </SelectContent>
@@ -216,12 +255,34 @@ export default function DailyAttendance() {
                     </Select>
 
 
+                    {/* SECTION SELECT */}
 
-                    {/* GENERATE */}
+                    <Select
+                        value={selectedSection}
+                        onValueChange={(val) => setSelectedSection(val)}
+                    >
+
+                        <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Select Section" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+
+                            <SelectItem value="A">A</SelectItem>
+                            <SelectItem value="B">B</SelectItem>
+                            <SelectItem value="C">C</SelectItem>
+
+                        </SelectContent>
+
+                    </Select>
+
+
+                    {/* GENERATE BUTTON */}
 
                     <Button
                         type="button"
                         onClick={handleGenerate}
+                        className="w-[140px]"
                     >
 
                         {loading ? "Loading..." : "Generate"}
@@ -229,11 +290,20 @@ export default function DailyAttendance() {
                     </Button>
 
 
-
                 </CardContent>
 
             </Card>
 
+
+            {/* ================= NO DATA MESSAGE ================= */}
+
+            {noData && (
+
+                <p className="text-red-500">
+                    No data available for this date
+                </p>
+
+            )}
 
 
             {/* ================= SUMMARY ================= */}
@@ -267,7 +337,6 @@ export default function DailyAttendance() {
             )}
 
 
-
             {/* ================= TABLE ================= */}
 
             {attendanceData.length > 0 && (
@@ -298,7 +367,6 @@ export default function DailyAttendance() {
                             </TableHeader>
 
 
-
                             <TableBody>
 
                                 {attendanceData.map((item: any) => (
@@ -306,13 +374,9 @@ export default function DailyAttendance() {
                                     <TableRow key={item.userId}>
 
                                         <TableCell>{item.name}</TableCell>
-
                                         <TableCell>{item.class}</TableCell>
-
                                         <TableCell>{item.section}</TableCell>
-
                                         <TableCell>{item.rollNumber}</TableCell>
-
                                         <TableCell>{item.firstScan}</TableCell>
 
                                         <TableCell>
