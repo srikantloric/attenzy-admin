@@ -37,13 +37,17 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from "lucide-react"
 
+import DataPagination from "@/components/Pagination"
+import { useFilterPagination } from "@/hooks/useFilterPagination"
+import { Separator } from "@/components/ui/separator"
 
+import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
 
 export default function DailyAttendance() {
 
     const { user } = useAuth()
     const orgId = user?.orgId
-
 
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
 
@@ -54,7 +58,7 @@ export default function DailyAttendance() {
     const [attendanceData, setAttendanceData] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [noData, setNoData] = useState(false)
-
+    const [search, setSearch] = useState("")
 
 
     /* ================= FETCH CLASSES ================= */
@@ -83,7 +87,6 @@ export default function DailyAttendance() {
     }, [orgId])
 
 
-
     /* ================= GENERATE ATTENDANCE ================= */
 
     const handleGenerate = async () => {
@@ -102,8 +105,6 @@ export default function DailyAttendance() {
 
             const formattedDate = format(selectedDate, "yyyy-MM-dd")
 
-            /* FILTER BY DATE + CLASS + SECTION */
-
             const filtered = data.filter((item: any) => {
 
                 return (
@@ -115,41 +116,19 @@ export default function DailyAttendance() {
 
             })
 
-
-
-            /* GROUP MULTIPLE SCANS */
-
-            const studentMap: any = {}
-
-            filtered.forEach((item: any) => {
-
-                if (!studentMap[item.userId]) {
-
-                    studentMap[item.userId] = {
-                        userId: item.userId,
-                        name: item.userName,
-                        class: item.userProfile?.class,
-                        section: item.userProfile?.section,
-                        rollNumber: item.userProfile?.rollNumber,
-                        firstScan: item.time,
-                        status: "PRESENT"
-                    }
-
-                } else {
-
-                    if (item.time < studentMap[item.userId].firstScan) {
-                        studentMap[item.userId].firstScan = item.time
-                    }
-
-                }
-
-            })
-
-            const result = Object.values(studentMap)
-
-            if (result.length === 0) {
+            if (filtered.length === 0) {
                 setNoData(true)
             }
+
+            const result = filtered.map((item: any) => ({
+                userId: item.userId,
+                name: item.userName,
+                class: item.userProfile?.class,
+                section: item.userProfile?.section,
+                rollNumber: item.userProfile?.rollNumber,
+                firstScan: item.time,
+                status: "PRESENT",
+            }))
 
             setAttendanceData(result)
 
@@ -166,7 +145,6 @@ export default function DailyAttendance() {
     }
 
 
-
     /* ================= SUMMARY ================= */
 
     const total = attendanceData.length
@@ -175,12 +153,26 @@ export default function DailyAttendance() {
         (a) => a.status === "PRESENT"
     ).length
 
+    const filteredRecords = attendanceData.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+    )
 
+    const {
+        currentPage,
+        setCurrentPage,
+        rowsPerPage,
+        setRowsPerPage,
+        filteredData,
+        paginatedData,
+    } = useFilterPagination({
+        data: filteredRecords,
+        searchKey: "name",
+        getIsActive: () => true,
+    })
 
     return (
 
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-
+        <div className="py-6 space-y-6">
 
             {/* ================= FILTER CARD ================= */}
 
@@ -343,8 +335,23 @@ export default function DailyAttendance() {
 
                 <Card>
 
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
+
                         <CardTitle>Attendance Details</CardTitle>
+
+                        <div className="relative">
+
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+
+                            <Input
+                                className="pl-8 w-64"
+                                placeholder="Search student..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+
+                        </div>
+
                     </CardHeader>
 
                     <CardContent className="overflow-x-auto">
@@ -369,35 +376,58 @@ export default function DailyAttendance() {
 
                             <TableBody>
 
-                                {attendanceData.map((item: any) => (
-
-                                    <TableRow key={item.userId}>
-
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell>{item.class}</TableCell>
-                                        <TableCell>{item.section}</TableCell>
-                                        <TableCell>{item.rollNumber}</TableCell>
-                                        <TableCell>{item.firstScan}</TableCell>
-
-                                        <TableCell>
-
-                                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
-
-                                                {item.status}
-
-                                            </span>
-
+                                {loading && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center">
+                                            Loading attendance...
                                         </TableCell>
-
                                     </TableRow>
+                                )}
 
-                                ))}
+                                {!loading && paginatedData.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                                            No data is available for this date
+                                        </TableCell>
+                                    </TableRow>
+                                )}
 
+                                {!loading &&
+                                    paginatedData.length > 0 &&
+                                    paginatedData.map((item: any) => (
+
+                                        <TableRow key={`${item.userId}-${item.time}`}>
+
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell>{item.class}</TableCell>
+                                            <TableCell>{item.section}</TableCell>
+                                            <TableCell>{item.rollNumber}</TableCell>
+                                            <TableCell>{item.firstScan}</TableCell>
+
+                                            <TableCell>
+                                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                                                    {item.status}
+                                                </span>
+                                            </TableCell>
+
+                                        </TableRow>
+
+                                    ))}
                             </TableBody>
 
                         </Table>
 
                     </CardContent>
+
+                    <Separator />
+
+                    <DataPagination
+                        totalItems={filteredData.length}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        rowsPerPage={rowsPerPage}
+                        setRowsPerPage={setRowsPerPage}
+                    />
 
                 </Card>
 
