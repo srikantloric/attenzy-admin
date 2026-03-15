@@ -144,7 +144,6 @@ export default function DailyAttendance() {
 
     }
 
-
     /* ================= SUMMARY ================= */
 
     const total = attendanceData.length
