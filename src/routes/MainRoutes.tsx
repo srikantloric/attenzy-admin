@@ -34,7 +34,16 @@ import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsPro
 import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab"
 
 import IotAttendance from "@/pages/attendance/iotAttendance"
-import StudentAttendance from "@/components/reports/StudentAttendance"
+import StudentAttendance from "@/pages/reports/analytics/dailyAttendance"
+
+import ClassAttendance from "@/pages/reports/analytics/ClassAttendance"
+
+import CalendarViewPage from "@/pages/reports/analytics/CalendarViewPage"
+import FacultyAttendance from "@/pages/reports/analytics/facultyAttendance"
+import StaffAttendance from "@/pages/reports/analytics/staffAttendance"
+import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph"
+import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance"
+
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")))
@@ -163,6 +172,37 @@ const MainRoutes = {
                 {
                     path: "student-attendance-percentage",
                     element: <StudentAttendance />,
+                    handle: { breadcrumb: "Daily Attendance" },
+                },
+                {
+                    path: "class-attendance-percentage",
+                    element: <ClassAttendance />,
+                    handle: { breadcrumb: "Class Attendance" },
+                },
+                {
+                    path: "faculty-attendance-percentage",
+                    element: <FacultyAttendance />,
+                    handle: { breadcrumb: "Faculty Attendance" },
+                },
+                {
+                    path: "staff-attendance-percentage",
+                    element: <StaffAttendance />,
+                    handle: { breadcrumb: "Staff Attendance" },
+                },
+                {
+                    path: "org-attendance-percentage",
+                    element: <OrganizationAttendance />,
+                    handle: { breadcrumb: "Organization Attendance" },
+                },
+                {
+                    path: "attendance-trend-graph",
+                    element: <AttendanceTrendGraph />,
+                    handle: { breadcrumb: "Attendance Trend Graph" },
+                },
+
+                {
+                    path: "calendar-view",
+                    element: <CalendarViewPage />,
                     handle: { breadcrumb: "Student Attendance" },
                 }
             ]

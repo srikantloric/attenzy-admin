@@ -27,8 +27,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AttendanceDonut } from "@/components/attendance/AttendanceDonut"
 import { AttendanceTrendChart } from "@/components/attendance/AttendanceTrendChart"
 
-
-
 function StudentAttendanceTab() {
 
   const { user } = useAuth()
