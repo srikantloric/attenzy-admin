@@ -35,7 +35,6 @@ import {
     HoverCardTrigger
 } from "@/components/ui/hover-card"
 
-import { Separator } from "@/components/ui/separator"
 import useAuth from "@/hooks/useAuth"
 import { filterMenuByRole } from "@/utils/filterMenuByRole"
 
@@ -64,7 +63,6 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                 <DrawerHeader />
             </SidebarHeader>
 
-            <Separator />
 
             {/* Content */}
             <SidebarContent>
@@ -192,7 +190,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                                                         <SidebarMenuSubButton
                                                                             asChild
                                                                             isActive={isSubActive}
-                                                                            className="cursor-pointer text-muted-foreground hover:text-foreground data-[active=true]:text-primary"
+                                                                            className="cursor-pointer text-muted-foreground  hover:bg-transparent hover:text-primary data-[active=true]:text-primary data-[active=true]:bg-transparent"
                                                                         >
 
                                                                             <Link to={subItem.url!}>

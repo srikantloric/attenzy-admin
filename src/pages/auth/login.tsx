@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import useAuth from "@/hooks/useAuth"
 import AuthWrapper from "@/sections/auth/AuthWrapper"
 import { useNavigate } from "react-router-dom"
+import AttenzyLogo from "@/assets/attenzy-logo-transparent.png"
 
 function Login() {
     const { login } = useAuth()
@@ -53,13 +54,16 @@ function Login() {
                                 <form className="p-6 md:p-8" onSubmit={handleLogin}>
                                     <FieldGroup>
                                         <div className="flex flex-col items-center gap-2 text-center">
-                                            <img
-                                                src="/attenzy-logo.png"
-                                                alt="attenzy-login"
-                                                className="h-15 mb-4"
-                                            />
+                                            <div className="flex items-center">
+                                                <img
+                                                    src={AttenzyLogo}
+                                                    alt="attenzy-login"
+                                                    className="h-15"
+                                                />
+                                                <p className="text-2xl">Attenzy</p>
+                                            </div>
                                             <p className="text-muted-foreground text-balance">
-                                                Login to your Attenzy IOT account
+                                                Login to your Attenzy account
                                             </p>
                                         </div>
 
@@ -129,9 +133,9 @@ function Login() {
                                     href="https://loricedu.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-semibold text-green-600 hover:underline"
+                                    className="font-semibold text-primary hover:underline"
                                 >
-                                    Loric Edu
+                                    Loric Softwares
                                 </a>{" "}
                                 · All rights reserved
                             </p>
