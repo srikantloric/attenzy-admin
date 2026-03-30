@@ -1,4 +1,5 @@
 import { useSidebar } from "@/components/ui/sidebar"
+import AttenzyLogo from "@/assets/attenzy-logo-transparent.png"
 
 export function DrawerHeader() {
     const { state, isMobile } = useSidebar()
@@ -7,7 +8,7 @@ export function DrawerHeader() {
     if (isMobile) {
         return (
             <img
-                src="/attenzy-logo-minified.png"
+                src={AttenzyLogo}
                 className="h-10 mx-auto"
                 alt="Attenzy"
             />
@@ -19,16 +20,21 @@ export function DrawerHeader() {
         <div className="h-10 flex items-center justify-center">
             {state === "collapsed" ? (
                 <img
-                    src="/attenzy-logo-minified.png"
+                    src={AttenzyLogo}
                     className="h-8"
                     alt="Attenzy"
                 />
             ) : (
-                <img
-                    src="/attenzy-logo.png"
-                    className="h-12"
-                    alt="Attenzy"
-                />
+                <>
+                    <img
+                        src={AttenzyLogo}
+                        className="h-12"
+                        alt="Attenzy"
+                    />
+                    <p className="text-2xl font-semibold">
+                        Attenzy
+                    </p>
+                </>
             )}
         </div>
     )

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react"
 import { AttendanceTable } from "@/components/attendance/AttendanceTable"
 import { Loader2 } from "lucide-react"
-import axios from "axios"
 import useAuth from "@/hooks/useAuth"
 import axiosServices from "@/utils/axios"
 
