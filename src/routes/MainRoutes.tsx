@@ -61,6 +61,7 @@ const MainRoutes = {
             element: <Dashboard />,
         },
         {
+            
             path: "dashboard",
             element: <Dashboard />,
             handle: { breadcrumb: "Dashboard" },
