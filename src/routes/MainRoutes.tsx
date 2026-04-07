@@ -44,7 +44,7 @@ import StaffAttendance from "@/pages/reports/analytics/staffAttendance"
 import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph"
 import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance"
 import TopAbsentees from "@/pages/reports/leaderboard/topAbsentees"
-import ClassLeaderboard from "@/pages/reports/leaderboard/classLeaderboard"
+import StudentLeaderboard from "@/pages/reports/leaderboard/studentLeaderboard"
 
 
 // lazy pages
@@ -216,9 +216,9 @@ const MainRoutes = {
                 },
 
                 {
-                    path: "class-leaderboard",
-                    element: <ClassLeaderboard />,
-                    handle: { breadcrumb: "class leaderboard" },
+                    path: "rank-students",
+                    element: <StudentLeaderboard />,
+                    handle: { breadcrumb: "Student Leaderboard" },
                 }
             ]
         },

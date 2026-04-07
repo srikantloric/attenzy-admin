@@ -1,4 +1,4 @@
-export interface StudentRanking {
+export interface StudentRanking { 
   userId: string;
   name: string;
   present: number;

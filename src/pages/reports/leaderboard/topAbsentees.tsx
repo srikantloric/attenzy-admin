@@ -213,115 +213,122 @@ export default function TopAbsentees() {
                 </CardHeader>
 
                 <CardContent>
-                    <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-4 rounded-lg border">
+                    <div className="flex flex-wrap items-end gap-4 bg-muted/30 p-4 rounded-lg border">
 
                         {/* PERIOD */}
-                        <Select value={periodType} onValueChange={(v) => setPeriodType(v as any)}>
-                            <SelectTrigger className="w-[150px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="MONTH">Monthly</SelectItem>
-                                <SelectItem value="WEEK">Weekly</SelectItem>
-                                <SelectItem value="RANGE">Range</SelectItem>
-                                <SelectItem value="CLASS">Class</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-xs text-muted-foreground">Period</p>
+                            <Select value={periodType} onValueChange={(v) => setPeriodType(v as any)}>
+                                <SelectTrigger className="w-[150px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="MONTH">Monthly</SelectItem>
+                                    <SelectItem value="WEEK">Weekly</SelectItem>
+                                    <SelectItem value="RANGE">Range</SelectItem>
+                                    <SelectItem value="CLASS">Class</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
                         {/* CLASS */}
                         {periodType === "CLASS" && (
-                            <Select value={classId} onValueChange={setClassId}>
-                                <SelectTrigger className="w-[160px]">
-                                    <SelectValue placeholder="Select Class" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {grades.map((g) => (
-                                        <SelectItem key={g.gradeId} value={g.name}>
-                                            {g.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex flex-col space-y-1">
+                                <p className="text-xs text-muted-foreground">Class</p>
+                                <Select value={classId} onValueChange={setClassId}>
+                                    <SelectTrigger className="w-[160px]">
+                                        <SelectValue placeholder="Select Class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {grades.map((g) => (
+                                            <SelectItem key={g.gradeId} value={g.name}>
+                                                {g.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         )}
 
                         {/* MONTH */}
                         {(periodType === "MONTH" || periodType === "CLASS") && (
                             <>
-                                <Select value={month} onValueChange={setMonth}>
-                                    <SelectTrigger className="w-[120px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {months.map((m) => (
-                                            <SelectItem key={m.value} value={m.value}>
-                                                {m.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-xs text-muted-foreground">Month</p>
+                                    <Select value={month} onValueChange={setMonth}>
+                                        <SelectTrigger className="w-[120px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {months.map((m) => (
+                                                <SelectItem key={m.value} value={m.value}>
+                                                    {m.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                                <Select value={year} onValueChange={setYear}>
-                                    <SelectTrigger className="w-[110px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {["2026", "2025", "2024", "2023"].map((y) => (
-                                            <SelectItem key={y} value={y}>{y}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-xs text-muted-foreground">Year</p>
+                                    <Select value={year} onValueChange={setYear}>
+                                        <SelectTrigger className="w-[110px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {["2026", "2025", "2024", "2023"].map((y) => (
+                                                <SelectItem key={y} value={y}>{y}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </>
                         )}
 
                         {/* WEEK */}
                         {periodType === "WEEK" && (
-                            <Input
-                                type="week"
-                                className="w-[180px]"
-                                value={week}
-                                onChange={(e) => setWeek(e.target.value)}
-                            />
+                            <div className="flex flex-col space-y-1">
+                                <p className="text-xs text-muted-foreground">Week</p>
+                                <Input
+                                    type="week"
+                                    className="w-[180px]"
+                                    value={week}
+                                    onChange={(e) => setWeek(e.target.value)}
+                                />
+                            </div>
                         )}
 
                         {/* RANGE */}
                         {periodType === "RANGE" && (
                             <>
-                                <Select value={startMonth} onValueChange={setStartMonth}>
-                                    <SelectTrigger className="w-[120px]">
-                                        <SelectValue placeholder="From" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {months.map((m) => (
-                                            <SelectItem key={m.value} value={m.value}>
-                                                {m.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                {/* FROM */}
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-xs text-muted-foreground">From</p>
+                                    <Input
+                                        type="month"
+                                        className="w-[160px]"
+                                        value={`${year}-${startMonth}`}
+                                        onChange={(e) => {
+                                            const [y, m] = e.target.value.split("-");
+                                            setYear(y);
+                                            setStartMonth(m);
+                                        }}
+                                    />
+                                </div>
 
-                                <Select value={endMonth} onValueChange={setEndMonth}>
-                                    <SelectTrigger className="w-[120px]">
-                                        <SelectValue placeholder="To" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {months.map((m) => (
-                                            <SelectItem key={m.value} value={m.value}>
-                                                {m.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Select value={year} onValueChange={setYear}>
-                                    <SelectTrigger className="w-[110px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {["2026", "2025", "2024", "2023"].map((y) => (
-                                            <SelectItem key={y} value={y}>{y}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                {/* TO */}
+                                <div className="flex flex-col space-y-1">
+                                    <p className="text-xs text-muted-foreground">To</p>
+                                    <Input
+                                        type="month"
+                                        className="w-[160px]"
+                                        value={`${year}-${endMonth}`}
+                                        onChange={(e) => {
+                                            const [_, m] = e.target.value.split("-");
+                                            setEndMonth(m);
+                                        }}
+                                    />
+                                </div>
                             </>
                         )}
 
