@@ -7,6 +7,9 @@ import useAuth from "@/hooks/useAuth"
 import { getTopAbsentees } from "@/api/reports/leaderboard/topAbsentees"
 import type { TopAbsentee } from "@/types/reports/leaderboard/topAbsentees"
 
+import { listGrades } from "@/api/academics"
+import type { AcademicItem } from "@/types/academics"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -17,14 +20,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 
 import { Download } from "lucide-react"
-
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export default function TopAbsentees() {
     const { user } = useAuth()
@@ -34,23 +31,47 @@ export default function TopAbsentees() {
 
     /* ================= STATE ================= */
 
-    const [periodType, setPeriodType] = useState<"MONTH" | "WEEK" | "RANGE">("MONTH")
+    const [periodType, setPeriodType] = useState<
+        "MONTH" | "WEEK" | "RANGE" | "CLASS"
+    >("MONTH")
 
     const [month, setMonth] = useState(format(currentDate, "MM"))
     const [year, setYear] = useState(format(currentDate, "yyyy"))
     const [week, setWeek] = useState(format(currentDate, "yyyy-'W'II"))
 
-    const [startMonth, setStartMonth] = useState(format(currentDate, "yyyy-MM"))
-    const [endMonth, setEndMonth] = useState(format(currentDate, "yyyy-MM"))
+    const [startMonth, setStartMonth] = useState("01")
+    const [endMonth, setEndMonth] = useState("03")
+
+    const [classId, setClassId] = useState("")
+    const [grades, setGrades] = useState<AcademicItem[]>([])
 
     const [data, setData] = useState<TopAbsentee[]>([])
     const [loading, setLoading] = useState(false)
     const [search, setSearch] = useState("")
+    const [error, setError] = useState("")
+
+    /* ================= FETCH CLASSES ================= */
+
+    useEffect(() => {
+        if (!orgId) return
+
+        const fetchGrades = async () => {
+            try {
+                const res = await listGrades(orgId)
+                setGrades(res)
+            } catch (err) {
+                console.error(err)
+            }
+        }
+
+        fetchGrades()
+    }, [orgId])
 
     /* ================= RESET ================= */
 
     useEffect(() => {
         setData([])
+        setError("")
     }, [periodType])
 
     /* ================= FETCH ================= */
@@ -59,33 +80,66 @@ export default function TopAbsentees() {
         if (!orgId) return
 
         setLoading(true)
+        setError("")
 
         try {
             let response
 
+            /* MONTH */
             if (periodType === "MONTH") {
                 response = await getTopAbsentees(orgId, "MONTH", {
                     month: `${year}-${month}`,
                 })
-            } else if (periodType === "WEEK") {
+            }
+
+            /* WEEK */
+            else if (periodType === "WEEK") {
                 response = await getTopAbsentees(orgId, "WEEK", { week })
-            } else {
+            }
+
+            /* RANGE */
+            else if (periodType === "RANGE") {
+                const start = `${year}-${startMonth}`
+                const end = `${year}-${endMonth}`
+
+                if (start > end) {
+                    setError("Invalid range")
+                    setLoading(false)
+                    return
+                }
+
                 response = await getTopAbsentees(orgId, "RANGE", {
-                    startMonth,
-                    endMonth,
+                    startMonth: start,
+                    endMonth: end,
+                })
+            }
+
+            /* CLASS (NEW) */
+            else if (periodType === "CLASS") {
+                if (!classId) {
+                    setError("Please select a class")
+                    setLoading(false)
+                    return
+                }
+
+                response = await getTopAbsentees(orgId, "MONTH", {
+                    month: `${year}-${month}`,
+                    classId,
                 })
             }
 
             setData(response?.data || [])
+
         } catch (err) {
             console.error(err)
+            setError("Failed to fetch data")
             setData([])
         } finally {
             setLoading(false)
         }
     }
 
-    /* ================= FILTER ================= */
+    /* ================= SEARCH ================= */
 
     const filteredData = useMemo(() => {
         return data.filter((s) =>
@@ -93,43 +147,33 @@ export default function TopAbsentees() {
         )
     }, [data, search])
 
-    /* ================= STATS ================= */
-
-    const totalStudents = data.length
-
-    const avgAbsence =
-        data.length > 0
-            ? Math.round(
-                data.reduce((acc, s) => acc + s.absencePercentage, 0) / data.length
-            )
-            : 0
-
-    const worstStudent = data[0]
+    const months = [
+        { value: "01", label: "January" },
+        { value: "02", label: "February" },
+        { value: "03", label: "March" },
+        { value: "04", label: "April" },
+        { value: "05", label: "May" },
+        { value: "06", label: "June" },
+        { value: "07", label: "July" },
+        { value: "08", label: "August" },
+        { value: "09", label: "September" },
+        { value: "10", label: "October" },
+        { value: "11", label: "November" },
+        { value: "12", label: "December" },
+    ]
 
     /* ================= EXCEL ================= */
 
     const exportToExcel = () => {
         const sheetData: (string | number)[][] = [
-            [
-                "Rank",
-                "Name",
-                "Present",
-                "Absent",
-                "Leave",
-                "Days",
-                "Attendance %",
-                "Absence %",
-            ],
+            ["Rank", "Name", "Absent", "Attendance %", "Absence %"],
         ]
 
         filteredData.forEach((s) => {
             sheetData.push([
                 s.rank,
                 s.name,
-                s.present,
                 s.absent,
-                s.leave,
-                s.totalWorkingDays,
                 s.attendancePercentage,
                 s.absencePercentage,
             ])
@@ -169,115 +213,116 @@ export default function TopAbsentees() {
                 </CardHeader>
 
                 <CardContent>
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-4 rounded-lg border">
 
                         {/* PERIOD */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Period</span>
+                        <Select value={periodType} onValueChange={(v) => setPeriodType(v as any)}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="MONTH">Monthly</SelectItem>
+                                <SelectItem value="WEEK">Weekly</SelectItem>
+                                <SelectItem value="RANGE">Range</SelectItem>
+                                <SelectItem value="CLASS">Class</SelectItem>
+                            </SelectContent>
+                        </Select>
 
-                            <Select
-                                value={periodType}
-                                onValueChange={(val) => setPeriodType(val as any)}
-                            >
-                                <SelectTrigger className="w-36">
-                                    <SelectValue />
+                        {/* CLASS */}
+                        {periodType === "CLASS" && (
+                            <Select value={classId} onValueChange={setClassId}>
+                                <SelectTrigger className="w-[160px]">
+                                    <SelectValue placeholder="Select Class" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="MONTH">Monthly</SelectItem>
-                                    <SelectItem value="WEEK">Weekly</SelectItem>
-                                    <SelectItem value="RANGE">Range</SelectItem>
+                                    {grades.map((g) => (
+                                        <SelectItem key={g.gradeId} value={g.name}>
+                                            {g.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
-                        </div>
+                        )}
 
-                        {/* MONTHLY FILTER */}
-                        {periodType === "MONTH" && (
-                            <div className="flex items-center gap-2">
-
-                                {/* MONTH */}
+                        {/* MONTH */}
+                        {(periodType === "MONTH" || periodType === "CLASS") && (
+                            <>
                                 <Select value={month} onValueChange={setMonth}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Month" />
+                                    <SelectTrigger className="w-[120px]">
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="01">Jan</SelectItem>
-                                        <SelectItem value="02">Feb</SelectItem>
-                                        <SelectItem value="03">Mar</SelectItem>
-                                        <SelectItem value="04">Apr</SelectItem>
-                                        <SelectItem value="05">May</SelectItem>
-                                        <SelectItem value="06">Jun</SelectItem>
-                                        <SelectItem value="07">Jul</SelectItem>
-                                        <SelectItem value="08">Aug</SelectItem>
-                                        <SelectItem value="09">Sep</SelectItem>
-                                        <SelectItem value="10">Oct</SelectItem>
-                                        <SelectItem value="11">Nov</SelectItem>
-                                        <SelectItem value="12">Dec</SelectItem>
+                                        {months.map((m) => (
+                                            <SelectItem key={m.value} value={m.value}>
+                                                {m.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
 
-                                {/* YEAR */}
                                 <Select value={year} onValueChange={setYear}>
                                     <SelectTrigger className="w-[110px]">
-                                        <SelectValue placeholder="Year" />
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Array.from({ length: 5 }).map((_, i) => {
-                                            const y = (new Date().getFullYear() - i).toString()
-                                            return (
-                                                <SelectItem key={y} value={y}>
-                                                    {y}
-                                                </SelectItem>
-                                            )
-                                        })}
+                                        {["2026", "2025", "2024", "2023"].map((y) => (
+                                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </>
+                        )}
+
+                        {/* WEEK */}
+                        {periodType === "WEEK" && (
+                            <Input
+                                type="week"
+                                className="w-[180px]"
+                                value={week}
+                                onChange={(e) => setWeek(e.target.value)}
+                            />
+                        )}
+
+                        {/* RANGE */}
+                        {periodType === "RANGE" && (
+                            <>
+                                <Select value={startMonth} onValueChange={setStartMonth}>
+                                    <SelectTrigger className="w-[120px]">
+                                        <SelectValue placeholder="From" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {months.map((m) => (
+                                            <SelectItem key={m.value} value={m.value}>
+                                                {m.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
 
-                            </div>
-                        )}
+                                <Select value={endMonth} onValueChange={setEndMonth}>
+                                    <SelectTrigger className="w-[120px]">
+                                        <SelectValue placeholder="To" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {months.map((m) => (
+                                            <SelectItem key={m.value} value={m.value}>
+                                                {m.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
-                        {/* WEEKLY FILTER */}
-                        {periodType === "WEEK" && (
-                            <div className="flex items-center gap-2">
-
-                                <Input
-                                    type="week"
-                                    className="w-[180px]"
-                                    value={week}
-                                    onChange={(e) => setWeek(e.target.value)}
-                                />
-
-                            </div>
-                        )}
-
-                        {/* RANGE FILTER (MONTH ONLY) */}
-                        {periodType === "RANGE" && (
-                            <div className="flex items-center gap-3">
-
-                                {/* FROM */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">From</span>
-
-                                    <Input
-                                        type="month"
-                                        className="w-[150px]"
-                                        value={startMonth}
-                                        onChange={(e) => setStartMonth(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* TO */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">To</span>
-
-                                    <Input
-                                        type="month"
-                                        className="w-[150px]"
-                                        value={endMonth}
-                                        onChange={(e) => setEndMonth(e.target.value)}
-                                    />
-                                </div>
-
-                            </div>
+                                <Select value={year} onValueChange={setYear}>
+                                    <SelectTrigger className="w-[110px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {["2026", "2025", "2024", "2023"].map((y) => (
+                                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </>
                         )}
 
                         {/* BUTTON */}
@@ -288,6 +333,10 @@ export default function TopAbsentees() {
                         </div>
 
                     </div>
+
+                    {error && (
+                        <p className="text-sm text-red-500 mt-3">{error}</p>
+                    )}
                 </CardContent>
             </Card>
 
@@ -298,7 +347,7 @@ export default function TopAbsentees() {
                     <Card>
                         <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground">Total Students</p>
-                            <p className="text-2xl font-bold">{totalStudents}</p>
+                            <p className="text-2xl font-bold">{data.length}</p>
                         </CardContent>
                     </Card>
 
@@ -306,7 +355,10 @@ export default function TopAbsentees() {
                         <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground">Avg Absence</p>
                             <p className="text-2xl font-bold text-red-500">
-                                {avgAbsence}%
+                                {Math.round(
+                                    data.reduce((acc, s) => acc + s.absencePercentage, 0) /
+                                    data.length
+                                )}%
                             </p>
                         </CardContent>
                     </Card>
@@ -314,10 +366,7 @@ export default function TopAbsentees() {
                     <Card>
                         <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground">Worst Case</p>
-                            <p className="font-semibold">{worstStudent?.name}</p>
-                            <Badge variant="destructive">
-                                {worstStudent?.absencePercentage}%
-                            </Badge>
+                            <p className="font-semibold">{data[0]?.name}</p>
                         </CardContent>
                     </Card>
 
@@ -329,7 +378,6 @@ export default function TopAbsentees() {
                 <Card>
 
                     <CardHeader className="flex flex-row items-center justify-between">
-
                         <CardTitle>Absentees List</CardTitle>
 
                         <div className="flex gap-3">
@@ -344,50 +392,87 @@ export default function TopAbsentees() {
                                 <Download size={16} />
                             </Button>
                         </div>
-
                     </CardHeader>
 
                     <CardContent className="p-0">
-                        <table className="w-full text-sm">
+                        <div className="w-full overflow-x-auto">
+                            <table className="w-full text-sm">
 
-                            <thead className="bg-muted/50">
-                                <tr>
-                                    <th className="p-3 text-left">Rank</th>
-                                    <th className="p-3 text-left">Name</th>
-                                    <th className="p-3 text-center">Absent</th>
-                                    <th className="p-3 text-center">Attendance</th>
-                                    <th className="p-3 text-center">Absence</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {filteredData.map((s) => (
-                                    <tr key={s.userId} className="border-b hover:bg-muted/40">
-                                        <td className="p-3 font-semibold">#{s.rank}</td>
-                                        <td className="p-3">{s.name}</td>
-                                        <td className="p-3 text-center text-red-500">{s.absent}</td>
-
-                                        <td className="p-3 text-center">
-                                            <Badge variant="secondary">
-                                                {s.attendancePercentage}%
-                                            </Badge>
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            <Badge variant="destructive">
-                                                {s.absencePercentage}%
-                                            </Badge>
-                                        </td>
+                                {/* HEADER */}
+                                <thead className="bg-muted/50">
+                                    <tr>
+                                        <th className="p-3 text-left">Rank</th>
+                                        <th className="p-3 text-left">Name</th>
+                                        <th className="p-3 text-center">Days</th>
+                                        <th className="p-3 text-center">Present</th>
+                                        <th className="p-3 text-center">Absent</th>
+                                        <th className="p-3 text-center">Leave</th>
+                                        <th className="p-3 text-center">Attendance %</th>
+                                        <th className="p-3 text-center">Absence %</th>
                                     </tr>
-                                ))}
-                            </tbody>
+                                </thead>
 
-                        </table>
+                                {/* BODY */}
+                                <tbody>
+                                    {filteredData.map((s) => (
+                                        <tr
+                                            key={s.userId}
+                                            className="border-b hover:bg-muted/40 transition"
+                                        >
+                                            {/* Rank */}
+                                            <td className="p-3 font-semibold">#{s.rank}</td>
+
+                                            {/* Name */}
+                                            <td className="p-3">{s.name}</td>
+
+                                            {/* Total Days */}
+                                            <td className="p-3 text-center">
+                                                {s.totalWorkingDays}
+                                            </td>
+
+                                            {/* Present */}
+                                            <td className="p-3 text-center text-green-600 font-medium">
+                                                {s.present}
+                                            </td>
+
+                                            {/* Absent */}
+                                            <td className="p-3 text-center text-red-500 font-medium">
+                                                {s.absent}
+                                            </td>
+
+                                            {/* Leave */}
+                                            <td className="p-3 text-center">
+                                                {s.leave}
+                                            </td>
+
+
+
+                                            {/* Attendance % */}
+                                            <td className="p-3 text-center">
+                                                <span className="text-green-600 font-medium">
+                                                    {s.attendancePercentage}%
+                                                </span>
+                                            </td>
+
+                                            {/* Absence % */}
+                                            <td className="p-3 text-center">
+                                                <span className="text-red-600 font-semibold">
+                                                    {s.absencePercentage}%
+                                                </span>
+                                            </td>
+
+                                        </tr>
+                                    ))}
+                                </tbody>
+
+                            </table>
+                        </div>
                     </CardContent>
 
                 </Card>
             )}
 
+            {/* EMPTY */}
             {!loading && data.length === 0 && (
                 <Card>
                     <CardContent className="py-6 text-center text-muted-foreground">

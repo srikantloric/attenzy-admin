@@ -147,7 +147,7 @@ export default function ClassAttendance() {
 
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
-      type: "array",
+      type: "array", 
     })
 
     const blob = new Blob([excelBuffer], {
