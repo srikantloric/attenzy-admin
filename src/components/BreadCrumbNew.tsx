@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom"
+
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -12,13 +14,21 @@ export function BreadcrumbNew() {
         <Breadcrumb>
             <BreadcrumbList>
                 <BreadcrumbItem>
-                    <BreadcrumbLink href="#">Home</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                        <Link to="/dashboard">Home</Link>
+                    </BreadcrumbLink>
                 </BreadcrumbItem>
+
                 <BreadcrumbSeparator />
+
                 <BreadcrumbItem>
-                    <BreadcrumbLink href="#">Components</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                        <Link to="/components">Components</Link>
+                    </BreadcrumbLink>
                 </BreadcrumbItem>
+
                 <BreadcrumbSeparator />
+
                 <BreadcrumbItem>
                     <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
                 </BreadcrumbItem>
