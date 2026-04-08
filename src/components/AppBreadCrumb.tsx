@@ -30,7 +30,7 @@ export function AppBreadcrumb() {
                                 <BreadcrumbPage>{bc.label}</BreadcrumbPage>
                             ) : (
                                 <>
-                                    <BreadcrumbLink href={bc.href}>
+                                    <BreadcrumbLink to={bc.href}>
                                         {bc.label}
                                     </BreadcrumbLink>
                                     <BreadcrumbSeparator />
