@@ -10,11 +10,39 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import useAuth from "@/hooks/useAuth"
 import { Bell, Radio } from "lucide-react"
 
+const getStageLabel = () => {
+    const explicitStage = import.meta.env.VITE_STAGE || import.meta.env.VITE_APP_STAGE
+
+    if (explicitStage) {
+        return String(explicitStage).toUpperCase()
+    }
+
+    const mode = import.meta.env.MODE
+    if (mode === "development") {
+        return "DEV"
+    }
+    if (mode === "production") {
+        const backendUrl = String(import.meta.env.VITE_BACKEND_BASE_URL || "").toLowerCase()
+
+        if (backendUrl.includes("staging") || backendUrl.includes("stage")) {
+            return "STAGE"
+        }
+        if (backendUrl.includes("dev") || backendUrl.includes("localhost")) {
+            return "DEV"
+        }
+
+        return "PROD"
+    }
+
+    return String(mode || "LOCAL").toUpperCase()
+}
+
 
 function AppBar() {
     const { user, logout } = useAuth()
     console.log(user)
     const isMobile = useIsMobile()
+    const stageLabel = getStageLabel()
 
 
     const handleLiveFeed = () => {
@@ -42,6 +70,8 @@ function AppBar() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <Badge variant="secondary">{stageLabel}</Badge>
+
                     {
                         !isMobile &&
                         <Badge variant={"outline"}>{user?.role}</Badge>
