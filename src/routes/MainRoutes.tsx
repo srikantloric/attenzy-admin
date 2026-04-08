@@ -43,6 +43,8 @@ import FacultyAttendance from "@/pages/reports/analytics/facultyAttendance"
 import StaffAttendance from "@/pages/reports/analytics/staffAttendance"
 import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph"
 import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance"
+import TopAbsentees from "@/pages/reports/leaderboard/topAbsentees"
+import StudentLeaderboard from "@/pages/reports/leaderboard/studentLeaderboard"
 
 
 // lazy pages
@@ -61,6 +63,7 @@ const MainRoutes = {
             element: <Dashboard />,
         },
         {
+
             path: "dashboard",
             element: <Dashboard />,
             handle: { breadcrumb: "Dashboard" },
@@ -204,6 +207,18 @@ const MainRoutes = {
                     path: "calendar-view",
                     element: <CalendarViewPage />,
                     handle: { breadcrumb: "Student Attendance" },
+                },
+
+                {
+                    path: "top-absentees",
+                    element: <TopAbsentees />,
+                    handle: { breadcrumb: "Top Absentees" },
+                },
+
+                {
+                    path: "rank-students",
+                    element: <StudentLeaderboard />,
+                    handle: { breadcrumb: "Student Leaderboard" },
                 }
             ]
         },
