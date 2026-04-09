@@ -1,30 +1,28 @@
-import { Separator } from "@/components/ui/separator"
-import { MapPin, Phone } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { useOutletContext } from "react-router-dom"
-import type { User, StudentProfile } from "@/types/users"
+import { Separator } from "@/components/ui/separator";
+import { MapPin, Phone } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useOutletContext } from "react-router-dom";
+import type { User, StudentProfile } from "@/types/users";
 
 function StudentsProfileTab() {
-
-  const { student } = useOutletContext<{ student: User | null }>()
+  const { student } = useOutletContext<{ student: User | null }>();
 
   if (!student) {
-    return <p className="text-sm text-muted-foreground">No data found</p>
+    return <p className="text-sm text-muted-foreground">No data found</p>;
   }
 
-  const profile = student.profile as StudentProfile
+  const profile = student.profile as StudentProfile;
 
-  const firstName = student.name?.split(" ")[0] || ""
-  const lastName = student.name?.split(" ").slice(1).join(" ") || ""
+  const firstName = student.name?.split(" ")[0] || "";
+  const lastName = student.name?.split(" ").slice(1).join(" ") || "";
 
   return (
     <div className="flex flex-col lg:flex-row gap-3 h-full">
-
+      
       {/* LEFT PROFILE CARD */}
       <div className="w-full lg:w-72 border flex flex-col rounded-md items-center justify-center p-4">
-
         {/* Profile Image */}
         <div className="w-20 h-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
           {student.profilePhoto ? (
@@ -33,7 +31,7 @@ function StudentsProfileTab() {
               src={student.profilePhoto}
               alt={student.name}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = ""
+                (e.target as HTMLImageElement).src = "";
               }}
             />
           ) : (
@@ -49,9 +47,7 @@ function StudentsProfileTab() {
         </span>
 
         {/* ID */}
-        <span className="text-sm text-muted-foreground">
-          {student.userId}
-        </span>
+        <span className="text-sm text-muted-foreground">{student.userId}</span>
 
         <Separator className="my-4" />
 
@@ -81,22 +77,17 @@ function StudentsProfileTab() {
 
         {/* Contact Info */}
         <div className="flex flex-col w-full gap-3 border rounded-lg p-3 bg-secondary/70">
-
           <div className="flex items-center gap-2 text-sm">
             <Phone size={16} />
-            <span className="break-all">
-              {student.phone || "-"}
-            </span>
+            <span className="break-all">{student.phone || "-"}</span>
           </div>
 
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} className="mt-0.5" />
             <p className="break-words">
-              {/* Replace when address available */}
-              Address not available
+              {profile?.address || "Address not available"}
             </p>
           </div>
-
         </div>
       </div>
 
@@ -110,15 +101,9 @@ function StudentsProfileTab() {
         <Separator />
 
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
           <div className="space-y-1">
             <Label>First Name</Label>
             <Input defaultValue={firstName} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Last Name</Label>
-            <Input defaultValue={lastName} />
           </div>
 
           <div className="space-y-1">
@@ -158,23 +143,37 @@ function StudentsProfileTab() {
 
           <div className="space-y-1">
             <Label>Date of Birth</Label>
-            <Input type="date" />
+            <Input
+              type="date"
+              defaultValue={profile?.dob ? profile.dob.split("T")[0] : ""}
+            />
           </div>
 
           <div className="space-y-1">
             <Label>Gender</Label>
-            <Input />
+            <Input
+              defaultValue={
+                profile?.gender
+                  ? profile.gender.charAt(0) +
+                    profile.gender.slice(1).toLowerCase()
+                  : ""
+              }
+            />
           </div>
 
           <div className="space-y-1">
             <Label>Guardian Name</Label>
-            <Input />
+            <Input defaultValue={profile?.fatherName || ""} />
           </div>
 
+          <div className="space-y-1">
+            <Label>Blood Group</Label>
+            <Input defaultValue={profile?.bloodGroup || ""} />
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default StudentsProfileTab
+export default StudentsProfileTab;
