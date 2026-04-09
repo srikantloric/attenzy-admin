@@ -45,6 +45,10 @@ import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph
 import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance"
 import TopAbsentees from "@/pages/reports/leaderboard/topAbsentees"
 import StudentLeaderboard from "@/pages/reports/leaderboard/studentLeaderboard"
+import ImportExportTab from "@/pages/settings/ImportExportTab"
+import CalanderWorkingDayTab from "@/pages/settings/CalanderWorkingDayTab"
+import AlertsNotificationsTab from "@/pages/settings/AlertsNotificationsTab"
+import AccessControlsTab from "@/pages/settings/AccessControlsTab"
 
 
 // lazy pages
@@ -267,6 +271,26 @@ const MainRoutes = {
                     index: true,
                     element: <AcademicSetupTab />,
                     handle: { breadcrumb: "academics" },
+                },
+                {
+                    path: "calander-working-days",
+                    element: <CalanderWorkingDayTab />,
+                    handle: { breadcrumb: "Calendar & Working Days" },
+                },
+                {
+                    path: "alerts-notifications",
+                    element: <AlertsNotificationsTab />,
+                    handle: { breadcrumb: "Alerts & Notifications" },
+                },
+                {
+                    path: "access-controls",
+                    element: <AccessControlsTab />,
+                    handle: { breadcrumb: "Access Controls" },
+                },
+                {
+                    path: "import-export",
+                    element: <ImportExportTab />,
+                    handle: { breadcrumb: "Import/Export" },
                 },
             ]
         },
