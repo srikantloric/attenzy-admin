@@ -29,7 +29,7 @@ import { Search, Plus, MoreVertical, Ban, Pencil, Eye } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth"; 
 
 import AddUserForm from "@/components/people/AddUserForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";

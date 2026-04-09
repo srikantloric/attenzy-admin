@@ -10,6 +10,9 @@ export const userSchema = z.discriminatedUnion("userType", [
     email: z.string().email("Invalid email"),
     rfidCode: z.string().min(1, "RFID required"),
 
+    externalId: z.string().optional(),
+    profilePhoto: z.string().optional(),
+
     profile: z.object({
       class: z.string().min(1, "Class is required"),
       section: z.string().min(1, "Section is required"),
@@ -25,6 +28,9 @@ export const userSchema = z.discriminatedUnion("userType", [
     email: z.string().email("Invalid email"),
     rfidCode: z.string().min(1, "RFID required"),
 
+    externalId: z.string().optional(),
+    profilePhoto: z.string().optional(),
+
     profile: z.object({
       designation: z.string().min(1, "Designation is required"),
       department: z.string().min(1, "Department is required"),
@@ -38,6 +44,9 @@ export const userSchema = z.discriminatedUnion("userType", [
     phone: z.string().regex(/^[0-9]{10}$/, "Phone must be 10 digits"),
     email: z.string().email("Invalid email"),
     rfidCode: z.string().min(1, "RFID required"),
+
+    externalId: z.string().optional(),
+    profilePhoto: z.string().optional(),
 
     profile: z.object({
       department: z.string().min(1, "Department is required"),
