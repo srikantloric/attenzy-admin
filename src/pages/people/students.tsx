@@ -274,7 +274,7 @@ const StudentsPage: React.FC = () => {
                         <Button
                           variant={"ghost"}
                           onClick={() => {
-                            navigate(user.userId);
+                            navigate(`/students/${user.userId}`)
                           }}
                         >
                           <Eye />

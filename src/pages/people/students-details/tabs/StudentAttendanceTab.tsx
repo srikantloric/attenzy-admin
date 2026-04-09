@@ -19,25 +19,30 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import useAuth from "@/hooks/useAuth"
 import axiosServices from "@/utils/axios"
-import { useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { AttendanceStatus, CalanderApiResponse } from "@/types/attendance"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AttendanceDonut } from "@/components/attendance/AttendanceDonut"
 import { AttendanceTrendChart } from "@/components/attendance/AttendanceTrendChart"
+import { useOutletContext } from "react-router-dom"
+import type { User } from "@/types/users"
 
 function StudentAttendanceTab() {
 
   const { user } = useAuth()
   const orgId = user?.orgId
-  const { id } = useParams()
+
+  // ✅ get student from parent
+  const { student } = useOutletContext<{ student: User | null }>()
+
   const [attendance, setAttendance] = useState<
     { date: string; status: AttendanceStatus | null }[]
   >([])
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
   const [loading, setLoading] = useState(false)
   const calendarRef = useRef<any>(null)
+
   const [summary, setSummary] = useState<{
     present: number
     absent: number
@@ -49,7 +54,7 @@ function StudentAttendanceTab() {
   /* ================= FETCH ================= */
 
   const fetchAttendance = async (selectedMonth: string) => {
-    if (!orgId || !id) return
+    if (!orgId || !student?.userId) return
 
     try {
       setLoading(true)
@@ -59,8 +64,8 @@ function StudentAttendanceTab() {
         {
           params: {
             month: selectedMonth,
-            userId: id
-          }
+            userId: student.userId,
+          },
         }
       )
 
@@ -70,9 +75,12 @@ function StudentAttendanceTab() {
         setAttendance([])
         return
       }
+
       const userData = data.users[0]
       setSummary(userData.summary)
+
       const userAttendance = userData.attendance
+
       const year = Number(selectedMonth.split("-")[0])
       const monthIndex = Number(selectedMonth.split("-")[1])
       const daysInMonth = new Date(year, monthIndex, 0).getDate()
@@ -101,9 +109,10 @@ function StudentAttendanceTab() {
 
   useEffect(() => {
     fetchAttendance(month)
-  }, [month, orgId, id])
+  }, [month, orgId, student])
 
   /* ================= CALENDAR EVENTS ================= */
+
   const events = attendance
     .filter((item): item is { date: string; status: AttendanceStatus } => !!item.status)
     .map(item => ({
@@ -116,6 +125,11 @@ function StudentAttendanceTab() {
   return (
     <div className="p-3 space-y-4">
 
+      {/* Optional student name */}
+      <p className="text-sm font-medium">
+        {student?.name} Attendance
+      </p>
+
       <Tabs defaultValue="calendar">
 
         <TabsList>
@@ -127,7 +141,7 @@ function StudentAttendanceTab() {
         <TabsContent value="calendar">
           <div className="grid gap-4 lg:grid-cols-4">
 
-            {/* LEFT → CALENDAR */}
+            {/* LEFT */}
             <div className="lg:col-span-3">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-medium">
@@ -147,26 +161,25 @@ function StudentAttendanceTab() {
                 </div>
               </div>
 
-              <div>
-                <FullCalendar
-                  ref={calendarRef}
-                  plugins={[dayGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  events={events}
-                  height="auto"
-                  headerToolbar={false}
-                  dayMaxEventRows={2}
-                  datesSet={(arg) => {
-                    const newMonth = arg.startStr.slice(0, 7)
-                    if (newMonth !== month) setMonth(newMonth)
-                  }}
-                />
-              </div>
+              <FullCalendar
+                ref={calendarRef}
+                plugins={[dayGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                events={events}
+                height="auto"
+                headerToolbar={false}
+                dayMaxEventRows={2}
+                datesSet={(arg) => {
+                  const newMonth = arg.startStr.slice(0, 7)
+                  if (newMonth !== month) setMonth(newMonth)
+                }}
+              />
+
               <br />
               <AttendanceTrendChart />
             </div>
 
-            {/* RIGHT → SUMMARY CARD */}
+            {/* RIGHT */}
             <div className="space-y-4 mt-11">
               <Card>
                 <CardHeader>
@@ -175,19 +188,15 @@ function StudentAttendanceTab() {
 
                 <CardContent className="space-y-5">
 
-                  {/* 🔵 Circular Progress */}
-
                   <AttendanceDonut percentage={summary?.attendancePercentage ?? 0} />
 
-
-                  {/* 📊 Counts */}
                   <div className="space-y-2 text-sm">
                     <SummaryRow label="Present" value={summary?.present} color="text-green-600" />
                     <SummaryRow label="Absent" value={summary?.absent} color="text-red-600" />
                     <SummaryRow label="Leave" value={summary?.leave} color="text-orange-600" />
                     <SummaryRow label="Holiday" value={summary?.holiday} color="text-blue-600" />
                   </div>
-                  {/* 🎯 75% Calculator */}
+
                   <RequiredAttendance75 summary={summary} />
 
                 </CardContent>
@@ -250,7 +259,7 @@ function StudentAttendanceTab() {
 
 export default StudentAttendanceTab
 
-/* ================= STATUS HELPERS ================= */
+/* ================= HELPERS ================= */
 
 function getStatusColor(status: AttendanceStatus) {
   switch (status) {
@@ -264,6 +273,7 @@ function getStatusColor(status: AttendanceStatus) {
       return "border-blue-500 text-blue-600"
   }
 }
+
 function getStatusBg(status: string) {
   switch (status) {
     case "PRESENT":
@@ -295,7 +305,6 @@ function SummaryRow({
     </div>
   )
 }
-
 
 function RequiredAttendance75({
   summary,
