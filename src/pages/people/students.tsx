@@ -135,11 +135,12 @@ const StudentsPage: React.FC = () => {
 
           <Button
             className="gap-2 bg-primary"
-            onClick={() => {
-              setFormMode("add");
-              setSelectedUser(null);
-              setSidebarOpen(true);
-            }}
+            // onClick={() => {
+            //   setFormMode("add");
+            //   setSelectedUser(null);
+            //   setSidebarOpen(true);
+            // }}
+            onClick={() => navigate("/add-people")}
           >
             <Plus className="h-4 w-4" />
             Add Student
