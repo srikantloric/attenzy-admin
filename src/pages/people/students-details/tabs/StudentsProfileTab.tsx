@@ -20,6 +20,7 @@ function StudentsProfileTab() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-3 h-full">
+      
       {/* LEFT PROFILE CARD */}
       <div className="w-full lg:w-72 border flex flex-col rounded-md items-center justify-center p-4">
         {/* Profile Image */}
