@@ -17,6 +17,19 @@ export const userSchema = z.discriminatedUnion("userType", [
       class: z.string().min(1, "Class is required"),
       section: z.string().min(1, "Section is required"),
       rollNumber: z.string().min(1, "Roll number is required"),
+
+      // ✅ NEW FIELDS
+      fatherName: z.string().optional(),
+
+      dob: z.string().optional(), // (we can refine later)
+
+      gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
+
+      bloodGroup: z
+        .enum(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
+        .optional(),
+
+      address: z.string().optional(),
     }),
   }),
 
