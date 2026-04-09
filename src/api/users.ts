@@ -38,6 +38,33 @@ export async function createUser(
   return res.json();
 }
 
+export async function getSignedUploadUrl(
+  fileName: string,
+  contentType: string,
+  fileSize: number
+) {
+  const res = await fetch(
+    "https://de2bhobqpg.execute-api.ap-south-1.amazonaws.com/v1/uploads/getS3Url",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileName,
+        contentType,
+        fileSize,
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to get signed URL");
+  }
+
+  return res.json();
+}
+
 
 export async function updateUser(
   orgId: string,

@@ -8,6 +8,10 @@ interface BaseUser {
   phone: string;
   email?: string | null;
   rfidCode?: string;
+
+  externalId?: string;   
+  profilePhoto?: string;  
+
   orgId: string;
   isActive?: boolean;
   createdAt: number;
@@ -69,6 +73,10 @@ export type CreateUserPayload =
     phone: string;
     email?: string | null;
     rfidCode?: string;
+
+    externalId?: string;     
+    profilePhoto?: string; 
+
     profile: StudentProfile;
   }
   | {
@@ -77,6 +85,10 @@ export type CreateUserPayload =
     phone: string;
     email?: string | null;
     rfidCode?: string;
+
+    externalId?: string;     
+    profilePhoto?: string; 
+
     profile: StaffProfile;
   }
   | {
@@ -85,6 +97,10 @@ export type CreateUserPayload =
     phone: string;
     email?: string | null;
     rfidCode?: string;
+
+    externalId?: string;      
+    profilePhoto?: string; 
+
     profile: FacultyProfile;
   };
 
@@ -94,6 +110,10 @@ export type UpdateUserPayload =
   | {
     userId: string;
     orgId: string;
+
+    externalId?: string;
+    profilePhoto?: string;
+
     userType?: "STUDENT";
     name?: string;
     phone?: string;
@@ -105,6 +125,10 @@ export type UpdateUserPayload =
   | {
     userId: string;
     orgId: string;
+
+    externalId?: string;
+    profilePhoto?: string;
+
     userType?: "STAFF";
     name?: string;
     phone?: string;
@@ -116,6 +140,10 @@ export type UpdateUserPayload =
   | {
     userId: string;
     orgId: string;
+
+    externalId?: string;
+    profilePhoto?: string;
+
     userType?: "FACULTY";
     name?: string;
     phone?: string;
