@@ -110,24 +110,58 @@ const AddPeoplePage = () => {
   /* ================= FILE UPLOAD ================= */
 
   const handleFileUpload = async (file: File) => {
+    const MAX_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
+    // Validate type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Only JPG, JPEG, PNG allowed");
+      return;
+    }
+
+    // Validate size
+    if (file.size > MAX_SIZE) {
+      toast.error("Max file size is 5MB");
+      return;
+    }
+
     try {
       setUploading(true);
-      const res = await getSignedUploadUrl(file.name, file.type, file.size);
 
-      await fetch(res.uploadUrl, {
+      // 1. Get signed URL
+      const res = await getSignedUploadUrl(file.name, file.type, file.size);
+      const { uploadUrl, publicUrl } = res;
+
+      // 2. Upload to S3
+      const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type },
+        headers: {
+          "Content-Type": file.type,
+        },
         body: file,
       });
 
-      setValue("profilePhoto", res.publicUrl, {
+      // IMPORTANT: fetch doesn't throw on HTTP errors
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        throw new Error(errorText || "Failed to upload file to storage (S3)");
+      }
+
+      // 3. Save PUBLIC URL
+      setValue("profilePhoto", publicUrl, {
         shouldDirty: true,
         shouldValidate: true,
       });
 
       toast.success("Uploaded successfully");
-    } catch {
-      toast.error("Upload failed");
+    } catch (err: any) {
+      console.error("Upload error:", err);
+
+      toast.error(
+        err?.message || // custom thrown error
+          err?.response?.data?.message || // backend error
+          "Upload failed"
+      );
     } finally {
       setUploading(false);
     }
