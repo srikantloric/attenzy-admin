@@ -46,6 +46,12 @@ export interface FacultyProfile extends CommonProfile {
   subjects: string;
 }
 
+export interface AssignRFIDResponse {
+  message: string;
+  userId: string;
+  rfidCode: string;
+}
+
 /* ================= FULL USER ================= */
 
 export interface StudentUser extends BaseUser {
