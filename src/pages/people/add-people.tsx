@@ -194,7 +194,9 @@ const AddPeoplePage = () => {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Add {selectedType}</h1>
+          <h1 className="text-2xl font-semibold">
+            Add {selectedType.charAt(0) + selectedType.slice(1).toLowerCase()}
+          </h1>
           <p className="text-sm text-muted-foreground">
             Create and manage {selectedType.toLowerCase()} details
           </p>
@@ -215,26 +217,9 @@ const AddPeoplePage = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
           >
-            {/* USER TYPE */}
-            <div className="p-4 rounded-xl border bg-muted/30 space-y-2">
-              <Label>User Type *</Label>
-              <Select
-                value={selectedType}
-                onValueChange={(val) => setValue("userType", val as any)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Select user type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STUDENT">Student</SelectItem>
-                  <SelectItem value="FACULTY">Faculty</SelectItem>
-                  <SelectItem value="STAFF">Staff</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            {/* PROFILE PHOTO (same as sheet) */}
-            <div className="p-4 rounded-xl border bg-background space-y-3">
+            {/* PROFILE PHOTO */}
+            <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground">
                 Profile Photo
               </Label>
@@ -465,7 +450,6 @@ const AddPeoplePage = () => {
 
             {/* COMMON PERSONAL */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
               <div className="space-y-1.5">
                 <Label>Date of Birth</Label>
 
@@ -559,7 +543,7 @@ const AddPeoplePage = () => {
               </Button>
 
               <Button disabled={!isValid || isSubmitting}>
-                Add {selectedType}
+                Add {selectedType.charAt(0) + selectedType.slice(1).toLowerCase()}
               </Button>
             </div>
           </form>
