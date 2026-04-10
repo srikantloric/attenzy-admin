@@ -16,7 +16,6 @@ function StudentsProfileTab() {
   const profile = student.profile as StudentProfile;
 
   const firstName = student.name?.split(" ")[0] || "";
-  const lastName = student.name?.split(" ").slice(1).join(" ") || "";
 
   return (
     <div className="flex flex-col lg:flex-row gap-3 h-full">

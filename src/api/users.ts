@@ -21,6 +21,8 @@ export async function createUser(
   orgId: string,
   payload: UserFormValues
 ) {
+
+  console.log("Creating user with payload:", payload);
   const res = await fetch(
     `${BACKEND_BASE_URL}/orgs/${orgId}/users`,
     {

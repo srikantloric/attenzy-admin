@@ -1,17 +1,5 @@
 import { z } from "zod";
 
-/* ================= COMMON PROFILE ================= */
-
-const commonProfileSchema = z.object({
-  fatherName: z.string().optional(),
-  dob: z.string().optional(),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
-  bloodGroup: z
-    .enum(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
-    .optional(),
-  address: z.string().optional(),
-});
-
 /* ================= BASE USER ================= */
 
 const baseUserSchema = z.object({
@@ -22,18 +10,24 @@ const baseUserSchema = z.object({
 
   externalId: z.string().optional(),
   profilePhoto: z.string().optional(),
+
+  fatherName: z.string().optional(),
+  dob: z.string().optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
+  bloodGroup: z
+    .enum(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
+    .optional(),
+  address: z.string().optional(),
 });
 
 /* ================= USER SCHEMA ================= */
 
 export const userSchema = z.discriminatedUnion("userType", [
-
   // ================= STUDENT =================
   z.object({
     userType: z.literal("STUDENT"),
     ...baseUserSchema.shape,
-
-    profile: commonProfileSchema.extend({
+    profile: z.object({
       class: z.string().min(1, "Class is required"),
       section: z.string().min(1, "Section is required"),
       rollNumber: z.string().min(1, "Roll number is required"),
@@ -44,8 +38,7 @@ export const userSchema = z.discriminatedUnion("userType", [
   z.object({
     userType: z.literal("STAFF"),
     ...baseUserSchema.shape,
-
-    profile: commonProfileSchema.extend({
+    profile: z.object({
       designation: z.string().min(1, "Designation is required"),
       department: z.string().min(1, "Department is required"),
     }),
@@ -55,8 +48,7 @@ export const userSchema = z.discriminatedUnion("userType", [
   z.object({
     userType: z.literal("FACULTY"),
     ...baseUserSchema.shape,
-
-    profile: commonProfileSchema.extend({
+    profile: z.object({
       department: z.string().min(1, "Department is required"),
       subjects: z.string().min(1, "Subjects required"),
     }),

@@ -79,7 +79,7 @@ const AddPeoplePage = () => {
   });
 
   const selectedType = watch("userType");
-  const dob = watch("profile.dob");
+  const dob = watch("dob");
   const photo = watch("profilePhoto");
 
   /* ================= FETCH ================= */
@@ -309,7 +309,7 @@ const AddPeoplePage = () => {
 
               <div>
                 <Label className="mb-1">Father's Name</Label>
-                <Input {...register("profile.fatherName")} />
+                <Input {...register("fatherName")} />
               </div>
 
               <div>
@@ -476,7 +476,7 @@ const AddPeoplePage = () => {
                       captionLayout="dropdown"
                       onSelect={(date) => {
                         if (date) {
-                          setValue("profile.dob", date.toISOString(), {
+                          setValue("dob", date.toISOString(), {
                             shouldDirty: true,
                             shouldValidate: true,
                           });
@@ -491,9 +491,7 @@ const AddPeoplePage = () => {
               <div className="space-y-1.5">
                 <Label>Gender</Label>
                 <Select
-                  onValueChange={(val) =>
-                    setValue("profile.gender", val as any)
-                  }
+                  onValueChange={(val) => setValue("gender", val as any)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Gender" />
@@ -511,9 +509,7 @@ const AddPeoplePage = () => {
               <div className="space-y-1.5">
                 <Label>Blood Group</Label>
                 <Select
-                  onValueChange={(val) =>
-                    setValue("profile.bloodGroup", val as any)
-                  }
+                  onValueChange={(val) => setValue("bloodGroup", val as any)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Blood Group" />
@@ -531,7 +527,7 @@ const AddPeoplePage = () => {
 
             <div>
               <Label className="mb-1">Address</Label>
-              <Input {...register("profile.address")} />
+              <Input {...register("address")} />
             </div>
 
             <Separator />
