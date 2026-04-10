@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
@@ -33,7 +35,7 @@ import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { createUser, getSignedUploadUrl } from "@/api/users";
 
-import { listGrades, listSections } from "@/api/academics";
+import { listGrades, listSections, listDepartments } from "@/api/academics";
 import type { AcademicItem } from "@/types/academics";
 
 const GENDERS = ["MALE", "FEMALE", "OTHER"] as const;
@@ -50,11 +52,15 @@ const BLOOD_GROUPS = [
 
 const AddPeoplePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const defaultUserType = location.state?.userType || "STUDENT";
+
   const { user } = useAuth();
   const orgId = user?.orgId;
 
   const [grades, setGrades] = useState<AcademicItem[]>([]);
   const [sections, setSections] = useState<AcademicItem[]>([]);
+  const [departments, setDepartments] = useState<AcademicItem[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const {
@@ -62,142 +68,165 @@ const AddPeoplePage = () => {
     handleSubmit,
     setValue,
     watch,
+    resetField,
     formState: { errors, isSubmitting, isValid },
   } = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     mode: "onChange",
     defaultValues: {
-      userType: "STUDENT",
+      userType: defaultUserType,
     },
   });
 
+  const selectedType = watch("userType");
   const dob = watch("profile.dob");
   const photo = watch("profilePhoto");
+
+  /* ================= FETCH ================= */
 
   useEffect(() => {
     if (!orgId) return;
 
     const init = async () => {
-      const [g, s] = await Promise.all([
+      const [g, s, d] = await Promise.all([
         listGrades(orgId),
         listSections(orgId),
+        listDepartments(orgId),
       ]);
       setGrades(g || []);
       setSections(s || []);
+      setDepartments(d || []);
     };
 
     init();
   }, [orgId]);
 
+  /* ================= RESET PROFILE ================= */
+
+  useEffect(() => {
+    resetField("profile");
+  }, [selectedType]);
+
+  /* ================= FILE UPLOAD ================= */
+
   const handleFileUpload = async (file: File) => {
-    const MAX_SIZE = 5 * 1024 * 1024;
-    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-
-    // Validate type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error("Only JPG, JPEG, PNG allowed");
-      return;
-    }
-
-    // Validate size
-    if (file.size > MAX_SIZE) {
-      toast.error("Max file size is 5MB");
-      return;
-    }
-
     try {
       setUploading(true);
-
-      // 1. Get signed URL
       const res = await getSignedUploadUrl(file.name, file.type, file.size);
-      const { uploadUrl, publicUrl } = res;
 
-      // 2. Upload to S3
-      const uploadRes = await fetch(uploadUrl, {
+      await fetch(res.uploadUrl, {
         method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-        },
+        headers: { "Content-Type": file.type },
         body: file,
       });
 
-      // ✅ IMPORTANT: fetch doesn't throw on HTTP errors
-      if (!uploadRes.ok) {
-        const errorText = await uploadRes.text();
-        throw new Error(errorText || "Failed to upload file to storage (S3)");
-      }
-
-      // 3. Save PUBLIC URL
-      setValue("profilePhoto", publicUrl, {
+      setValue("profilePhoto", res.publicUrl, {
         shouldDirty: true,
         shouldValidate: true,
       });
 
       toast.success("Uploaded successfully");
-    } catch (err: any) {
-      console.error("Upload error:", err);
-
-      toast.error(
-        err?.message || // custom thrown error
-          err?.response?.data?.message || // backend error
-          "Upload failed"
-      );
+    } catch {
+      toast.error("Upload failed");
     } finally {
       setUploading(false);
     }
   };
+
+  /* ================= SUBMIT ================= */
 
   const onSubmit = async (data: UserFormValues) => {
     if (!orgId) return;
 
     try {
       await createUser(orgId, data);
-      toast.success("Student added successfully");
-      navigate("/students");
+      toast.success(`${data.userType} added successfully`);
+      navigate(`/${data.userType.toLowerCase()}s`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to create user");
     }
   };
 
+  useEffect(() => {
+    if (defaultUserType) {
+      setValue("userType", defaultUserType);
+    }
+  }, [defaultUserType, setValue]);
+
   return (
     <div className="space-y-6 lg:p-6 md:p-3">
-      {/* Breadcrumb */}
       <AppBreadcrumb />
 
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Add Student</h1>
+          <h1 className="text-2xl font-semibold">Add {selectedType}</h1>
           <p className="text-sm text-muted-foreground">
-            Create and manage student details
+            Create and manage {selectedType.toLowerCase()} details
           </p>
         </div>
 
-        <Button variant="outline" onClick={() => navigate("/students")}>
+        <Button variant="outline" onClick={() => navigate(-1)}>
           Back
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Information</CardTitle>
+          <CardTitle>User Information</CardTitle>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* PROFILE PHOTO */}
-            <div className="space-y-3">
-              <Label>Profile Photo</Label>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
+          >
+            {/* USER TYPE */}
+            <div className="space-y-1.5">
+              <Label>User Type *</Label>
+              <Select
+                value={selectedType}
+                onValueChange={(val) => setValue("userType", val as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="FACULTY">Faculty</SelectItem>
+                  <SelectItem value="STAFF">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
-                  {photo ? (
-                    <img src={photo} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-lg text-muted-foreground">
-                      {watch("name")?.charAt(0)?.toUpperCase() || "U"}
-                    </span>
-                  )}
+            {/* PROFILE PHOTO (same as sheet) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Profile Photo</Label>
+
+              <div className="flex items-center gap-5">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border bg-muted shadow-md flex items-center justify-center">
+                    {photo ? (
+                      <img src={photo} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-lg font-semibold text-muted-foreground">
+                        {watch("name")?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Hover overlay */}
+                  <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                    {uploading ? "Uploading..." : "Change"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                    />
+                  </label>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -238,237 +267,255 @@ const AddPeoplePage = () => {
               </div>
             </div>
 
-            <Separator />
+            {/* BASIC FIELDS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <Label className="mb-1">Name *</Label>
+                <Input {...register("name")} />
+                {errors.name && (
+                  <p className="text-sm text-destructive">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
 
-            {/* BASIC INFO */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground">
-                Basic Information
-              </h3>
+              <div>
+                <Label className="mb-1">Father's Name</Label>
+                <Input {...register("profile.fatherName")} />
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <Label>Name *</Label>
-                  <Input {...register("name")} />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <Label className="mb-1">Phone *</Label>
+                <Input {...register("phone")} maxLength={10} />
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label>Father's Name</Label>
-                  <Input {...register("profile.fatherName")} />
-                </div>
+              <div>
+                <Label className="mb-1">Email *</Label>
+                <Input {...register("email")} />
+              </div>
 
-                <div>
-                  <Label className="mb-1">Phone *</Label>
-                  <Input {...register("phone")} maxLength={10} />
-                  {errors.phone && (
-                    <p className="text-sm text-destructive">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <Label className="mb-1">RFID *</Label>
+                <Input {...register("rfidCode")} />
+              </div>
 
-                <div>
-                  <Label className="mb-1">Email *</Label>
-                  <Input {...register("email")} />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>External ID</Label>
-                  <Input {...register("externalId")} />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>RFID *</Label>
-                  <Input {...register("rfidCode")} />
-                </div>
+              <div>
+                <Label className="mb-1">External ID</Label>
+                <Input {...register("externalId")} />
               </div>
             </div>
 
             <Separator />
 
-            {/* ACADEMIC */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground">
-                Academic Details
-              </h3>
+            {/* TYPE SPECIFIC */}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="space-y-1.5">
-                  <Label>Grade *</Label>
-                  <Select
-                    onValueChange={(val) => setValue("profile.class", val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {grades.map((g) => (
-                        <SelectItem key={g.gradeId} value={g.name}>
-                          {g.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Section *</Label>
-                  <Select
-                    onValueChange={(val) => setValue("profile.section", val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Section" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sections.map((s) => (
-                        <SelectItem key={s.sectionId} value={s.name}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Roll Number *</Label>
-                  <Input {...register("profile.rollNumber")} />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* PERSONAL */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground">
-                Personal Details
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-                <div className="space-y-1.5">
-                  <Label>Date of Birth</Label>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start font-normal ${
-                          !dob && "text-muted-foreground"
-                        }`}
-                      >
-                        {dob
-                          ? new Date(dob).toLocaleDateString()
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-
-                    <PopoverContent
-                      className="w-auto overflow-hidden p-0"
-                      align="start"
+            {selectedType === "STUDENT" && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="space-y-1.5">
+                    <Label>Grade *</Label>
+                    <Select
+                      onValueChange={(val) => setValue("profile.class", val)}
                     >
-                      <Calendar
-                        mode="single"
-                        selected={dob ? new Date(dob) : undefined}
-                        defaultMonth={dob ? new Date(dob) : undefined}
-                        captionLayout="dropdown"
-                        onSelect={(date) => {
-                          if (date) {
-                            setValue("profile.dob", date.toISOString(), {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            });
-                          }
-                        }}
-                        disabled={(date) => date > new Date()} // prevent future DOB
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {grades.map((g) => (
+                          <SelectItem key={g.gradeId} value={g.name}>
+                            {g.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label>Gender</Label>
-                  <Select
-                    onValueChange={(val) =>
-                      setValue(
-                        "profile.gender",
-                        val as (typeof GENDERS)[number]
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GENDERS.map((g) => (
-                        <SelectItem key={g} value={g}>
-                          {g}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-1.5">
+                    <Label>Section *</Label>
+                    <Select
+                      onValueChange={(val) => setValue("profile.section", val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Section" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sections.map((s) => (
+                          <SelectItem key={s.sectionId} value={s.name}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label>Blood Group</Label>
-                  <Select
-                    onValueChange={(val) =>
-                      setValue(
-                        "profile.bloodGroup",
-                        val as (typeof BLOOD_GROUPS)[number]
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Blood Group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BLOOD_GROUPS.map((bg) => (
-                        <SelectItem key={bg} value={bg}>
-                          {bg}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label className="mb-1">Roll Number *</Label>
+                    <Input {...register("profile.rollNumber")} />
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
+
+            {selectedType === "STAFF" && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <Label className="mb-1">Designation *</Label>
+                    <Input {...register("profile.designation")} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>Department *</Label>
+                    <Select
+                      onValueChange={(val) =>
+                        setValue("profile.department", val)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.departmentId} value={d.name}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedType === "FACULTY" && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <Label>Department *</Label>
+                    <Select
+                      onValueChange={(val) =>
+                        setValue("profile.department", val)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.departmentId} value={d.name}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="mb-1">Subjects *</Label>
+                    <Input {...register("profile.subjects")} />
+                  </div>
+                </div>
+              </>
+            )}
 
             <Separator />
 
-            {/* ADDRESS */}
-            <div className="space-y-1.5">
-              <Label>Address</Label>
+            {/* COMMON PERSONAL */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="space-y-1.5">
+                <Label>Date of Birth</Label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={`w-full justify-start font-normal ${
+                        !dob && "text-muted-foreground"
+                      }`}
+                    >
+                      {dob ? new Date(dob).toLocaleDateString() : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={dob ? new Date(dob) : undefined}
+                      defaultMonth={dob ? new Date(dob) : undefined}
+                      captionLayout="dropdown"
+                      onSelect={(date) => {
+                        if (date) {
+                          setValue("profile.dob", date.toISOString(), {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }
+                      }}
+                      disabled={(date) => date > new Date()} // prevent future DOB
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Gender</Label>
+                <Select
+                  onValueChange={(val) =>
+                    setValue("profile.gender", val as any)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Blood Group</Label>
+                <Select
+                  onValueChange={(val) =>
+                    setValue("profile.bloodGroup", val as any)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Blood Group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BLOOD_GROUPS.map((bg) => (
+                      <SelectItem key={bg} value={bg}>
+                        {bg}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label className="mb-1">Address</Label>
               <Input {...register("profile.address")} />
             </div>
 
+            <Separator />
+
             {/* ACTIONS */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/students")}
-              >
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
 
-              <Button
-                type="submit"
-                disabled={!isValid || isSubmitting}
-                className="bg-primary"
-              >
-                Add Student
+              <Button disabled={!isValid || isSubmitting}>
+                Add {selectedType}
               </Button>
             </div>
           </form>

@@ -37,6 +37,7 @@ import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 type FormMode = "add" | "edit";
 
@@ -51,6 +52,8 @@ const StaffPage: React.FC = () => {
   const [formMode, setFormMode] = useState<FormMode>("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
+
+  const navigate = useNavigate();
 
   /* ================= FETCH ================= */
 
@@ -133,11 +136,16 @@ const StaffPage: React.FC = () => {
 
           <Button
             className="gap-2 bg-primary"
-            onClick={() => {
-              setSelectedUser(null);
-              setFormMode("add");
-              setSidebarOpen(true);
-            }}
+            // onClick={() => {
+            //   setSelectedUser(null);
+            //   setFormMode("add");
+            //   setSidebarOpen(true);
+            // }}
+            onClick={() =>
+              navigate("/add-people", {
+                state: { userType: "STAFF" },
+              })
+            }
           >
             <Plus className="h-4 w-4" />
             Add Staff

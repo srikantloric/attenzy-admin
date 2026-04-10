@@ -37,6 +37,7 @@ import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 type FormMode = "add" | "edit";
 
@@ -51,6 +52,8 @@ const FacultyPage: React.FC = () => {
   const [formMode, setFormMode] = useState<FormMode>("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
+
+  const navigate = useNavigate();
 
   /* ================= FETCH ================= */
 
@@ -133,15 +136,16 @@ const FacultyPage: React.FC = () => {
 
           <Button
             className="gap-2 bg-primary"
-            onClick={() => {
-              setSelectedUser(null);
-              setFormMode("add");
-              setSidebarOpen(true);
-            }}
+            onClick={() =>
+              navigate("/add-people", {
+                state: { userType: "FACULTY" },
+              })
+            }
           >
             <Plus className="h-4 w-4" />
             Add Faculty
           </Button>
+          
         </div>
 
         {/* Meta */}
@@ -213,7 +217,6 @@ const FacultyPage: React.FC = () => {
                       className={user.isActive === false ? "opacity-60" : ""}
                     >
                       <TableCell className="flex gap-2 items-center">
-
                         <Avatar>
                           <AvatarImage
                             src={user.profilePhoto || ""}
@@ -226,7 +229,7 @@ const FacultyPage: React.FC = () => {
                             {user.name?.charAt(0)?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex flex-col">
                           <p className="font-bold">{user.name.toUpperCase()}</p>
                           <p className="text-foreground text-xs font-normal">

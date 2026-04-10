@@ -1,5 +1,15 @@
 export type UserType = "STUDENT" | "STAFF" | "FACULTY";
 
+/* ================= COMMON PROFILE ================= */
+
+export interface CommonProfile {
+  fatherName?: string;
+  dob?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  address?: string;
+}
+
 /* ================= BASE USER ================= */
 
 interface BaseUser {
@@ -20,34 +30,23 @@ interface BaseUser {
 
 /* ================= PROFILE TYPES ================= */
 
-export interface StudentProfile {
+export interface StudentProfile extends CommonProfile {
   class: string;
   section: string;
   rollNumber: string;
-  fatherName?: string;
-  dob?: string;
-  gender?: string;
-  bloodGroup?: string;
-  address?: string;
 }
 
-export interface StaffProfile {
+export interface StaffProfile extends CommonProfile {
   designation: string;
   department: string;
 }
 
-export interface FacultyProfile {
+export interface FacultyProfile extends CommonProfile {
   department: string;
   subjects: string;
 }
 
-export interface AssignRFIDResponse {
-  message: string;
-  userId: string;
-  rfidCode: string;
-}
-
-/* ================= FULL USER (DISCRIMINATED UNION) ================= */
+/* ================= FULL USER ================= */
 
 export interface StudentUser extends BaseUser {
   userType: "STUDENT";
@@ -75,10 +74,8 @@ export type CreateUserPayload =
       phone: string;
       email?: string | null;
       rfidCode?: string;
-
       externalId?: string;
       profilePhoto?: string;
-
       profile: StudentProfile;
     }
   | {
@@ -87,10 +84,8 @@ export type CreateUserPayload =
       phone: string;
       email?: string | null;
       rfidCode?: string;
-
       externalId?: string;
       profilePhoto?: string;
-
       profile: StaffProfile;
     }
   | {
@@ -99,10 +94,8 @@ export type CreateUserPayload =
       phone: string;
       email?: string | null;
       rfidCode?: string;
-
       externalId?: string;
       profilePhoto?: string;
-
       profile: FacultyProfile;
     };
 
@@ -112,45 +105,39 @@ export type UpdateUserPayload =
   | {
       userId: string;
       orgId: string;
-
-      externalId?: string;
-      profilePhoto?: string;
-
       userType?: "STUDENT";
       name?: string;
       phone?: string;
       email?: string | null;
       rfidCode?: string;
+      externalId?: string;
+      profilePhoto?: string;
       profile?: Partial<StudentProfile>;
       isActive?: boolean;
     }
   | {
       userId: string;
       orgId: string;
-
-      externalId?: string;
-      profilePhoto?: string;
-
       userType?: "STAFF";
       name?: string;
       phone?: string;
       email?: string | null;
       rfidCode?: string;
+      externalId?: string;
+      profilePhoto?: string;
       profile?: Partial<StaffProfile>;
       isActive?: boolean;
     }
   | {
       userId: string;
       orgId: string;
-
-      externalId?: string;
-      profilePhoto?: string;
-
       userType?: "FACULTY";
       name?: string;
       phone?: string;
       email?: string | null;
       rfidCode?: string;
+      externalId?: string;
+      profilePhoto?: string;
       profile?: Partial<FacultyProfile>;
       isActive?: boolean;
     };
