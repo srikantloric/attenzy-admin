@@ -110,13 +110,13 @@ const AddUserForm = ({
     const MAX_SIZE = 5 * 1024 * 1024;
     const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
-    // ✅ Validate type
+    // Validate type
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast.error("Only JPG, JPEG, PNG allowed");
       return;
     }
 
-    // ✅ Validate size
+    // Validate size
     if (file.size > MAX_SIZE) {
       toast.error("Max file size is 5MB");
       return;

@@ -1,80 +1,46 @@
-import { AppBreadcrumb } from "@/components/AppBreadCrumb"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CircleAlert, Fingerprint, Settings, User } from "lucide-react"
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom"
-import { useEffect, useState } from "react"
-import useAuth from "@/hooks/useAuth"
-import { getUsersByOrg } from "@/api/users"
-import type { User as UserType } from "@/types/users"
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CircleAlert, Fingerprint, Settings, User } from "lucide-react";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import useAuth from "@/hooks/useAuth";
+import { getUsersByOrg } from "@/api/users";
+import type { User as UserType } from "@/types/users";
 
 function StudentsDetailsPage() {
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const { id } = useParams()
-  const { user: authUser } = useAuth()
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { id } = useParams();
+  const { user: authUser } = useAuth();
 
-  const [student, setStudent] = useState<UserType | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [student, setStudent] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const tab = pathname.split("/")[3] ?? "profile"
+  const tab = pathname.split("/")[3] ?? "profile";
 
   /* ================= FETCH STUDENT ================= */
 
   useEffect(() => {
-    if (!authUser?.orgId || !id) return
+    if (!authUser?.orgId || !id) return;
 
-    setLoading(true)
+    setLoading(true);
 
     getUsersByOrg(authUser.orgId)
       .then((data) => {
-        const found = data.find((u: UserType) => u.userId === id)
-        setStudent(found || null)
+        const found = data.find((u: UserType) => u.userId === id);
+        setStudent(found || null);
       })
       .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [id, authUser])
+      .finally(() => setLoading(false));
+  }, [id, authUser]);
 
   return (
     <div className="space-y-6 p-1 sm:p-2 md:p-3 lg:p-6">
       <AppBreadcrumb />
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-
-          {/* Avatar */}
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center border">
-            {student?.profilePhoto ? (
-              <img
-                src={student.profilePhoto}
-                className="w-full h-full object-cover"
-                alt={student.name}
-              />
-            ) : (
-              <span className="text-sm font-medium text-muted-foreground">
-                {student?.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-            )}
-          </div>
-
-          {/* Name + ID */}
-          <div>
-            <h1 className="text-md lg:text-2xl font-semibold">
-              {student?.name || "Student Details"}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {student?.userId}
-            </p>
-          </div>
-        </div>
-      </div>
+      
+      <div className="mt-4"></div>
 
       {/* Tabs Container */}
       <div className="flex flex-col gap-3 border rounded-2xl p-3">
@@ -141,7 +107,7 @@ function StudentsDetailsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default StudentsDetailsPage
+export default StudentsDetailsPage;
