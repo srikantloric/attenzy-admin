@@ -216,13 +216,13 @@ const AddPeoplePage = () => {
             className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
           >
             {/* USER TYPE */}
-            <div className="space-y-1.5">
+            <div className="p-4 rounded-xl border bg-muted/30 space-y-2">
               <Label>User Type *</Label>
               <Select
                 value={selectedType}
                 onValueChange={(val) => setValue("userType", val as any)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="Select user type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,14 +234,21 @@ const AddPeoplePage = () => {
             </div>
 
             {/* PROFILE PHOTO (same as sheet) */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Profile Photo</Label>
+            <div className="p-4 rounded-xl border bg-background space-y-3">
+              <Label className="text-sm font-semibold text-muted-foreground">
+                Profile Photo
+              </Label>
 
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-6">
+                {/* Avatar */}
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border bg-muted shadow-md flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border bg-muted shadow-sm flex items-center justify-center transition">
                     {photo ? (
-                      <img src={photo} className="w-full h-full object-cover" />
+                      <img
+                        src={photo}
+                        alt="profile"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span className="text-lg font-semibold text-muted-foreground">
                         {watch("name")?.charAt(0)?.toUpperCase() || "U"}
@@ -249,8 +256,8 @@ const AddPeoplePage = () => {
                     )}
                   </div>
 
-                  {/* Hover overlay */}
-                  <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                  {/* Hover Overlay */}
+                  <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition cursor-pointer">
                     {uploading ? "Uploading..." : "Change"}
                     <input
                       type="file"
@@ -263,10 +270,12 @@ const AddPeoplePage = () => {
                   </label>
                 </div>
 
+                {/* Actions */}
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
                     variant="secondary"
+                    className="h-9 px-4"
                     onClick={() => document.getElementById("upload")?.click()}
                   >
                     Upload Image
@@ -287,7 +296,7 @@ const AddPeoplePage = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      className="h-8 text-destructive border-destructive/30 hover:bg-destructive/10"
                       onClick={() => setValue("profilePhoto", "")}
                     >
                       Remove
@@ -456,6 +465,7 @@ const AddPeoplePage = () => {
 
             {/* COMMON PERSONAL */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
               <div className="space-y-1.5">
                 <Label>Date of Birth</Label>
 
