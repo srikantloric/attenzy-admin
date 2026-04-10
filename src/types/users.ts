@@ -1,15 +1,5 @@
 export type UserType = "STUDENT" | "STAFF" | "FACULTY";
 
-/* ================= COMMON PROFILE ================= */
-
-export interface CommonProfile {
-  fatherName?: string;
-  dob?: string;
-  gender?: "MALE" | "FEMALE" | "OTHER";
-  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
-  address?: string;
-}
-
 /* ================= BASE USER ================= */
 
 interface BaseUser {
@@ -22,6 +12,12 @@ interface BaseUser {
   externalId?: string;
   profilePhoto?: string;
 
+  fatherName?: string;
+  dob?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  address?: string;
+
   orgId: string;
   isActive?: boolean;
   createdAt: number;
@@ -30,18 +26,18 @@ interface BaseUser {
 
 /* ================= PROFILE TYPES ================= */
 
-export interface StudentProfile extends CommonProfile {
+export interface StudentProfile {
   class: string;
   section: string;
   rollNumber: string;
 }
 
-export interface StaffProfile extends CommonProfile {
+export interface StaffProfile {
   designation: string;
   department: string;
 }
 
-export interface FacultyProfile extends CommonProfile {
+export interface FacultyProfile {
   department: string;
   subjects: string;
 }
@@ -73,77 +69,71 @@ export type User = StudentUser | StaffUser | FacultyUser;
 
 /* ================= CREATE USER ================= */
 
+type BaseCreatePayload = {
+  name: string;
+  phone: string;
+  email?: string | null;
+  rfidCode?: string;
+
+  externalId?: string;
+  profilePhoto?: string;
+
+  fatherName?: string;
+  dob?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  address?: string;
+};
+
 export type CreateUserPayload =
-  | {
+  | ({
       userType: "STUDENT";
-      name: string;
-      phone: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile: StudentProfile;
-    }
-  | {
+    } & BaseCreatePayload)
+  | ({
       userType: "STAFF";
-      name: string;
-      phone: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile: StaffProfile;
-    }
-  | {
+    } & BaseCreatePayload)
+  | ({
       userType: "FACULTY";
-      name: string;
-      phone: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile: FacultyProfile;
-    };
+    } & BaseCreatePayload);
 
 /* ================= UPDATE USER ================= */
 
+type BaseUpdatePayload = {
+  userId: string;
+  orgId: string;
+
+  userType?: UserType;
+
+  name?: string;
+  phone?: string;
+  email?: string | null;
+  rfidCode?: string;
+
+  externalId?: string;
+  profilePhoto?: string;
+
+  fatherName?: string;
+  dob?: string;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  address?: string;
+
+  isActive?: boolean;
+};
+
 export type UpdateUserPayload =
-  | {
-      userId: string;
-      orgId: string;
+  | (BaseUpdatePayload & {
       userType?: "STUDENT";
-      name?: string;
-      phone?: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile?: Partial<StudentProfile>;
-      isActive?: boolean;
-    }
-  | {
-      userId: string;
-      orgId: string;
+    })
+  | (BaseUpdatePayload & {
       userType?: "STAFF";
-      name?: string;
-      phone?: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile?: Partial<StaffProfile>;
-      isActive?: boolean;
-    }
-  | {
-      userId: string;
-      orgId: string;
+    })
+  | (BaseUpdatePayload & {
       userType?: "FACULTY";
-      name?: string;
-      phone?: string;
-      email?: string | null;
-      rfidCode?: string;
-      externalId?: string;
-      profilePhoto?: string;
       profile?: Partial<FacultyProfile>;
-      isActive?: boolean;
-    };
+    });

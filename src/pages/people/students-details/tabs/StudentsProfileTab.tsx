@@ -19,7 +19,6 @@ function StudentsProfileTab() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-3 h-full">
-      
       {/* LEFT PROFILE CARD */}
       <div className="w-full lg:w-72 border flex flex-col rounded-md items-center justify-center p-4">
         {/* Profile Image */}
@@ -84,7 +83,7 @@ function StudentsProfileTab() {
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} className="mt-0.5" />
             <p className="break-words">
-              {profile?.address || "Address not available"}
+              {student.address || "Address not available"}
             </p>
           </div>
         </div>
@@ -144,7 +143,11 @@ function StudentsProfileTab() {
             <Label>Date of Birth</Label>
             <Input
               type="date"
-              defaultValue={profile?.dob ? profile.dob.split("T")[0] : ""}
+              defaultValue={
+                student.dob
+                  ? new Date(student.dob).toISOString().split("T")[0]
+                  : ""
+              }
             />
           </div>
 
@@ -152,22 +155,22 @@ function StudentsProfileTab() {
             <Label>Gender</Label>
             <Input
               defaultValue={
-                profile?.gender
-                  ? profile.gender.charAt(0) +
-                    profile.gender.slice(1).toLowerCase()
-                  : ""
+                student.gender
+                  ? student.gender.charAt(0) +
+                    student.gender.slice(1).toLowerCase()
+                  : "-"
               }
             />
           </div>
 
           <div className="space-y-1">
             <Label>Guardian Name</Label>
-            <Input defaultValue={profile?.fatherName || ""} />
+            <Input defaultValue={student.fatherName || ""} />
           </div>
 
           <div className="space-y-1">
             <Label>Blood Group</Label>
-            <Input defaultValue={profile?.bloodGroup || ""} />
+            <Input defaultValue={student.bloodGroup || ""} />
           </div>
         </div>
       </div>
