@@ -27,6 +27,25 @@ function StudentsProfileTab() {
 
   /* ================= STATE ================= */
 
+  const [loading, setLoading] = useState(false);
+
+  const initialData = {
+    name: student.name || "",
+    phone: student.phone || "",
+    email: student.email || "",
+    dob: student.dob || "",
+    gender: student.gender || undefined,
+    fatherName: student.fatherName || "",
+    bloodGroup: student.bloodGroup || undefined,
+    address: student.address || "",
+    externalId: student.externalId || "",
+    profile: {
+      class: profile.class,
+      section: profile.section,
+      rollNumber: profile.rollNumber,
+    },
+  };
+
   const [formData, setFormData] = useState({
     name: student.name || "",
     phone: student.phone || "",
@@ -43,6 +62,8 @@ function StudentsProfileTab() {
       rollNumber: profile.rollNumber,
     },
   });
+
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
 
   /* ================= SAVE ================= */
 
@@ -63,8 +84,6 @@ function StudentsProfileTab() {
       toast.error(err?.message || "Something went wrong while updating user");
     }
   };
-
-  const firstName = student.name?.split(" ")[0] || "";
 
   return (
     <div className="flex flex-col lg:flex-row gap-3 h-full">
@@ -134,8 +153,8 @@ function StudentsProfileTab() {
       <div className="flex-1 border rounded-md">
         <div className="p-4 flex items-center justify-between">
           <p className="font-medium">Personal Details</p>
-          <Button size="sm" onClick={handleSave}>
-            Save
+          <Button size="sm" onClick={handleSave} disabled={loading || !isDirty}>
+            {loading ? "Saving..." : "Save"}
           </Button>
         </div>
 
