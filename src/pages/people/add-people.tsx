@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -80,6 +79,7 @@ const AddPeoplePage = () => {
   const selectedType = watch("userType");
   const dob = watch("dob");
   const photo = watch("profilePhoto");
+  const gender = watch("gender");
 
   /* ================= FETCH ================= */
 
@@ -216,7 +216,6 @@ const AddPeoplePage = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
           >
-
             {/* PROFILE PHOTO */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground">
@@ -475,10 +474,14 @@ const AddPeoplePage = () => {
                       captionLayout="dropdown"
                       onSelect={(date) => {
                         if (date) {
-                          setValue("dob", date.toISOString(), {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
+                          setValue(
+                            "dob",
+                            date.toISOString().split("T")[0], // YYYY-MM-DD
+                            {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            }
+                          );
                         }
                       }}
                       disabled={(date) => date > new Date()} // prevent future DOB
@@ -490,7 +493,13 @@ const AddPeoplePage = () => {
               <div className="space-y-1.5">
                 <Label>Gender</Label>
                 <Select
-                  onValueChange={(val) => setValue("gender", val as any)}
+                  value={gender}
+                  onValueChange={(val) =>
+                    setValue("gender", val as any, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Gender" />
@@ -538,7 +547,8 @@ const AddPeoplePage = () => {
               </Button>
 
               <Button disabled={!isValid || isSubmitting}>
-                Add {selectedType.charAt(0) + selectedType.slice(1).toLowerCase()}
+                Add{" "}
+                {selectedType.charAt(0) + selectedType.slice(1).toLowerCase()}
               </Button>
             </div>
           </form>
