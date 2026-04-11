@@ -175,6 +175,7 @@ const AddPeoplePage = () => {
       await createUser(orgId, data);
       toast.success(`${data.userType} added successfully`);
       navigate(`/${data.userType.toLowerCase()}s`);
+      console.log(data);
     } catch (err: any) {
       toast.error(err?.message || "Failed to create user");
     }
@@ -474,14 +475,12 @@ const AddPeoplePage = () => {
                       captionLayout="dropdown"
                       onSelect={(date) => {
                         if (date) {
-                          setValue(
-                            "dob",
-                            date.toISOString().split("T")[0], // YYYY-MM-DD
-                            {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            }
-                          );
+                          const iso = date.toISOString();
+                      
+                          setValue("dob", iso, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                         }
                       }}
                       disabled={(date) => date > new Date()} // prevent future DOB
