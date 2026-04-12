@@ -102,7 +102,7 @@ function StudentsDetailsPage() {
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading...</p>
           ) : (
-            <Outlet context={{ student }} />
+            <Outlet context={{ user: student }} />
           )}
         </div>
       </div>

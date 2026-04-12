@@ -28,8 +28,8 @@ import ReportPage from "@/pages/reports/ReportPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import AcademicSetupTab from "@/pages/settings/AcademicSetupTab";
 
-import StudentsDetailsPage from "@/pages/people/students-details/StudentDetailsPage";
-import StudentsProfileTab from "@/pages/people/students-details/tabs/StudentsProfileTab";
+import StudentsDetailsPage from "@/pages/people/students-details/UserDetailsPage";
+import StudentsProfileTab from "@/pages/people/students-details/tabs/UserProfileTab";
 import StudentAttendanceTab from "@/pages/people/students-details/tabs/StudentAttendanceTab";
 
 import IotAttendance from "@/pages/attendance/iotAttendance";
@@ -53,7 +53,7 @@ import AddPeoplePage from "@/pages/people/add-people";
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
 const Attendance = Loadable(
-  lazy(() => import("@/pages/attendance/attendance")),
+  lazy(() => import("@/pages/attendance/attendance"))
 );
 
 // ==============================|| MAIN ROUTES ||============================== //
@@ -130,13 +130,50 @@ const MainRoutes = {
     },
     {
       path: "faculty",
-      element: <FacultyPage />,
       handle: { breadcrumb: "Faculty" },
+      children: [
+        {
+          index: true,
+          element: <FacultyPage />,
+        },
+        {
+          path: ":id",
+          element: <StudentsDetailsPage />,
+          handle: {
+            breadcrumb: ({ params }: any) => params.id ?? "Details",
+          },
+          children: [
+            {
+              index: true,
+              element: <StudentsProfileTab />,
+            },
+          ],
+        },
+      ],
     },
+
     {
       path: "staff",
-      element: <StaffPage />,
       handle: { breadcrumb: "Staff" },
+      children: [
+        {
+          index: true,
+          element: <StaffPage />,
+        },
+        {
+          path: ":id",
+          element: <StudentsDetailsPage />,
+          handle: {
+            breadcrumb: ({ params }: any) => params.id ?? "Details",
+          },
+          children: [
+            {
+              index: true,
+              element: <StudentsProfileTab />,
+            },
+          ],
+        },
+      ],
     },
     {
       path: "rfid-mapping",

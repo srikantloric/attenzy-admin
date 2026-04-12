@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Search, Plus, MoreVertical, Ban, Pencil } from "lucide-react";
+import { Search, Plus, MoreVertical, Ban, Pencil, Eye } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 import { timeAgo } from "@/utils/timeAgo";
@@ -145,7 +145,6 @@ const FacultyPage: React.FC = () => {
             <Plus className="h-4 w-4" />
             Add Faculty
           </Button>
-          
         </div>
 
         {/* Meta */}
@@ -265,6 +264,14 @@ const FacultyPage: React.FC = () => {
                       </TableCell>
 
                       <TableCell className="text-right">
+                        <Button
+                          variant={"ghost"}
+                          onClick={() => {
+                            navigate(`/faculty/${user.userId}`);
+                          }}
+                        >
+                          <Eye />
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button size="icon" variant="ghost">
