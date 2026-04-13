@@ -23,8 +23,6 @@ function StudentsProfileTab() {
     return <p className="text-sm text-muted-foreground">No data found</p>;
   }
 
-  const profile = user.profile;
-
   /* ================= STATE ================= */
 
   const [loading, setLoading] = useState(false);
@@ -105,7 +103,7 @@ function StudentsProfileTab() {
 
         <Separator className="my-4" />
 
-        {/* ✅ DYNAMIC PROFILE */}
+        {/* DYNAMIC PROFILE */}
         <div className="flex items-center gap-4 text-sm">
           {user.userType === "STUDENT" && (
             <>
@@ -226,131 +224,156 @@ function StudentsProfileTab() {
           </div>
 
           {/* STUDENT */}
-          {user.userType === "STUDENT" && (
-            <>
-              <div className="space-y-1">
-                <Label>Grade</Label>
-                <Input
-                  value={user.profile.class}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        class: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
+          {user.userType === "STUDENT" &&
+            (() => {
+              const profile = formData.profile as {
+                class: string;
+                section: string;
+                rollNumber: string;
+              };
 
-              <div className="space-y-1">
-                <Label>Section</Label>
-                <Input
-                  value={user.profile.section}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        section: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
+              return (
+                <>
+                  <div className="space-y-1">
+                    <Label>Grade</Label>
+                    <Input
+                      value={profile.class}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            class: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label>Roll No</Label>
-                <Input
-                  value={user.profile.rollNumber}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        rollNumber: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
-            </>
-          )}
+                  <div className="space-y-1">
+                    <Label>Section</Label>
+                    <Input
+                      value={profile.section}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            section: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>Roll No</Label>
+                    <Input
+                      value={profile.rollNumber}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            rollNumber: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
           {/* FACULTY */}
-          {user.userType === "FACULTY" && (
-            <>
-              <div className="space-y-1">
-                <Label>Department</Label>
-                <Input
-                  value={user.profile.department}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        department: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
+          {user.userType === "FACULTY" &&
+            (() => {
+              const profile = formData.profile as {
+                department: string;
+                subjects: string;
+              };
 
-              <div className="space-y-1">
-                <Label>Subjects</Label>
-                <Input
-                  value={user.profile.subjects}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        subjects: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
-            </>
-          )}
+              return (
+                <>
+                  <div className="space-y-1">
+                    <Label>Department</Label>
+                    <Input
+                      value={profile.department}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            department: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>Subjects</Label>
+                    <Input
+                      value={profile.subjects}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            subjects: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
           {/* STAFF */}
-          {user.userType === "STAFF" && (
-            <>
-              <div className="space-y-1">
-                <Label>Designation</Label>
-                <Input
-                  value={user.profile.designation}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        designation: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
+          {user.userType === "STAFF" &&
+            (() => {
+              const profile = formData.profile as {
+                designation: string;
+                department: string;
+              };
 
-              <div className="space-y-1">
-                <Label>Department</Label>
-                <Input
-                  value={user.profile.department}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile: {
-                        ...formData.profile,
-                        department: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
-            </>
-          )}
+              return (
+                <>
+                  <div className="space-y-1">
+                    <Label>Designation</Label>
+                    <Input
+                      value={profile.designation}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            designation: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>Department</Label>
+                    <Input
+                      value={profile.department}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          profile: {
+                            ...profile,
+                            department: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
           <div className="space-y-1">
             <Label>Phone</Label>
