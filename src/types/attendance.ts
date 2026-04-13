@@ -7,6 +7,7 @@ export interface AttendanceItem {
     rollNumber: string
     class: string
     section: string
+    department: string
   }
   deviceId: string
   deviceName: string

@@ -16,6 +16,7 @@ export interface AttendanceSummary {
 export interface AttendanceUser {
   userId: string
   name: string
+  profilePhoto?: string 
   attendance: Record<string, AttendanceStatus>
   summary: AttendanceSummary
 }

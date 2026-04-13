@@ -161,7 +161,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
                                     <SidebarMenuSubButton
                                       asChild
                                       isActive={isSubActive}
-                                      className="cursor-pointer text-muted hover:text-primary hover:bg-transparent data-[active=true]:bg-transparent data-[active=true]:text-primary"
+                                      className="cursor-pointer text-muted dark:text-foreground/70 dark:data-[active=true]:text-primary hover:text-primary hover:bg-transparent data-[active=true]:bg-transparent data-[active=true]:text-primary"
                                     >
                                       <Link to={subItem.url!}>
                                         <span className="text-[16px]">

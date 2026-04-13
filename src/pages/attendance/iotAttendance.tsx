@@ -1,405 +1,429 @@
-"use client"
+"use client";
 
-import React, { useEffect, useMemo, useState } from "react"
-import useAuth from "@/hooks/useAuth"
-import { getAttendanceByOrg } from "@/api/attendance"
-import type { AttendanceItem } from "@/types/attendance"
+import React, { useEffect, useMemo, useState } from "react";
+import useAuth from "@/hooks/useAuth";
+import { getAttendanceByOrg } from "@/api/attendance";
+import type { AttendanceItem } from "@/types/attendance";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { AppBreadcrumb } from "@/components/AppBreadCrumb"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Calendar } from "@/components/ui/calendar"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Calendar } from "@/components/ui/calendar";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { CalendarIcon, Search } from "lucide-react"
-import { format } from "date-fns"
-import DataPagination from "@/components/Pagination"
-import { useFilterPagination } from "@/hooks/useFilterPagination"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon, Search } from "lucide-react";
+import { format } from "date-fns";
+
+import { useFilterPagination } from "@/hooks/useFilterPagination";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
-const AttendanceRow = React.memo(
-    ({ record }: { record: AttendanceItem }) => {
-        return (
-            <TableRow>
-                <TableCell className="flex items-center gap-3">
-                    <Avatar>
-                        <AvatarFallback>
-                            {record.userName.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
+const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
+  return (
+    <TableRow>
+      <TableCell className="flex items-center gap-3">
+        <Avatar>
+          <AvatarFallback>
+            {record.userName.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
 
-                    <div>
-                        <p className="font-medium">{record.userName}</p>
-                        <p className="text-xs text-muted-foreground">
-                            {record.userId}
-                        </p>
-                    </div>
-                </TableCell>
+        <div>
+          <p className="font-medium">{record.userName}</p>
+          <p className="text-xs text-muted-foreground">{record.userId}</p>
+        </div>
+      </TableCell>
 
-                <TableCell>
-                    {record.userProfile.class} - {record.userProfile.section}
-                </TableCell>
+      <TableCell>
+        {record.userType === "STUDENT"
+          ? `${record.userProfile.class} - ${record.userProfile.section}`
+          : record.userProfile.department}
+      </TableCell>
 
-                <TableCell>{record.deviceName}</TableCell>
-                <TableCell>{record.time}</TableCell>
+      <TableCell>{record.deviceName}</TableCell>
+      <TableCell>{new Date(record.timestamp).toLocaleTimeString()}</TableCell>
 
-                <TableCell>
-                    <Badge className="bg-green-100 text-green-700">
-                        Present
-                    </Badge>
-                </TableCell>
-            </TableRow>
-        )
-    }
-)
+      <TableCell>
+        <Badge className="bg-green-100 text-green-700">Present</Badge>
+      </TableCell>
+    </TableRow>
+  );
+});
 
 const IotAttendance: React.FC = () => {
-    const { user } = useAuth()
-    const orgId = user?.orgId
+  const { user } = useAuth();
+  const orgId = user?.orgId;
 
-    const [attendance, setAttendance] = useState<AttendanceItem[]>([])
-    const [loading, setLoading] = useState(false)
+  const [attendance, setAttendance] = useState<AttendanceItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-    const [search, setSearch] = useState("")
-    const [filterStatus, setFilterStatus] =
-        useState<"all" | "present" | "absent">("all")
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "present" | "absent"
+  >("all");
 
-    const [classFilter, setClassFilter] = useState("all")
-    const [userTypeFilter, setUserTypeFilter] = useState("all")
-    const [autoRefresh, setAutoRefresh] = useState(false)
+  const [classFilter, setClassFilter] = useState("all");
+  const [userTypeFilter, setUserTypeFilter] = useState("all");
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-    // ✅ Fetch with silent mode
-    const fetchAttendance = async (isSilent = false) => {
-        if (!orgId) return
+  // ✅ Fetch with silent mode
+  const fetchAttendance = async (isSilent = false) => {
+    if (!orgId) return;
 
-        try {
-            if (!isSilent) setLoading(true)
+    try {
+      if (!isSilent) setLoading(true);
 
-            const data = await getAttendanceByOrg(orgId)
+      const data = await getAttendanceByOrg(orgId);
 
-            setAttendance((prev) => {
-                if (JSON.stringify(prev) === JSON.stringify(data)) {
-                    return prev
-                }
-                return data
-            })
-        } catch (err) {
-            console.error(err)
-        } finally {
-            if (!isSilent) setLoading(false)
+      setAttendance((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) {
+          return prev;
         }
+        return data;
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendance();
+  }, [orgId]);
+
+  // ✅ Silent auto refresh
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchAttendance(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, orgId]);
+
+  const formattedDate = useMemo(() => {
+    return format(selectedDate, "yyyy-MM-dd");
+  }, [selectedDate]);
+
+  const availableClasses = useMemo(() => {
+    const set = new Set(attendance.map((a) => a.userProfile.class));
+    return ["all", ...Array.from(set)];
+  }, [attendance]);
+
+  const availableUserTypes = ["all", "STUDENT", "FACULTY", "STAFF"];
+
+  const filteredRecords = useMemo(() => {
+    let data = attendance.filter((a) => a.date === formattedDate);
+
+    if (filterStatus === "absent") {
+      data = [];
     }
 
-    useEffect(() => {
-        fetchAttendance()
-    }, [orgId])
+    if (classFilter !== "all") {
+      data = data.filter((a) => a.userProfile.class === classFilter);
+    }
 
-    // ✅ Silent auto refresh
-    useEffect(() => {
-        if (!autoRefresh) return
+    if (userTypeFilter !== "all") {
+      data = data.filter((a) => a.userType?.toUpperCase() === userTypeFilter);
+    }
 
-        const interval = setInterval(() => {
-            fetchAttendance(true)
-        }, 10000)
+    if (search) {
+      data = data.filter((a) =>
+        a.userName.toLowerCase().includes(search.toLowerCase())
+      );
+    }
 
-        return () => clearInterval(interval)
-    }, [autoRefresh, orgId])
+    return data;
+  }, [
+    attendance,
+    formattedDate,
+    filterStatus,
+    classFilter,
+    userTypeFilter,
+    search,
+  ]);
 
-    const formattedDate = useMemo(() => {
-        return format(selectedDate, "yyyy-MM-dd")
-    }, [selectedDate])
+  const {
+    currentPage,
+    setCurrentPage,
+    rowsPerPage,
+    setRowsPerPage,
+    filteredData,
+    paginatedData,
+  } = useFilterPagination<AttendanceItem>({
+    data: filteredRecords,
+    searchKey: "userName",
+    getIsActive: () => true,
+  });
 
-    const availableClasses = useMemo(() => {
-        const set = new Set(attendance.map((a) => a.userProfile.class))
-        return ["all", ...Array.from(set)]
-    }, [attendance])
+  const totalPunches = filteredRecords.length;
 
-    const availableUserTypes = ["all", "STUDENT", "FACULTY", "STAFF"]
+  const uniqueStudents = useMemo(() => {
+    const set = new Set(filteredRecords.map((r) => r.userId));
+    return set.size;
+  }, [filteredRecords]);
 
-    const filteredRecords = useMemo(() => {
-        let data = attendance.filter((a) => a.date === formattedDate)
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-        if (filterStatus === "absent") {
-            data = []
-        }
+  return (
+    <div className="space-y-6 p-6">
+      <AppBreadcrumb />
 
-        if (classFilter !== "all") {
-            data = data.filter(
-                (a) => a.userProfile.class === classFilter
-            )
-        }
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Smart Attendance</h1>
 
-        if (userTypeFilter !== "all") {
-            data = data.filter(
-                (a) => a.userType?.toUpperCase() === userTypeFilter
-            )
-        }
+        <div className="flex items-center gap-3">
+          {autoRefresh && (
+            <span className="text-xs text-muted-foreground">
+              Live updating…
+            </span>
+          )}
 
-        if (search) {
-            data = data.filter((a) =>
-                a.userName.toLowerCase().includes(search.toLowerCase())
-            )
-        }
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                {format(selectedDate, "PPP")}
+              </Button>
+            </PopoverTrigger>
 
-        return data
-    }, [
-        attendance,
-        formattedDate,
-        filterStatus,
-        classFilter,
-        userTypeFilter,
-        search,
-    ])
-
-    const {
-        currentPage,
-        setCurrentPage,
-        rowsPerPage,
-        setRowsPerPage,
-        filteredData,
-        paginatedData,
-    } = useFilterPagination<AttendanceItem>({
-        data: filteredRecords,
-        searchKey: "userName",
-        getIsActive: () => true,
-    })
-
-    const totalPunches = filteredRecords.length
-
-    const uniqueStudents = useMemo(() => {
-        const set = new Set(filteredRecords.map((r) => r.userId))
-        return set.size
-    }, [filteredRecords])
-
-    return (
-        <div className="space-y-6 p-6">
-            <AppBreadcrumb />
-
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">
-                    Smart Attendance
-                </h1>
-
-                <div className="flex items-center gap-3">
-                    {autoRefresh && (
-                        <span className="text-xs text-muted-foreground">
-                            Live updating…
-                        </span>
-                    )}
-
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="gap-2">
-                                <CalendarIcon className="h-4 w-4" />
-                                {format(selectedDate, "PPP")}
-                            </Button>
-                        </PopoverTrigger>
-
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) =>
-                                    date && setSelectedDate(date)
-                                }
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm text-muted-foreground">
-                            Total Punches
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-3xl font-bold">
-                        {totalPunches}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm text-muted-foreground">
-                            Unique Students
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-3xl font-bold">
-                        {uniqueStudents}
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Filters */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex gap-2">
-                    {(["all", "present", "absent"] as const).map(
-                        (status) => (
-                            <Button
-                                key={status}
-                                size="sm"
-                                variant={
-                                    filterStatus === status
-                                        ? "default"
-                                        : "outline"
-                                }
-                                onClick={() => setFilterStatus(status)}
-                            >
-                                {status.charAt(0).toUpperCase() +
-                                    status.slice(1)}
-                            </Button>
-                        )
-                    )}
-                </div>
-
-                <div className="flex gap-3 items-center">
-                    <Select
-                        value={classFilter}
-                        onValueChange={setClassFilter}
-                    >
-                        <SelectTrigger className="w-37.5">
-                            <SelectValue placeholder="Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableClasses.map((cls) => (
-                                <SelectItem key={cls} value={cls}>
-                                    {cls === "all" ? "All Classes" : cls}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={userTypeFilter}
-                        onValueChange={setUserTypeFilter}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue placeholder="User Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableUserTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
-                                    {type === "all" ? "All Types" : type}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            className="pl-8 w-64"
-                            placeholder="Search student..."
-                            value={search}
-                            onChange={(e) =>
-                                setSearch(e.target.value)
-                            }
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Table */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Attendance Logs</CardTitle>
-
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                            Auto Refresh
-                        </span>
-                        <Switch
-                            checked={autoRefresh}
-                            onCheckedChange={setAutoRefresh}
-                        />
-                    </div>
-                </CardHeader>
-
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Class</TableHead>
-                                <TableHead>Device</TableHead>
-                                <TableHead>Time</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-
-                        <TableBody>
-                            {loading && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center">
-                                        Loading attendance...
-                                    </TableCell>
-                                </TableRow>
-                            )}
-
-                            {!loading && paginatedData.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
-                                        No data is available for this date
-                                    </TableCell>
-                                </TableRow>
-                            )}
-
-                            {!loading &&
-                                paginatedData.length > 0 &&
-                                paginatedData.map((record) => (
-                                    <AttendanceRow
-                                        key={`${record.userId}-${record.date}-${record.time}`}
-                                        record={record}
-                                    />
-                                ))}
-                        </TableBody>
-
-                    </Table>
-                </CardContent>
-
-                <Separator />
-
-                <DataPagination
-                    totalItems={filteredData.length}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    rowsPerPage={rowsPerPage}
-                    setRowsPerPage={setRowsPerPage}
-                />
-            </Card>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-    )
-}
+      </div>
 
-export default IotAttendance
+      <Separator />
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              Total Punches
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-bold">
+            {totalPunches}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              Unique Students
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-bold">
+            {uniqueStudents}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex gap-2">
+          {(["all", "present", "absent"] as const).map((status) => (
+            <Button
+              key={status}
+              size="sm"
+              variant={filterStatus === status ? "default" : "outline"}
+              onClick={() => setFilterStatus(status)}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex gap-3 items-center">
+          <Select value={classFilter} onValueChange={setClassFilter}>
+            <SelectTrigger className="w-37.5">
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableClasses.map((cls) => (
+                <SelectItem key={cls} value={cls}>
+                  {cls === "all" ? "All Classes" : cls}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="User Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableUserTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type === "all" ? "All Types" : type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8 w-64"
+              placeholder="Search student..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Attendance Logs</CardTitle>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Auto Refresh</span>
+            <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead>Class/Department</TableHead>
+                <TableHead>Device</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    Loading attendance...
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {!loading && paginatedData.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center text-muted-foreground py-6"
+                  >
+                    No data is available for this date
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {!loading &&
+                paginatedData.length > 0 &&
+                paginatedData.map((record) => (
+                  <AttendanceRow
+                    key={`${record.userId}-${record.date}-${record.time}`}
+                    record={record}
+                  />
+                ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+
+        <Separator />
+
+        <Pagination>
+          <PaginationContent>
+            {/* Previous */}
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                }}
+                className={
+                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                }
+              />
+            </PaginationItem>
+
+            {/* Pages */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  href="#"
+                  isActive={currentPage === page}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(page);
+                  }}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            {/* Next */}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                }}
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </Card>
+    </div>
+  );
+};
+
+export default IotAttendance;
