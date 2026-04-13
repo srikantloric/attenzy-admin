@@ -56,7 +56,9 @@ const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
       </TableCell>
 
       <TableCell>
-        {record.userProfile.class} - {record.userProfile.section}
+        {record.userType === "STUDENT"
+          ? `${record.userProfile.class} - ${record.userProfile.section}`
+          : record.userProfile.department}
       </TableCell>
 
       <TableCell>{record.deviceName}</TableCell>
@@ -318,7 +320,7 @@ const IotAttendance: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
-                <TableHead>Class</TableHead>
+                <TableHead>Class/Department</TableHead>
                 <TableHead>Device</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
