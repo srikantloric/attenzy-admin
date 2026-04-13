@@ -92,7 +92,6 @@ const StudentsPage: React.FC = () => {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination<User>({

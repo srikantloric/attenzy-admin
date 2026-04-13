@@ -45,7 +45,6 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-  PaginationEllipsis,
 } from "@/components/ui/pagination";
 
 const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
@@ -181,7 +180,6 @@ const IotAttendance: React.FC = () => {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination<AttendanceItem>({
