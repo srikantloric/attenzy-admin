@@ -24,7 +24,6 @@ import type { User, UserType } from "@/types/users";
 import { getUsersByOrg } from "@/api/users";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFilterPagination } from "@/hooks/useFilterPagination";
-import DataPagination from "@/components/Pagination";
 import {
   Pagination,
   PaginationContent,
@@ -68,7 +67,6 @@ const RFIDMappingPage: React.FC = () => {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination<User>({

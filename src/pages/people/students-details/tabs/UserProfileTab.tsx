@@ -25,7 +25,7 @@ function StudentsProfileTab() {
 
   /* ================= STATE ================= */
 
-  const [loading, setLoading] = useState(false);
+  const [loading, _] = useState(false);
 
   const initialData = {
     name: user.name || "",

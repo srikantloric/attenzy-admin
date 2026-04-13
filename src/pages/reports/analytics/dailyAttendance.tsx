@@ -37,7 +37,6 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 
-import DataPagination from "@/components/Pagination";
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Separator } from "@/components/ui/separator";
 
@@ -50,7 +49,6 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-  PaginationEllipsis,
 } from "@/components/ui/pagination";
 
 export default function DailyAttendance() {
@@ -148,7 +146,6 @@ export default function DailyAttendance() {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination({

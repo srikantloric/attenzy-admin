@@ -33,7 +33,6 @@ import useAuth from "@/hooks/useAuth";
 
 import AddUserForm from "@/components/people/AddUserForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
-import DataPagination from "@/components/Pagination";
 
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -94,7 +93,6 @@ const FacultyPage: React.FC = () => {
     currentPage,
     setCurrentPage,
     rowsPerPage,
-    setRowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination<User>({
