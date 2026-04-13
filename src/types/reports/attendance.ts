@@ -3,6 +3,7 @@ export type AttendanceStatus =
   | "ABSENT"
   | "LEAVE"
   | "HOLIDAY"
+  | "HALF_DAY";
 
 export interface AttendanceSummary {
   present: number

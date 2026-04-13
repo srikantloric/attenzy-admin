@@ -1,19 +1,37 @@
 import type { UserFormValues } from "@/schemas/user.schema";
 import type { AssignRFIDResponse, UpdateUserPayload } from "@/types/users";
+import type { User } from "@/types/users";
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
+export type GetUsersByOrgParams = {
+  userType?: string;
+  classId?: string;
+  grade?: string;
+};
 
-export async function getUsersByOrg(orgId: string) {
+
+export async function getUsersByOrg(
+  orgId: string,
+  params?: GetUsersByOrgParams
+): Promise<User[]> {
+  const query = new URLSearchParams();
+
+  if (params?.userType) query.set("userType", params.userType);
+  if (params?.classId) query.set("classId", params.classId);
+  if (params?.grade) query.set("grade", params.grade);
+
+  const queryString = query.toString();
   const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/users`
+    `${BACKEND_BASE_URL}/orgs/${orgId}/users${queryString ? `?${queryString}` : ""}`
   );
 
   if (!res.ok) throw new Error("Failed to fetch users");
 
-  const data = await res.json();
-  data.items.sort((a: any, b: any) => b.createdAt - a.createdAt);
-  return data.items;
+  const data = (await res.json()) as { items?: User[] };
+  const items = Array.isArray(data.items) ? data.items : [];
+  items.sort((a, b) => b.createdAt - a.createdAt);
+  return items;
 }
 
 
