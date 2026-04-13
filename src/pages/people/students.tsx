@@ -38,6 +38,15 @@ import DataPagination from "@/components/Pagination";
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 type FormMode = "add" | "edit";
 
@@ -116,6 +125,34 @@ const StudentsPage: React.FC = () => {
   const TOTAL = users.length;
   const ACTIVE_COUNT = users.filter((u) => u.isActive !== false).length;
   const INACTIVE_COUNT = users.filter((u) => u.isActive === false).length;
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+  const getPageNumbers = () => {
+    const pages = [];
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+
+      if (currentPage > 3) pages.push("...");
+
+      for (
+        let i = Math.max(2, currentPage - 1);
+        i <= Math.min(totalPages - 1, currentPage + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) pages.push("...");
+
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   /* ================= RENDER ================= */
 
@@ -216,7 +253,6 @@ const StudentsPage: React.FC = () => {
                       className={user.isActive === false ? "opacity-60" : ""}
                     >
                       <TableCell className="flex gap-2 items-center">
-
                         <Avatar>
                           <AvatarImage
                             src={user.profilePhoto || ""}
@@ -229,7 +265,7 @@ const StudentsPage: React.FC = () => {
                             {user.name?.charAt(0)?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex flex-col items-start">
                           <p className="font-bold">{user.name.toUpperCase()}</p>
                           <Button
@@ -275,7 +311,7 @@ const StudentsPage: React.FC = () => {
                         <Button
                           variant={"ghost"}
                           onClick={() => {
-                            navigate(`/students/${user.userId}`)
+                            navigate(`/students/${user.userId}`);
                           }}
                         >
                           <Eye />
@@ -321,13 +357,62 @@ const StudentsPage: React.FC = () => {
 
           <Separator />
 
-          <DataPagination
-            totalItems={filteredData.length}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            rowsPerPage={rowsPerPage}
-            setRowsPerPage={setRowsPerPage}
-          />
+          <Pagination>
+            <PaginationContent>
+              {/* Previous */}
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
+                />
+              </PaginationItem>
+
+              {/* Pages */}
+              {getPageNumbers().map((page, index) =>
+                page === "..." ? (
+                  <PaginationItem key={index}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={currentPage === page}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(Number(page));
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+
+              {/* Next */}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages)
+                      setCurrentPage(currentPage + 1);
+                  }}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </Card>
       </div>
 

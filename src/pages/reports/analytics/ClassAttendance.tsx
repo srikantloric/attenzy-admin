@@ -1,48 +1,60 @@
-import { useState, useMemo, useEffect } from "react"
-import { format } from "date-fns"
-import * as XLSX from "xlsx"
-import { saveAs } from "file-saver"
+import { useState, useMemo, useEffect } from "react";
+import { format } from "date-fns";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
-import useAuth from "@/hooks/useAuth"
-import { getCalendarView } from "@/api/reports/studentAttendance"
-import type { AttendanceCalendarResponse } from "@/types/reports/attendance"
+import useAuth from "@/hooks/useAuth";
+import { getCalendarView } from "@/api/reports/studentAttendance";
+import type { AttendanceCalendarResponse } from "@/types/reports/attendance";
 
-import { listGrades } from "@/api/academics"
-import type { AcademicItem } from "@/types/academics"
+import { listGrades } from "@/api/academics";
+import type { AcademicItem } from "@/types/academics";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-import { AttendanceTable } from "@/components/attendance/AttendanceTable"
-import { Download } from "lucide-react"
+import { AttendanceTable } from "@/components/attendance/AttendanceTable";
+import { Download } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 export default function ClassAttendance() {
-  const { user } = useAuth()
-  const orgId = user?.orgId ?? ""
+  const { user } = useAuth();
+  const orgId = user?.orgId ?? "";
 
-  const currentDate = new Date()
+  const currentDate = new Date();
 
-  const [selectedClass, setSelectedClass] = useState("")
-  const [month, setMonth] = useState(format(currentDate, "MM"))
-  const [year, setYear] = useState(format(currentDate, "yyyy"))
+  const [selectedClass, setSelectedClass] = useState("");
+  const [month, setMonth] = useState(format(currentDate, "MM"));
+  const [year, setYear] = useState(format(currentDate, "yyyy"));
 
-  const [appliedClass, setAppliedClass] = useState("")
-  const [appliedMonth, setAppliedMonth] = useState(month)
-  const [appliedYear, setAppliedYear] = useState(year)
+  const [appliedClass, setAppliedClass] = useState("");
+  const [appliedMonth, setAppliedMonth] = useState(month);
+  const [appliedYear, setAppliedYear] = useState(year);
 
-  const [data, setData] = useState<AttendanceCalendarResponse | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState("")
+  const [data, setData] = useState<AttendanceCalendarResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const [grades, setGrades] = useState<AcademicItem[]>([])
+  const [grades, setGrades] = useState<AcademicItem[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(10);
 
   const monthOptions = [
     { value: "01", label: "January" },
@@ -57,115 +69,117 @@ export default function ClassAttendance() {
     { value: "10", label: "October" },
     { value: "11", label: "November" },
     { value: "12", label: "December" },
-  ]
+  ];
 
   const yearOptions = Array.from({ length: 5 }).map((_, i) =>
     (currentDate.getFullYear() - i).toString()
-  )
+  );
 
   /* ================= FETCH ================= */
 
   const handleGenerate = async () => {
-    if (!orgId || !selectedClass) return
+    if (!orgId || !selectedClass) return;
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const monthParam = `${year}-${month}`
+      const monthParam = `${year}-${month}`;
 
-      const res = await getCalendarView(
-        orgId,
-        monthParam,
-        selectedClass
-      )
+      const res = await getCalendarView(orgId, monthParam, selectedClass);
 
-      setData(res)
+      setData(res);
 
       // apply filters after successful fetch
-      setAppliedClass(selectedClass)
-      setAppliedMonth(month)
-      setAppliedYear(year)
-
+      setAppliedClass(selectedClass);
+      setAppliedMonth(month);
+      setAppliedYear(year);
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (!orgId) return
+    if (!orgId) return;
 
     const fetchGrades = async () => {
       try {
-        const res = await listGrades(orgId)
-        setGrades(res)
+        const res = await listGrades(orgId);
+        setGrades(res);
       } catch (err) {
-        console.error("Failed to fetch grades", err)
+        console.error("Failed to fetch grades", err);
       }
-    }
+    };
 
-    fetchGrades()
-  }, [orgId])
+    fetchGrades();
+  }, [orgId]);
 
   /* ================= SEARCH ================= */
 
   const filteredUsers = useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return data.users.filter((u) =>
       u.name.toLowerCase().includes(search.toLowerCase())
-    )
-  }, [data, search])
+    );
+  }, [data, search]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredUsers.slice(start, start + rowsPerPage);
+  }, [filteredUsers, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
 
   /* ================= EXCEL ================= */
 
   const exportToExcel = () => {
-    if (!data) return
+    if (!data) return;
 
-    const sheetData: (string | number)[][] = []
-    const header = ["Name", "P/W", "%", ...data.days]
-    sheetData.push(header)
+    const sheetData: (string | number)[][] = [];
+    const header = ["Name", "P/W", "%", ...data.days];
+    sheetData.push(header);
 
     filteredUsers.forEach((user) => {
       const row: (string | number)[] = [
         user.name,
         `${user.summary.present}/${user.summary.workingDays}`,
         user.summary.attendancePercentage,
-      ]
+      ];
 
       data.days.forEach((day) => {
-        const status = user.attendance?.[day]
-        row.push(status ? status[0] : "-")
-      })
+        const status = user.attendance?.[day];
+        row.push(status ? status[0] : "-");
+      });
 
-      sheetData.push(row)
-    })
+      sheetData.push(row);
+    });
 
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Class Attendance")
+    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Class Attendance");
 
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
-      type: "array", 
-    })
+      type: "array",
+    });
 
     const blob = new Blob([excelBuffer], {
       type: "application/octet-stream",
-    })
+    });
 
     saveAs(
       blob,
       `Class-${appliedClass}-Attendance-${appliedYear}-${appliedMonth}.xlsx`
-    )
-  }
+    );
+  };
 
-  const appliedMonthLabel =
-    monthOptions.find((m) => m.value === appliedMonth)?.label
+  const appliedMonthLabel = monthOptions.find(
+    (m) => m.value === appliedMonth
+  )?.label;
 
   return (
     <div className="py-6 space-y-6">
-
       {/* FILTER CARD */}
       <Card>
         <CardHeader>
@@ -173,7 +187,6 @@ export default function ClassAttendance() {
         </CardHeader>
 
         <CardContent className="flex flex-wrap gap-4 items-end">
-
           {/* Grade */}
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-44">
@@ -219,14 +232,12 @@ export default function ClassAttendance() {
           <Button onClick={handleGenerate}>
             {loading ? "Generating..." : "Generate"}
           </Button>
-
         </CardContent>
       </Card>
 
       {/* ATTENDANCE LEGEND */}
       {data && (
         <div className="flex flex-wrap items-center gap-3 text-sm">
-
           <span className="px-2 py-1 rounded bg-green-100 text-green-700 font-medium">
             P — Present
           </span>
@@ -250,22 +261,18 @@ export default function ClassAttendance() {
           <span className="text-blue-600 font-medium ml-2">
             (P/W — Present Days / Working Days)
           </span>
-
         </div>
       )}
 
       {/* TABLE */}
       {data && (
         <Card>
-
           <CardHeader className="flex flex-row items-center justify-between gap-2">
-
             <CardTitle className="text-lg font-semibold">
               Monthly Attendance — {appliedMonthLabel} {appliedYear}
             </CardTitle>
 
             <div className="flex items-center gap-3">
-
               <Input
                 placeholder="Search student..."
                 className="w-60"
@@ -273,32 +280,72 @@ export default function ClassAttendance() {
                 onChange={(e) => setSearch(e.target.value)}
               />
 
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={exportToExcel}
-              >
+              <Button variant="outline" size="icon" onClick={exportToExcel}>
                 <Download size={16} />
               </Button>
-
             </div>
-
           </CardHeader>
 
           <CardContent className="p-0">
-
             <div className="w-full overflow-x-auto">
-              <AttendanceTable
-                days={data.days}
-                users={filteredUsers}
-              />
+              <AttendanceTable days={data.days} users={paginatedUsers} />
             </div>
-
           </CardContent>
 
+          <Pagination>
+            <PaginationContent>
+              {/* Previous */}
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
+                />
+              </PaginationItem>
+
+              {/* Pages */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={currentPage === page}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+
+              {/* Next */}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages)
+                      setCurrentPage(currentPage + 1);
+                  }}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </Card>
       )}
-
     </div>
-  )
+  );
 }

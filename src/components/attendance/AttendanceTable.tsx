@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -6,45 +6,45 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 import type {
   AttendanceUser,
-  AttendanceStatus
-} from "@/types/reports/attendance"
+  AttendanceStatus,
+} from "@/types/reports/attendance";
 
 interface Props {
-  days: string[]
-  users: AttendanceUser[]
+  days: string[];
+  users: AttendanceUser[];
 }
 
-
 function getBadge(status?: AttendanceStatus) {
-  let display = "-"
+  let display = "-";
 
-  if (status === "PRESENT") display = "P"
-  if (status === "ABSENT") display = "A"
-  if (status === "LEAVE") display = "L"
-  if (status === "HOLIDAY") display = "H"
+  if (status === "PRESENT") display = "P";
+  if (status === "ABSENT") display = "A";
+  if (status === "LEAVE") display = "L";
+  if (status === "HOLIDAY") display = "H";
 
   return (
     <span
       className={`inline-flex items-center justify-center 
       h-6 w-6 rounded-md text-xs font-semibold
-      ${display === "P"
+      ${
+        display === "P"
           ? "bg-green-100 text-green-700"
           : display === "A"
-            ? "bg-red-100 text-red-700"
-            : display === "L"
-              ? "bg-yellow-100 text-yellow-700"
-              : display === "H"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-muted text-muted-foreground"
-        }`}
+          ? "bg-red-100 text-red-700"
+          : display === "L"
+          ? "bg-yellow-100 text-yellow-700"
+          : display === "H"
+          ? "bg-blue-100 text-blue-700"
+          : "bg-muted text-muted-foreground"
+      }`}
     >
       {display}
     </span>
-  )
+  );
 }
 
 /* ================= TABLE ================= */
@@ -52,9 +52,7 @@ function getBadge(status?: AttendanceStatus) {
 export function AttendanceTable({ days, users }: Props) {
   return (
     <div className=" overflow-x-auto rounded-lg border">
-
       <Table className=" text-xs sm:text-sm">
-
         {/* HEADER */}
         <TableHeader>
           <TableRow>
@@ -66,10 +64,7 @@ export function AttendanceTable({ days, users }: Props) {
             <TableHead className="text-center">%</TableHead>
 
             {days.map((day) => (
-              <TableHead
-                key={day}
-                className="text-center"
-              >
+              <TableHead key={day} className="text-center">
                 {day}
               </TableHead>
             ))}
@@ -80,25 +75,23 @@ export function AttendanceTable({ days, users }: Props) {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.userId}>
-
               {/* Sticky Name Column */}
               <TableCell className="flex gap-2 items-center sticky left-0 z-20 bg-background border-r font-medium min-w-[180px] whitespace-nowrap">
-                <Avatar className="h-8 w-8">
+                <Avatar>
                   <AvatarImage
-                    src="https://github.com/shadcn.png"
-                    alt="@shadcn"
-                  >
-                  </AvatarImage>
-
+                    src={user.profilePhoto || ""}
+                    alt={user.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "";
+                    }}
+                  />
                   <AvatarFallback>
-                    {user.name?.[0]}
+                    {user.name?.charAt(0)?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex flex-col items-start">
-                  <p className="font-bold">
-                    {user.name.toUpperCase()}
-                  </p>
+                  <p className="font-bold">{user.name.toUpperCase()}</p>
                   <span className="text-xs text-muted-foreground">
                     {user.userId}
                   </span>
@@ -107,8 +100,7 @@ export function AttendanceTable({ days, users }: Props) {
 
               {/* P/W */}
               <TableCell className="text-center font-semibold">
-                {user.summary.present}/
-                {user.summary.workingDays}
+                {user.summary.present}/{user.summary.workingDays}
               </TableCell>
 
               {/* % */}
@@ -122,13 +114,10 @@ export function AttendanceTable({ days, users }: Props) {
                   {getBadge(user.attendance?.[day])}
                 </TableCell>
               ))}
-
             </TableRow>
           ))}
         </TableBody>
-
       </Table>
-
     </div>
-  )
+  );
 }
