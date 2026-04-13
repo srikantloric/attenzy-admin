@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
-import DataPagination from "@/components/Pagination";
+
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import {
   Select,
@@ -38,6 +38,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
   return (
@@ -154,7 +163,7 @@ const IotAttendance: React.FC = () => {
 
     if (search) {
       data = data.filter((a) =>
-        a.userName.toLowerCase().includes(search.toLowerCase()),
+        a.userName.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -187,6 +196,8 @@ const IotAttendance: React.FC = () => {
     const set = new Set(filteredRecords.map((r) => r.userId));
     return set.size;
   }, [filteredRecords]);
+
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   return (
     <div className="space-y-6 p-6">
@@ -361,13 +372,55 @@ const IotAttendance: React.FC = () => {
 
         <Separator />
 
-        <DataPagination
-          totalItems={filteredData.length}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-        />
+        <Pagination>
+          <PaginationContent>
+            {/* Previous */}
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                }}
+                className={
+                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                }
+              />
+            </PaginationItem>
+
+            {/* Pages */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  href="#"
+                  isActive={currentPage === page}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(page);
+                  }}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            {/* Next */}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                }}
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : ""
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </Card>
     </div>
   );
