@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useOutletContext } from "react-router-dom";
-import type { User, StudentProfile } from "@/types/users";
+import type { User } from "@/types/users";
 import { useState } from "react";
 import { updateUser } from "@/api/users";
 import {
@@ -34,9 +34,22 @@ function StudentsProfileTab() {
     phone: user.phone || "",
     email: user.email || "",
     dob: user.dob || "",
-    gender: user.gender || undefined,
+    gender: user.gender?.toUpperCase() as
+      | "MALE"
+      | "FEMALE"
+      | "OTHER"
+      | undefined,
     fatherName: user.fatherName || "",
-    bloodGroup: user.bloodGroup || undefined,
+    bloodGroup: user.bloodGroup?.toUpperCase() as
+      | "A+"
+      | "A-"
+      | "B+"
+      | "B-"
+      | "O+"
+      | "O-"
+      | "AB+"
+      | "AB-"
+      | undefined,
     address: user.address || "",
     externalId: user.externalId || "",
     profile: { ...user.profile },
@@ -391,7 +404,7 @@ function StudentsProfileTab() {
             <Label>Gender</Label>
 
             <Select
-              value={formData.gender || ""}
+              value={formData.gender ?? ""}
               onValueChange={(val) =>
                 setFormData({
                   ...formData,
@@ -425,7 +438,7 @@ function StudentsProfileTab() {
             <Label>Blood Group</Label>
 
             <Select
-              value={formData.bloodGroup || ""}
+              value={formData.bloodGroup ?? ""}
               onValueChange={(val) =>
                 setFormData({
                   ...formData,
