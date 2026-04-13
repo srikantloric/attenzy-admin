@@ -23,7 +23,7 @@ export interface AttendanceResponse {
 }
 
 
-export type AttendanceStatus = "PRESENT" | "ABSENT" | "LEAVE" | "HALF_DAY"
+export type AttendanceStatus = "PRESENT" | "ABSENT" | "LEAVE" | "HALF_DAY"|"HOLIDAY"
 
 export type CalanderApiResponse = {
   month: string
