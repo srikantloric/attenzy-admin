@@ -19,9 +19,11 @@ import { AppBreadcrumb } from "@/components/AppBreadCrumb"
 import useAuth from "@/hooks/useAuth"
 import { getAttendanceByOrg } from "@/api/attendance"
 import { listOrgDevices } from "@/api/device"
+import { getUsersByOrg } from "@/api/users"
 
 import type { AttendanceItem } from "@/types/attendance"
 import type { Device } from "@/types/device"
+import type { User } from "@/types/users"
 
 function OrganizationDashboard() {
     const { user } = useAuth()
@@ -29,6 +31,7 @@ function OrganizationDashboard() {
 
     const [attendance, setAttendance] = useState<AttendanceItem[]>([])
     const [devices, setDevices] = useState<Device[]>([])
+    const [users, setUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -40,13 +43,15 @@ function OrganizationDashboard() {
                 setLoading(true)
                 setError(null)
 
-                const [attendanceRes, devicesRes] = await Promise.all([
+                const [attendanceRes, devicesRes, usersRes] = await Promise.all([
                     getAttendanceByOrg(orgId),
                     listOrgDevices(orgId),
+                    getUsersByOrg(orgId),
                 ])
 
                 setAttendance(attendanceRes ?? [])
                 setDevices(devicesRes.items ?? [])
+                setUsers(usersRes ?? [])
             } catch (err) {
                 console.error(err)
                 setError("Failed to load dashboard data")
@@ -111,6 +116,16 @@ function OrganizationDashboard() {
         return facultyIds.size
     }, [todayAttendance])
 
+    const totalStudents = useMemo(
+        () => users.filter((item) => item.userType === "STUDENT").length,
+        [users]
+    )
+
+    const totalFaculty = useMemo(
+        () => users.filter((item) => item.userType === "FACULTY").length,
+        [users]
+    )
+
     const attendanceErrors = useMemo(
         () => todayAttendance.filter((item) => !item.deviceId || !item.deviceName || !item.rfidCode).length,
         [todayAttendance]
@@ -156,14 +171,14 @@ function OrganizationDashboard() {
             <div className="grid gap-4 md:grid-cols-4">
                 <StatCard
                     title="Students Present"
-                    value={todayStudentCount}
-                    trend="Today"
+                    value={`${todayStudentCount} / ${totalStudents}`}
+                    trend="Today present"
                     icon={<Users />}
                 />
                 <StatCard
                     title="Faculty Present"
-                    value={todayFacultyCount}
-                    trend="Today"
+                    value={`${todayFacultyCount} / ${totalFaculty}`}
+                    trend="Today present"
                     icon={<UserCheck />}
                 />
                 <StatCard
