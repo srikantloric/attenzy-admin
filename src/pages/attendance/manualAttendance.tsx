@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { listGrades } from "@/api/academics";
-import { getUsersByOrg } from "@/api/users";
+import { getStudentsByClass } from "@/api/users";
 import {
   getAttendanceCalendarView,
   updateManualAttendance,
@@ -299,11 +299,11 @@ const ManualAttendancePage = () => {
 
     setLoadingUsers(true);
     try {
-      const users = await getUsersByOrg(orgId, {
-        userType: selectedUserType,
-        classId: selectedUserType === "STUDENT" ? selectedClass : undefined,
-        grade: selectedUserType === "STUDENT" ? selectedClass : undefined,
-      });
+      const users = await getStudentsByClass(
+        orgId,
+        selectedUserType,
+        selectedClass
+      );
 
       const nextRecords = await prefillAttendanceForDate(
         users.map(mapUserToRow)
