@@ -108,17 +108,21 @@ const mapUserToRow = (user: User): ManualAttendanceRow => ({
 });
 
 const getCountsFromResponse = (response: ManualAttendanceUpdateResponse) => {
+  if (
+    typeof response.successCount === "number" &&
+    typeof response.failedCount === "number"
+  ) {
+    return {
+      success: response.successCount,
+      failed: response.failedCount,
+    };
+  }
+
   const resultItems = Array.isArray(response.results) ? response.results : [];
-  const successFromResults = resultItems.filter((item) => item.success).length;
-  const failedFromResults = resultItems.filter((item) => !item.success).length;
 
   return {
-    success:
-      typeof response.success === "number"
-        ? response.success
-        : successFromResults,
-    failed:
-      typeof response.failed === "number" ? response.failed : failedFromResults,
+    success: resultItems.filter((item) => item.ok).length,
+    failed: resultItems.filter((item) => !item.ok).length,
   };
 };
 

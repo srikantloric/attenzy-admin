@@ -9,7 +9,7 @@ import StudentsPage from "@/pages/people/students";
 import StaffPage from "@/pages/people/staff";
 import RFIDMappingPage from "@/pages/people/rfid-mapping";
 
-import ManualAttendancePage from "@/pages/attendance/attendance";
+import ManualAttendancePage from "@/pages/attendance/manualAttendance";
 
 import PartnersPage from "@/pages/partners/PartnersPage";
 import PartnerDetailsPage from "@/components/partners/PartnerDetailsPage";
@@ -53,7 +53,7 @@ import AddPeoplePage from "@/pages/people/add-people";
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
 const Attendance = Loadable(
-  lazy(() => import("@/pages/attendance/attendance"))
+  lazy(() => import("@/pages/attendance/manualAttendance"))
 );
 
 // ==============================|| MAIN ROUTES ||============================== //
