@@ -48,6 +48,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ManualAttendanceRow {
   id: string;
@@ -554,11 +555,18 @@ const ManualAttendancePage = () => {
                 {paginatedRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <img
-                        src={user.profile}
-                        alt={user.name}
-                        className="h-10 w-10 rounded-sm  object-cover"
-                      />
+                      <Avatar>
+                        <AvatarImage
+                          src={user.profile || ""}
+                          alt={user.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "";
+                          }}
+                        />
+                        <AvatarFallback>
+                          {user.name?.charAt(0)?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     </TableCell>
                     <TableCell>{user.id}</TableCell>
 
