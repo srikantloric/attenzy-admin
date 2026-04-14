@@ -40,6 +40,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { CheckCircle2, Search, Save } from "lucide-react";
 import type { AcademicItem } from "@/types/academics";
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
 interface ManualAttendanceRow {
   id: string;
   profile: string;
@@ -68,7 +77,7 @@ const STATUS_LEGEND: Array<{ short: string; label: AttendanceStatus }> = [
 const MAX_UPDATES_PER_REQUEST = 200;
 
 const mapCalendarStatusToManualStatus = (
-  status: CalendarAttendanceStatus,
+  status: CalendarAttendanceStatus
 ): AttendanceStatus => {
   if (status === "HOLIDAY") {
     return "HALF_DAY";
@@ -115,7 +124,7 @@ const getCountsFromResponse = (response: ManualAttendanceUpdateResponse) => {
 
 const applyPrefilledStatuses = (
   rows: ManualAttendanceRow[],
-  statusByUserId: Map<string, AttendanceStatus>,
+  statusByUserId: Map<string, AttendanceStatus>
 ): { updatedRows: ManualAttendanceRow[]; markedCount: number } => {
   let markedCount = 0;
 
@@ -138,7 +147,7 @@ const applyPrefilledStatuses = (
         reason: "",
         alreadyMarked: false,
       };
-    },
+    }
   );
 
   return { updatedRows, markedCount };
@@ -159,13 +168,16 @@ const ManualAttendancePage = () => {
   const [loadingPrefill, setLoadingPrefill] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+
   const visibleByUserType = useMemo(() => {
     return records.filter((record) => record.userType === selectedUserType);
   }, [records, selectedUserType]);
 
   const activeGradeOptions = useMemo(
     () => gradeOptions.filter((grade) => grade.isActive),
-    [gradeOptions],
+    [gradeOptions]
   );
 
   useEffect(() => {
@@ -187,7 +199,7 @@ const ManualAttendancePage = () => {
     setSelectedClass((current) =>
       activeGradeOptions.some((grade) => grade.name === current)
         ? current
-        : activeGradeOptions[0].name,
+        : activeGradeOptions[0].name
     );
   }, [activeGradeOptions, selectedUserType]);
 
@@ -200,24 +212,31 @@ const ManualAttendancePage = () => {
       return [];
     }
 
-    return visibleByUserType.filter(
-      (record) => record.groupLabel === selectedClass,
+    return visibleByUserType.filter((record) =>
+      record.groupLabel.startsWith(selectedClass)
     );
   }, [selectedClass, selectedUserType, visibleByUserType]);
 
   const filteredRecords = useMemo(() => {
     return visibleByClass.filter((r) =>
-      r.name.toLowerCase().includes(search.toLowerCase()),
+      r.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [visibleByClass, search]);
 
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredRecords.slice(start, start + rowsPerPage);
+  }, [filteredRecords, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredRecords.length / rowsPerPage);
+
   const markedVisibleCount = useMemo(
     () => visibleByClass.filter((record) => record.alreadyMarked).length,
-    [visibleByClass],
+    [visibleByClass]
   );
 
   const prefillAttendanceForDate = async (
-    sourceRows: ManualAttendanceRow[],
+    sourceRows: ManualAttendanceRow[]
   ): Promise<ManualAttendanceRow[]> => {
     if (!orgId || !date || sourceRows.length === 0) {
       return sourceRows;
@@ -236,21 +255,21 @@ const ManualAttendancePage = () => {
         if (status) {
           statusByUserId.set(
             calendarUser.userId,
-            mapCalendarStatusToManualStatus(status),
+            mapCalendarStatusToManualStatus(status)
           );
         }
       });
 
       const { updatedRows } = applyPrefilledStatuses(
         sourceRows,
-        statusByUserId,
+        statusByUserId
       );
       return updatedRows;
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to prefill attendance status",
+          : "Failed to prefill attendance status"
       );
       return sourceRows.map((row) => ({
         ...row,
@@ -282,7 +301,7 @@ const ManualAttendancePage = () => {
       });
 
       const nextRecords = await prefillAttendanceForDate(
-        users.map(mapUserToRow),
+        users.map(mapUserToRow)
       );
       setRecords(nextRecords);
 
@@ -293,7 +312,7 @@ const ManualAttendancePage = () => {
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load users",
+        error instanceof Error ? error.message : "Failed to load users"
       );
     } finally {
       setLoadingUsers(false);
@@ -312,7 +331,7 @@ const ManualAttendancePage = () => {
 
         if (configuredGrades.length === 0) {
           toast.warning(
-            "No active grades are configured for this organization",
+            "No active grades are configured for this organization"
           );
           return;
         }
@@ -320,11 +339,11 @@ const ManualAttendancePage = () => {
         setSelectedClass((current) =>
           current && configuredGrades.some((grade) => grade.name === current)
             ? current
-            : configuredGrades[0].name,
+            : configuredGrades[0].name
         );
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to load grades",
+          error instanceof Error ? error.message : "Failed to load grades"
         );
       } finally {
         setLoadingGrades(false);
@@ -407,11 +426,13 @@ const ManualAttendancePage = () => {
 
       if (failed === 0) {
         toast.success(
-          `Manual attendance updated for ${success} user${success === 1 ? "" : "s"}`,
+          `Manual attendance updated for ${success} user${
+            success === 1 ? "" : "s"
+          }`
         );
       } else {
         toast.warning(
-          `Manual attendance updated with ${success} success and ${failed} failures`,
+          `Manual attendance updated with ${success} success and ${failed} failures`
         );
       }
 
@@ -421,7 +442,7 @@ const ManualAttendancePage = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to save manual attendance",
+          : "Failed to save manual attendance"
       );
     } finally {
       setSaving(false);
@@ -440,7 +461,7 @@ const ManualAttendancePage = () => {
         </p>
       </div>
 
-      <Separator />
+      {/* <Separator /> */}
 
       {/* Main Layout */}
       <div className="flex gap-6">
@@ -513,7 +534,7 @@ const ManualAttendancePage = () => {
               </TableHeader>
 
               <TableBody>
-                {filteredRecords.length === 0 && (
+                {paginatedRecords.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -526,7 +547,7 @@ const ManualAttendancePage = () => {
                   </TableRow>
                 )}
 
-                {filteredRecords.map((user) => (
+                {paginatedRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <img
@@ -584,6 +605,63 @@ const ManualAttendancePage = () => {
               </TableBody>
             </Table>
           </CardContent>
+
+          <Separator />
+
+          <div className="py-4">
+            <Pagination>
+              <PaginationContent>
+                {/* Previous */}
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+
+                {/* Pages */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={currentPage === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(page);
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+
+                {/* Next */}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages)
+                        setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage === totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </Card>
 
         {/* RIGHT SIDE */}
