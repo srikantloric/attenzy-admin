@@ -15,13 +15,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Plus, Check, Save, Loader2 } from "lucide-react";
 
 import useAuth from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import type { User, UserType } from "@/types/users";
-import { getUsersByOrg } from "@/api/users";
+import { assignOrUpdateRFID, getUsersByOrg } from "@/api/users";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFilterPagination } from "@/hooks/useFilterPagination";
 import {
@@ -41,6 +48,9 @@ const RFIDMappingPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState<UserType>("STUDENT");
   const [assignOpen, setAssignOpen] = useState(false);
+  const [rfidInputs, setRfidInputs] = useState<Record<string, string>>({});
+  const [savingRows, setSavingRows] = useState<Record<string, boolean>>({});
+  const [studentClassFilter, setStudentClassFilter] = useState("ALL");
 
   useEffect(() => {
     if (!orgId) return;
@@ -57,9 +67,70 @@ const RFIDMappingPage: React.FC = () => {
     fetchUsers();
   }, [orgId]);
 
+  useEffect(() => {
+    const inputDefaults = users.reduce<Record<string, string>>((acc, current) => {
+      acc[current.userId] = current.rfidCode ?? "";
+      return acc;
+    }, {});
+
+    setRfidInputs(inputDefaults);
+  }, [users]);
+
+  const handleInlineRFIDSave = async (user: User) => {
+    if (!orgId) return;
+
+    const rawValue = rfidInputs[user.userId] ?? "";
+    const nextRfid = rawValue.trim();
+
+    if (!nextRfid) {
+      toast.warning("RFID is required");
+      return;
+    }
+
+    if (nextRfid === (user.rfidCode ?? "")) return;
+
+    setSavingRows((prev) => ({ ...prev, [user.userId]: true }));
+
+    try {
+      const res = await assignOrUpdateRFID(orgId, user.userId, nextRfid);
+
+      setUsers((prev) =>
+        prev.map((current) =>
+          current.userId === user.userId
+            ? { ...current, rfidCode: nextRfid }
+            : current
+        )
+      );
+
+      setRfidInputs((prev) => ({ ...prev, [user.userId]: nextRfid }));
+      toast.success(res.message || "RFID saved");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save RFID");
+    } finally {
+      setSavingRows((prev) => ({ ...prev, [user.userId]: false }));
+    }
+  };
+
   const tabFilteredUsers = useMemo(() => {
-    return users.filter((u) => u.userType === activeTab);
-  }, [users, activeTab]);
+    const byType = users.filter((u) => u.userType === activeTab);
+
+    if (activeTab !== "STUDENT" || studentClassFilter === "ALL") {
+      return byType;
+    }
+
+    return byType.filter(
+      (u) => "class" in u.profile && u.profile.class === studentClassFilter
+    );
+  }, [users, activeTab, studentClassFilter]);
+
+  const studentClassOptions = useMemo(() => {
+    const classes = users
+      .filter((u) => u.userType === "STUDENT")
+      .map((u) => u.profile.class)
+      .filter((v): v is string => Boolean(v && v.trim()));
+
+    return Array.from(new Set(classes)).sort((a, b) => a.localeCompare(b));
+  }, [users]);
 
   const {
     search,
@@ -183,15 +254,41 @@ const RFIDMappingPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Search by name or ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        {/* Search + Filter */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder="Search by name or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {activeTab === "STUDENT" && (
+            <Select
+              value={studentClassFilter}
+              onValueChange={(value) => {
+                setStudentClassFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by class" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="ALL">All Classes</SelectItem>
+
+                {studentClassOptions.map((className) => (
+                  <SelectItem key={className} value={className}>
+                    {className}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
@@ -283,11 +380,53 @@ const RFIDMappingPage: React.FC = () => {
                     )}
 
                     <TableCell>
-                      {user.rfidCode ? (
-                        <Badge variant="default">{user.rfidCode}</Badge>
-                      ) : (
-                        <Badge variant="secondary">Unassigned</Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Enter RFID"
+                          className="w-36"
+                          value={rfidInputs[user.userId] ?? ""}
+                          onChange={(e) =>
+                            setRfidInputs((prev) => ({
+                              ...prev,
+                              [user.userId]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void handleInlineRFIDSave(user);
+                            }
+                          }}
+                          disabled={Boolean(savingRows[user.userId])}
+                        />
+
+                        {(() => {
+                          const isSaving = Boolean(savingRows[user.userId]);
+                          const currentValue = (rfidInputs[user.userId] ?? "").trim();
+                          const savedValue = user.rfidCode ?? "";
+                          const hasSavedRFID = Boolean(savedValue);
+                          const isChanged = currentValue !== savedValue;
+
+                          if (isSaving) {
+                            return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+                          }
+
+                          if (!isChanged && hasSavedRFID) {
+                            return <Check className="h-4 w-4 text-green-600" />;
+                          }
+
+                          return (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => void handleInlineRFIDSave(user)}
+                              disabled={!currentValue || !isChanged}
+                            >
+                              <Save className="h-4 w-4" />
+                            </Button>
+                          );
+                        })()}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

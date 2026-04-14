@@ -1,7 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import type { AttendanceItem } from "@/types/attendance"
 
-export default function LiveAttendanceWithDevice() {
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+
+type LiveAttendanceWithDeviceProps = {
+    records: AttendanceItem[]
+    loading?: boolean
+}
+
+export default function LiveAttendanceWithDevice({ records, loading = false }: LiveAttendanceWithDeviceProps) {
     return (
         <Card>
             <CardHeader>
@@ -18,18 +25,35 @@ export default function LiveAttendanceWithDevice() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow>
-                            <TableCell>09:02</TableCell>
-                            <TableCell>Rahul S</TableCell>
-                            <TableCell>Student</TableCell>
-                            <TableCell>Lab 2</TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>09:07</TableCell>
-                            <TableCell>Dr. Meena</TableCell>
-                            <TableCell>Faculty</TableCell>
-                            <TableCell>Lab 2</TableCell>
-                        </TableRow>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                                    Loading live attendance...
+                                </TableCell>
+                            </TableRow>
+                        ) : records.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                                    No attendance scans available yet.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            records.map((record) => (
+                                <TableRow key={`${record.userId}-${record.timestamp}-${record.deviceId}`}>
+                                    <TableCell>
+                                        {record.time || new Date(record.timestamp).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </TableCell>
+                                    <TableCell>{record.userName}</TableCell>
+                                    <TableCell>
+                                        {record.userType.charAt(0) + record.userType.slice(1).toLowerCase()}
+                                    </TableCell>
+                                    <TableCell>{record.deviceName || "-"}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
