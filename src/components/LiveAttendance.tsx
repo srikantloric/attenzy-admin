@@ -1,8 +1,16 @@
-import { CheckCircle2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { CheckCircle2 } from "lucide-react"
 
-export default function LiveAttendance() {
+import type { AttendanceItem } from "@/types/attendance"
+
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+
+type LiveAttendanceProps = {
+    records: AttendanceItem[]
+    loading?: boolean
+}
+
+export default function LiveAttendance({ records, loading = false }: LiveAttendanceProps) {
     return (
         <Card>
             <CardHeader>
@@ -19,22 +27,37 @@ export default function LiveAttendance() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow>
-                            <TableCell>09:02</TableCell>
-                            <TableCell>Rahul S</TableCell>
-                            <TableCell>Student</TableCell>
-                            <TableCell >
-                                <CheckCircle2 className="text-primary"/>
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>09:07</TableCell>
-                            <TableCell>Dr. Meena</TableCell>
-                            <TableCell>Faculty</TableCell>
-                            <TableCell>
-                                <CheckCircle2 className="text-primary"/>
-                            </TableCell>
-                        </TableRow>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                                    Loading live attendance...
+                                </TableCell>
+                            </TableRow>
+                        ) : records.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                                    No attendance scans available yet.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            records.map((record) => (
+                                <TableRow key={`${record.userId}-${record.timestamp}`}>
+                                    <TableCell>
+                                        {record.time || new Date(record.timestamp).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </TableCell>
+                                    <TableCell>{record.userName}</TableCell>
+                                    <TableCell>
+                                        {record.userType.charAt(0) + record.userType.slice(1).toLowerCase()}
+                                    </TableCell>
+                                    <TableCell>
+                                        <CheckCircle2 className="text-primary" />
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
