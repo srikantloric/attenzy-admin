@@ -5,8 +5,17 @@ import type { AttendanceCalendarResponse } from "@/types/reports/attendance";
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 
-export async function getAttendanceByOrg(orgId: string) {
-  const res = await fetch(`${BACKEND_BASE_URL}/orgs/${orgId}/attscan`);
+export async function getAttendanceByOrg(orgId: string, date?: string) {
+  const params = new URLSearchParams();
+
+  if (date) {
+    params.set("date", date);
+  }
+
+  const query = params.toString();
+  const url = `${BACKEND_BASE_URL}/orgs/${orgId}/attscan${query ? `?${query}` : ""}`;
+
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error("Failed to fetch attendance");
   }

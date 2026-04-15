@@ -13,8 +13,6 @@ export interface AttendanceItem {
   deviceName: string
   rfidCode: string
   timestamp: number
-  date: string
-  time: string
 }
 
 export interface AttendanceResponse {

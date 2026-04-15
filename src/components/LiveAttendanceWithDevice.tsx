@@ -41,7 +41,7 @@ export default function LiveAttendanceWithDevice({ records, loading = false }: L
                             records.map((record) => (
                                 <TableRow key={`${record.userId}-${record.timestamp}-${record.deviceId}`}>
                                     <TableCell>
-                                        {record.time || new Date(record.timestamp).toLocaleTimeString([], {
+                                        {new Date(record.timestamp).toLocaleTimeString([], {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                         })}
