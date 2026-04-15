@@ -89,9 +89,7 @@ const IotAttendance: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "present" | "absent"
-  >("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "present">("all");
 
   const [classFilter, setClassFilter] = useState("all");
   const [userTypeFilter, setUserTypeFilter] = useState("all");
@@ -147,10 +145,6 @@ const IotAttendance: React.FC = () => {
 
   const filteredRecords = useMemo(() => {
     let data = attendance.filter((a) => a.date === formattedDate);
-
-    if (filterStatus === "absent") {
-      data = [];
-    }
 
     if (classFilter !== "all") {
       data = data.filter((a) => a.userProfile.class === classFilter);
@@ -262,7 +256,7 @@ const IotAttendance: React.FC = () => {
       {/* Filters */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex gap-2">
-          {(["all", "present", "absent"] as const).map((status) => (
+          {(["all", "present"] as const).map((status) => (
             <Button
               key={status}
               size="sm"
