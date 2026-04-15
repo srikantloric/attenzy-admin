@@ -38,14 +38,19 @@ export async function getUsersByOrg(
 export async function getStudentsByClass(
   orgId: string,
   userType: string,
-  className?: string
+  className?: string,
+  section?: string
 ): Promise<User[]> {
   const query = new URLSearchParams();
 
   query.set("userType", userType);
 
-  if (className) {
-    query.set("class", className); // ✅ only when exists
+  if (className && className !== "all") {
+    query.set("class", className);
+  }
+
+  if (section && section !== "all") {
+    query.set("section", section); 
   }
 
   const res = await fetch(

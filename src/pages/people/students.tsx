@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { StudentProfile, User } from "@/types/users";
 import { getStudentsByClass, updateUser } from "@/api/users";
-import { listGrades } from "@/api/academics";
+import { listGrades, listSections } from "@/api/academics";
 import type { AcademicItem } from "@/types/academics";
 import { toast } from "sonner";
 
@@ -73,6 +73,9 @@ const StudentsPage: React.FC = () => {
   const [grades, setGrades] = useState<AcademicItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("all");
 
+  const [sections, setSections] = useState<AcademicItem[]>([]);
+  const [selectedSection, setSelectedSection] = useState<string>("all");
+
   const navigate = useNavigate();
 
   /* ================= FETCH ================= */
@@ -83,13 +86,12 @@ const StudentsPage: React.FC = () => {
     setLoading(true);
 
     try {
-      let data: User[] = [];
-
-      if (selectedClass === "all") {
-        data = await getStudentsByClass(orgId, "STUDENT", "");
-      } else {
-        data = await getStudentsByClass(orgId, "STUDENT", selectedClass);
-      }
+      const data = await getStudentsByClass(
+        orgId,
+        "STUDENT",
+        selectedClass,
+        selectedSection
+      );
 
       setUsers(data);
     } catch (err) {
@@ -110,12 +112,29 @@ const StudentsPage: React.FC = () => {
     }
   };
 
+  const fetchSections = async () => {
+    if (!orgId) return;
+
+    try {
+      const data = await listSections(orgId);
+      setSections(data);
+    } catch (err) {
+      console.error("Failed to fetch sections", err);
+    }
+  };
+
   useEffect(() => {
     if (!orgId) return;
 
     fetchGrades();
+    fetchSections();
+  }, [orgId]);
+
+  useEffect(() => {
+    if (!orgId) return;
+
     fetchUsers();
-  }, [orgId, selectedClass]);
+  }, [orgId, selectedClass, selectedSection]);
 
   /* ================= FILTER + PAGINATION ================= */
 
@@ -244,18 +263,21 @@ const StudentsPage: React.FC = () => {
           </div>
 
           {/* RIGHT SIDE → CLASS + SEARCH */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* CLASS DROPDOWN */}
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="w-[150px] h-9 text-sm">
+          <div className="flex items-center gap-2">
+            {/* CLASS */}
+            <Select
+              value={selectedClass}
+              onValueChange={(value) => {
+                setSelectedClass(value);
+                setSelectedSection("all");
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-9 text-sm">
                 <SelectValue placeholder="Class" />
               </SelectTrigger>
-
               <SelectContent>
-                {/* ALL OPTION */}
                 <SelectItem value="all">All Classes</SelectItem>
-
-                {/* DYNAMIC GRADES */}
                 {grades.map((grade) => (
                   <SelectItem
                     key={grade.gradeId ?? grade.name}
@@ -267,8 +289,29 @@ const StudentsPage: React.FC = () => {
               </SelectContent>
             </Select>
 
+            {/* SECTION */}
+            <Select
+              value={selectedSection}
+              onValueChange={(value) => {
+                setSelectedSection(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue placeholder="Section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sections</SelectItem>
+                {sections.map((sec) => (
+                  <SelectItem key={sec.sectionId ?? sec.name} value={sec.name}>
+                    {sec.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* SEARCH */}
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-8 w-full"
