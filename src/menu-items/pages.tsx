@@ -37,19 +37,19 @@ const pages: NavItemType = {
       id: "attendance",
       title: "Attendance",
       type: "collapse",
-      url: "/dashboard",
+      url: "/attendance",
       icon: icons.attendance,
       roles: ["ORGANIZATION"],
       children: [
         {
           id: "manual-entry",
           title: "Manual Entry",
-          url: "manual-entry",
+          url: "/manual-entry",
         },
         {
           id: "attendance-dashboard",
           title: "IoT Attendance",
-          url: "attendance-dashboard",
+          url: "/attendance-dashboard",
         },
       ],
     },
