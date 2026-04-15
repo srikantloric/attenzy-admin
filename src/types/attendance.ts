@@ -3,6 +3,7 @@ export interface AttendanceItem {
   userId: string
   userType: string
   userName: string
+  profilePhoto: string
   userProfile: {
     rollNumber: string
     class: string
@@ -13,8 +14,6 @@ export interface AttendanceItem {
   deviceName: string
   rfidCode: string
   timestamp: number
-  date: string
-  time: string
 }
 
 export interface AttendanceResponse {

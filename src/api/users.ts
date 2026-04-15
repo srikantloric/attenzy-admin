@@ -10,7 +10,6 @@ export type GetUsersByOrgParams = {
   grade?: string;
 };
 
-
 export async function getUsersByOrg(
   orgId: string,
   params?: GetUsersByOrgParams
@@ -23,7 +22,9 @@ export async function getUsersByOrg(
 
   const queryString = query.toString();
   const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/users${queryString ? `?${queryString}` : ""}`
+    `${BACKEND_BASE_URL}/orgs/${orgId}/users${
+      queryString ? `?${queryString}` : ""
+    }`
   );
 
   if (!res.ok) throw new Error("Failed to fetch users");
@@ -34,21 +35,41 @@ export async function getUsersByOrg(
   return items;
 }
 
-
-export async function createUser(
+export async function getStudentsByClass(
   orgId: string,
-  payload: UserFormValues
-) {
+  userType: string,
+  className?: string,
+  section?: string
+): Promise<User[]> {
+  const query = new URLSearchParams();
 
-  console.log("Creating user with payload:", payload);
+  query.set("userType", userType);
+
+  if (className && className !== "all") {
+    query.set("class", className);
+  }
+
+  if (section && section !== "all") {
+    query.set("section", section); 
+  }
+
   const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/users`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
+    `${BACKEND_BASE_URL}/orgs/${orgId}/users?${query.toString()}`
   );
+
+  if (!res.ok) throw new Error("Failed to fetch users");
+
+  const data = await res.json();
+  return data.items ?? [];
+}
+
+export async function createUser(orgId: string, payload: UserFormValues) {
+  console.log("Creating user with payload:", payload);
+  const res = await fetch(`${BACKEND_BASE_URL}/orgs/${orgId}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
   if (!res.ok) {
     const error = await res.json();
@@ -85,20 +106,16 @@ export async function getSignedUploadUrl(
   return res.json();
 }
 
-
 export async function updateUser(
   orgId: string,
   userId: string,
   payload: Partial<Omit<UpdateUserPayload, "userId" | "orgId">>
 ) {
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/users/${userId}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
+  const res = await fetch(`${BACKEND_BASE_URL}/orgs/${orgId}/users/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
   if (!res.ok) {
     const error = await res.json();
@@ -107,7 +124,6 @@ export async function updateUser(
 
   return res.json();
 }
-
 
 export async function assignOrUpdateRFID(
   orgId: string,
@@ -127,9 +143,7 @@ export async function assignOrUpdateRFID(
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(
-      error?.message || "Failed to assign RFID"
-    );
+    throw new Error(error?.message || "Failed to assign RFID");
   }
 
   return res.json();

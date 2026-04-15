@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -29,7 +29,6 @@ import { Input } from "@/components/ui/input";
 import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 
-import { useFilterPagination } from "@/hooks/useFilterPagination";
 import {
   Select,
   SelectContent,
@@ -38,20 +37,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
   return (
     <TableRow>
       <TableCell className="flex items-center gap-3">
-        <Avatar>
+        <Avatar size="lg" className="rounded-none">
+          <AvatarImage src={record.profilePhoto} alt="@shadcn" />
           <AvatarFallback>
             {record.userName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
@@ -89,22 +83,24 @@ const IotAttendance: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "present" | "absent"
-  >("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "present">("all");
 
   const [classFilter, setClassFilter] = useState("all");
   const [userTypeFilter, setUserTypeFilter] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
+  const selectedDateKey = useMemo(() => {
+    return format(selectedDate, "yyyyMMdd");
+  }, [selectedDate]);
+
   // ✅ Fetch with silent mode
-  const fetchAttendance = async (isSilent = false) => {
+  const fetchAttendance = async (date: string, isSilent = false) => {
     if (!orgId) return;
 
     try {
       if (!isSilent) setLoading(true);
 
-      const data = await getAttendanceByOrg(orgId);
+      const data = await getAttendanceByOrg(orgId, date);
 
       setAttendance((prev) => {
         if (JSON.stringify(prev) === JSON.stringify(data)) {
@@ -120,23 +116,19 @@ const IotAttendance: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAttendance();
-  }, [orgId]);
+    fetchAttendance(selectedDateKey);
+  }, [orgId, selectedDateKey]);
 
   // ✅ Silent auto refresh
   useEffect(() => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      fetchAttendance(true);
+      fetchAttendance(selectedDateKey, true);
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, orgId]);
-
-  const formattedDate = useMemo(() => {
-    return format(selectedDate, "yyyy-MM-dd");
-  }, [selectedDate]);
+  }, [autoRefresh, orgId, selectedDateKey]);
 
   const availableClasses = useMemo(() => {
     const set = new Set(attendance.map((a) => a.userProfile.class));
@@ -146,11 +138,7 @@ const IotAttendance: React.FC = () => {
   const availableUserTypes = ["all", "STUDENT", "FACULTY", "STAFF"];
 
   const filteredRecords = useMemo(() => {
-    let data = attendance.filter((a) => a.date === formattedDate);
-
-    if (filterStatus === "absent") {
-      data = [];
-    }
+    let data = attendance;
 
     if (classFilter !== "all") {
       data = data.filter((a) => a.userProfile.class === classFilter);
@@ -162,31 +150,19 @@ const IotAttendance: React.FC = () => {
 
     if (search) {
       data = data.filter((a) =>
-        a.userName.toLowerCase().includes(search.toLowerCase())
+        a.userName.toLowerCase().includes(search.toLowerCase()),
       );
     }
 
-    return data;
+    return [...data].sort((a, b) => b.timestamp - a.timestamp);
   }, [
     attendance,
-    formattedDate,
+    selectedDateKey,
     filterStatus,
     classFilter,
     userTypeFilter,
     search,
   ]);
-
-  const {
-    currentPage,
-    setCurrentPage,
-    rowsPerPage,
-    filteredData,
-    paginatedData,
-  } = useFilterPagination<AttendanceItem>({
-    data: filteredRecords,
-    searchKey: "userName",
-    getIsActive: () => true,
-  });
 
   const totalPunches = filteredRecords.length;
 
@@ -195,10 +171,8 @@ const IotAttendance: React.FC = () => {
     return set.size;
   }, [filteredRecords]);
 
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex h-[calc(100vh-8rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
       <AppBreadcrumb />
 
       {/* Header */}
@@ -262,7 +236,7 @@ const IotAttendance: React.FC = () => {
       {/* Filters */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex gap-2">
-          {(["all", "present", "absent"] as const).map((status) => (
+          {(["all", "present"] as const).map((status) => (
             <Button
               key={status}
               size="sm"
@@ -314,7 +288,7 @@ const IotAttendance: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Card>
+      <Card className="flex min-h-0 flex-1 flex-col">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Attendance Logs</CardTitle>
 
@@ -324,101 +298,51 @@ const IotAttendance: React.FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Class/Department</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {loading && (
+        <CardContent className="min-h-0 flex-1">
+          <ScrollArea className="h-full">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    Loading attendance...
-                  </TableCell>
+                  <TableHead>Entity</TableHead>
+                  <TableHead>Class/Department</TableHead>
+                  <TableHead>Device</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              )}
+              </TableHeader>
 
-              {!loading && paginatedData.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center text-muted-foreground py-6"
-                  >
-                    No data is available for this date
-                  </TableCell>
-                </TableRow>
-              )}
+              <TableBody>
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Loading attendance...
+                    </TableCell>
+                  </TableRow>
+                )}
 
-              {!loading &&
-                paginatedData.length > 0 &&
-                paginatedData.map((record) => (
-                  <AttendanceRow
-                    key={`${record.userId}-${record.date}-${record.time}`}
-                    record={record}
-                  />
-                ))}
-            </TableBody>
-          </Table>
+                {!loading && filteredRecords.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-muted-foreground py-6"
+                    >
+                      No data is available for this date
+                    </TableCell>
+                  </TableRow>
+                )}
+
+                {!loading &&
+                  filteredRecords.length > 0 &&
+                  filteredRecords.map((record) => (
+                    <AttendanceRow
+                      key={`${record.userId}-${record.timestamp}`}
+                      record={record}
+                    />
+                  ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
-
-        <Separator />
-
-        <Pagination>
-          <PaginationContent>
-            {/* Previous */}
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage > 1) setCurrentPage(currentPage - 1);
-                }}
-                className={
-                  currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                }
-              />
-            </PaginationItem>
-
-            {/* Pages */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  href="#"
-                  isActive={currentPage === page}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage(page);
-                  }}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-
-            {/* Next */}
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                }}
-                className={
-                  currentPage === totalPages
-                    ? "pointer-events-none opacity-50"
-                    : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
       </Card>
     </div>
   );

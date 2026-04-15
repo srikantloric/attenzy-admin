@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { StudentProfile, User } from "@/types/users";
-import { getUsersByOrg, updateUser } from "@/api/users";
+import { getStudentsByClass, updateUser } from "@/api/users";
+import { listGrades, listSections } from "@/api/academics";
+import type { AcademicItem } from "@/types/academics";
 import { toast } from "sonner";
 
 import {
@@ -46,6 +48,13 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type FormMode = "add" | "edit";
 
@@ -61,26 +70,71 @@ const StudentsPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
+  const [grades, setGrades] = useState<AcademicItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+
+  const [sections, setSections] = useState<AcademicItem[]>([]);
+  const [selectedSection, setSelectedSection] = useState<string>("all");
+
   const navigate = useNavigate();
 
   /* ================= FETCH ================= */
 
-  const fetchUsers = () => {
+  const fetchUsers = async () => {
     if (!orgId) return;
 
     setLoading(true);
-    getUsersByOrg(orgId)
-      .then((data) => {
-        const students = data.filter((u: User) => u.userType === "STUDENT");
-        setUsers(students);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+
+    try {
+      const data = await getStudentsByClass(
+        orgId,
+        "STUDENT",
+        selectedClass,
+        selectedSection
+      );
+
+      setUsers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGrades = async () => {
+    if (!orgId) return;
+
+    try {
+      const data = await listGrades(orgId);
+      setGrades(data);
+    } catch (err) {
+      console.error("Failed to fetch grades", err);
+    }
+  };
+
+  const fetchSections = async () => {
+    if (!orgId) return;
+
+    try {
+      const data = await listSections(orgId);
+      setSections(data);
+    } catch (err) {
+      console.error("Failed to fetch sections", err);
+    }
   };
 
   useEffect(() => {
-    fetchUsers();
+    if (!orgId) return;
+
+    fetchGrades();
+    fetchSections();
   }, [orgId]);
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    fetchUsers();
+  }, [orgId, selectedClass, selectedSection]);
 
   /* ================= FILTER + PAGINATION ================= */
 
@@ -99,6 +153,18 @@ const StudentsPage: React.FC = () => {
     searchKey: "name",
     getIsActive: (u) => u.isActive !== false,
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, users]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages || 1);
+    }
+  }, [filteredData, rowsPerPage]);
 
   /* ================= STATUS TOGGLE ================= */
 
@@ -125,32 +191,6 @@ const StudentsPage: React.FC = () => {
   const INACTIVE_COUNT = users.filter((u) => u.isActive === false).length;
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
-  const getPageNumbers = () => {
-    const pages = [];
-
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-
-      if (currentPage > 3) pages.push("...");
-
-      for (
-        let i = Math.max(2, currentPage - 1);
-        i <= Math.min(totalPages - 1, currentPage + 1);
-        i++
-      ) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 2) pages.push("...");
-
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
 
   /* ================= RENDER ================= */
 
@@ -193,9 +233,9 @@ const StudentsPage: React.FC = () => {
 
         <Separator />
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex gap-2">
+          {/* LEFT SIDE → STATUS */}
+          <div className="flex gap-2 items-center flex-wrap">
             {(["all", "active", "inactive"] as const).map((status) => (
               <Button
                 key={status}
@@ -208,14 +248,64 @@ const StudentsPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-8 w-full"
-              placeholder="Search students..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          {/* RIGHT SIDE → CLASS + SEARCH */}
+          <div className="flex items-center gap-2">
+            {/* CLASS */}
+            <Select
+              value={selectedClass}
+              onValueChange={(value) => {
+                setSelectedClass(value);
+                setSelectedSection("all");
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue placeholder="Class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {grades.map((grade) => (
+                  <SelectItem
+                    key={grade.gradeId ?? grade.name}
+                    value={grade.name}
+                  >
+                    {grade.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* SECTION */}
+            <Select
+              value={selectedSection}
+              onValueChange={(value) => {
+                setSelectedSection(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue placeholder="Section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sections</SelectItem>
+                {sections.map((sec) => (
+                  <SelectItem key={sec.sectionId ?? sec.name} value={sec.name}>
+                    {sec.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* SEARCH */}
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-8 w-full"
+                placeholder="Search students..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -355,62 +445,103 @@ const StudentsPage: React.FC = () => {
 
           <Separator />
 
-          <Pagination>
-            <PaginationContent>
-              {/* Previous */}
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) setCurrentPage(currentPage - 1);
-                  }}
-                  className={
-                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
-
-              {/* Pages */}
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <PaginationItem key={index}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={page}>
-                    <PaginationLink
+          {filteredData.length > 0 && (
+            <>
+              <Pagination>
+                <PaginationContent>
+                  {/* Previous */}
+                  <PaginationItem>
+                    <PaginationPrevious
                       href="#"
-                      isActive={currentPage === page}
                       onClick={(e) => {
                         e.preventDefault();
-                        setCurrentPage(Number(page));
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
                       }}
-                    >
-                      {page}
-                    </PaginationLink>
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
+                    />
                   </PaginationItem>
-                )
-              )}
 
-              {/* Next */}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      setCurrentPage(currentPage + 1);
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : ""
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                  {/* Page Numbers */}
+                  {(() => {
+                    const pages: (number | string)[] = [];
+                    const total = totalPages;
+
+                    if (total <= 7) {
+                      for (let i = 1; i <= total; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+
+                      if (currentPage > 3) {
+                        pages.push("...");
+                      }
+
+                      const start = Math.max(2, currentPage - 1);
+                      const end = Math.min(total - 1, currentPage + 1);
+
+                      for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                      }
+
+                      if (currentPage < total - 2) {
+                        pages.push("...");
+                      }
+
+                      pages.push(total);
+                    }
+
+                    return pages.map((page, index) =>
+                      page === "..." ? (
+                        <PaginationItem key={`ellipsis-${index}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            isActive={currentPage === page}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(Number(page));
+                            }}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    );
+                  })()}
+
+                  {/* Next */}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages)
+                          setCurrentPage(currentPage + 1);
+                      }}
+                      className={
+                        currentPage === totalPages
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </>
+          )}
+
+          {/* Show message when no data */}
+          {!loading && filteredData.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No students found
+            </div>
+          )}
         </Card>
       </div>
 

@@ -127,31 +127,6 @@ const StaffPage: React.FC = () => {
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-  const getPageNumbers = () => {
-    const pages = [];
-
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-
-      if (currentPage > 3) pages.push("...");
-
-      for (
-        let i = Math.max(2, currentPage - 1);
-        i <= Math.min(totalPages - 1, currentPage + 1);
-        i++
-      ) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 2) pages.push("...");
-
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
 
   /* ================= RENDER ================= */
 
@@ -353,62 +328,99 @@ const StaffPage: React.FC = () => {
 
           <Separator />
 
-          <Pagination>
-            <PaginationContent>
-              {/* Previous */}
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) setCurrentPage(currentPage - 1);
-                  }}
-                  className={
-                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
+          {filteredData.length > 0 && (
+            <Pagination>
+              <PaginationContent>
+                {/* Previous */}
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
 
-              {/* Pages */}
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <PaginationItem key={index}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      href="#"
-                      isActive={currentPage === page}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentPage(Number(page));
-                      }}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
+                {/* Page Numbers - Inline version */}
+                {(() => {
+                  const pages: (number | string)[] = [];
+                  const total = totalPages;
 
-              {/* Next */}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      setCurrentPage(currentPage + 1);
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                  if (total <= 7) {
+                    for (let i = 1; i <= total; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+
+                    if (currentPage > 3) {
+                      pages.push("...");
+                    }
+
+                    const start = Math.max(2, currentPage - 1);
+                    const end = Math.min(total - 1, currentPage + 1);
+
+                    for (let i = start; i <= end; i++) {
+                      pages.push(i);
+                    }
+
+                    if (currentPage < total - 2) {
+                      pages.push("...");
+                    }
+
+                    pages.push(total);
                   }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+
+                  return pages.map((page, index) =>
+                    page === "..." ? (
+                      <PaginationItem key={`ellipsis-${index}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(Number(page));
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  );
+                })()}
+
+                {/* Next */}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages)
+                        setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage === totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+
+          {/* Show message when no data */}
+          {!loading && filteredData.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No staff members found
+            </div>
+          )}
         </Card>
       </div>
 

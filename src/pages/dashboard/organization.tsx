@@ -65,10 +65,21 @@ function OrganizationDashboard() {
 
     const todayKey = format(new Date(), "yyyy-MM-dd")
 
+    const getDateKeyFromTimestamp = (timestamp: number) =>
+        format(new Date(timestamp), "yyyy-MM-dd")
+
     const todayAttendance = useMemo(
-        () => attendance.filter((item) => item.date === todayKey),
+        () => attendance.filter((item) => getDateKeyFromTimestamp(item.timestamp) === todayKey),
         [attendance, todayKey]
     )
+
+    const attendanceCountByDate = useMemo(() => {
+        return attendance.reduce((map, item) => {
+            const key = getDateKeyFromTimestamp(item.timestamp)
+            map.set(key, (map.get(key) ?? 0) + 1)
+            return map
+        }, new Map<string, number>())
+    }, [attendance])
 
     const attendanceByDate = useMemo(() => {
         return Array.from({ length: 7 }).map((_, index) => {
@@ -78,10 +89,10 @@ function OrganizationDashboard() {
 
             return {
                 label: format(date, "EEE"),
-                value: attendance.filter((item) => item.date === key).length,
+                value: attendanceCountByDate.get(key) ?? 0,
             }
         })
-    }, [attendance])
+    }, [attendanceCountByDate])
 
     const maxAttendance = Math.max(...attendanceByDate.map((item) => item.value), 1)
     const chartHeight = 180

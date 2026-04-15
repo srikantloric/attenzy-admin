@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { listGrades } from "@/api/academics";
-import { getUsersByOrg } from "@/api/users";
+import { getStudentsByClass } from "@/api/users";
 import {
   getAttendanceCalendarView,
   updateManualAttendance,
@@ -40,6 +40,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { CheckCircle2, Search, Save } from "lucide-react";
 import type { AcademicItem } from "@/types/academics";
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 interface ManualAttendanceRow {
   id: string;
   profile: string;
@@ -68,7 +79,7 @@ const STATUS_LEGEND: Array<{ short: string; label: AttendanceStatus }> = [
 const MAX_UPDATES_PER_REQUEST = 200;
 
 const mapCalendarStatusToManualStatus = (
-  status: CalendarAttendanceStatus,
+  status: CalendarAttendanceStatus
 ): AttendanceStatus => {
   if (status === "HOLIDAY") {
     return "HALF_DAY";
@@ -99,23 +110,27 @@ const mapUserToRow = (user: User): ManualAttendanceRow => ({
 });
 
 const getCountsFromResponse = (response: ManualAttendanceUpdateResponse) => {
+  if (
+    typeof response.successCount === "number" &&
+    typeof response.failedCount === "number"
+  ) {
+    return {
+      success: response.successCount,
+      failed: response.failedCount,
+    };
+  }
+
   const resultItems = Array.isArray(response.results) ? response.results : [];
-  const successFromResults = resultItems.filter((item) => item.success).length;
-  const failedFromResults = resultItems.filter((item) => !item.success).length;
 
   return {
-    success:
-      typeof response.success === "number"
-        ? response.success
-        : successFromResults,
-    failed:
-      typeof response.failed === "number" ? response.failed : failedFromResults,
+    success: resultItems.filter((item) => item.ok).length,
+    failed: resultItems.filter((item) => !item.ok).length,
   };
 };
 
 const applyPrefilledStatuses = (
   rows: ManualAttendanceRow[],
-  statusByUserId: Map<string, AttendanceStatus>,
+  statusByUserId: Map<string, AttendanceStatus>
 ): { updatedRows: ManualAttendanceRow[]; markedCount: number } => {
   let markedCount = 0;
 
@@ -138,7 +153,7 @@ const applyPrefilledStatuses = (
         reason: "",
         alreadyMarked: false,
       };
-    },
+    }
   );
 
   return { updatedRows, markedCount };
@@ -159,13 +174,16 @@ const ManualAttendancePage = () => {
   const [loadingPrefill, setLoadingPrefill] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+
   const visibleByUserType = useMemo(() => {
     return records.filter((record) => record.userType === selectedUserType);
   }, [records, selectedUserType]);
 
   const activeGradeOptions = useMemo(
     () => gradeOptions.filter((grade) => grade.isActive),
-    [gradeOptions],
+    [gradeOptions]
   );
 
   useEffect(() => {
@@ -187,7 +205,7 @@ const ManualAttendancePage = () => {
     setSelectedClass((current) =>
       activeGradeOptions.some((grade) => grade.name === current)
         ? current
-        : activeGradeOptions[0].name,
+        : activeGradeOptions[0].name
     );
   }, [activeGradeOptions, selectedUserType]);
 
@@ -200,24 +218,31 @@ const ManualAttendancePage = () => {
       return [];
     }
 
-    return visibleByUserType.filter(
-      (record) => record.groupLabel === selectedClass,
+    return visibleByUserType.filter((record) =>
+      record.groupLabel.startsWith(selectedClass)
     );
   }, [selectedClass, selectedUserType, visibleByUserType]);
 
   const filteredRecords = useMemo(() => {
     return visibleByClass.filter((r) =>
-      r.name.toLowerCase().includes(search.toLowerCase()),
+      r.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [visibleByClass, search]);
 
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredRecords.slice(start, start + rowsPerPage);
+  }, [filteredRecords, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredRecords.length / rowsPerPage);
+
   const markedVisibleCount = useMemo(
     () => visibleByClass.filter((record) => record.alreadyMarked).length,
-    [visibleByClass],
+    [visibleByClass]
   );
 
   const prefillAttendanceForDate = async (
-    sourceRows: ManualAttendanceRow[],
+    sourceRows: ManualAttendanceRow[]
   ): Promise<ManualAttendanceRow[]> => {
     if (!orgId || !date || sourceRows.length === 0) {
       return sourceRows;
@@ -236,21 +261,21 @@ const ManualAttendancePage = () => {
         if (status) {
           statusByUserId.set(
             calendarUser.userId,
-            mapCalendarStatusToManualStatus(status),
+            mapCalendarStatusToManualStatus(status)
           );
         }
       });
 
       const { updatedRows } = applyPrefilledStatuses(
         sourceRows,
-        statusByUserId,
+        statusByUserId
       );
       return updatedRows;
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to prefill attendance status",
+          : "Failed to prefill attendance status"
       );
       return sourceRows.map((row) => ({
         ...row,
@@ -275,14 +300,14 @@ const ManualAttendancePage = () => {
 
     setLoadingUsers(true);
     try {
-      const users = await getUsersByOrg(orgId, {
-        userType: selectedUserType,
-        classId: selectedUserType === "STUDENT" ? selectedClass : undefined,
-        grade: selectedUserType === "STUDENT" ? selectedClass : undefined,
-      });
+      const users = await getStudentsByClass(
+        orgId,
+        selectedUserType,
+        selectedClass
+      );
 
       const nextRecords = await prefillAttendanceForDate(
-        users.map(mapUserToRow),
+        users.map(mapUserToRow)
       );
       setRecords(nextRecords);
 
@@ -293,7 +318,7 @@ const ManualAttendancePage = () => {
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load users",
+        error instanceof Error ? error.message : "Failed to load users"
       );
     } finally {
       setLoadingUsers(false);
@@ -312,7 +337,7 @@ const ManualAttendancePage = () => {
 
         if (configuredGrades.length === 0) {
           toast.warning(
-            "No active grades are configured for this organization",
+            "No active grades are configured for this organization"
           );
           return;
         }
@@ -320,11 +345,11 @@ const ManualAttendancePage = () => {
         setSelectedClass((current) =>
           current && configuredGrades.some((grade) => grade.name === current)
             ? current
-            : configuredGrades[0].name,
+            : configuredGrades[0].name
         );
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to load grades",
+          error instanceof Error ? error.message : "Failed to load grades"
         );
       } finally {
         setLoadingGrades(false);
@@ -407,11 +432,13 @@ const ManualAttendancePage = () => {
 
       if (failed === 0) {
         toast.success(
-          `Manual attendance updated for ${success} user${success === 1 ? "" : "s"}`,
+          `Manual attendance updated for ${success} user${
+            success === 1 ? "" : "s"
+          }`
         );
       } else {
         toast.warning(
-          `Manual attendance updated with ${success} success and ${failed} failures`,
+          `Manual attendance updated with ${success} success and ${failed} failures`
         );
       }
 
@@ -421,7 +448,7 @@ const ManualAttendancePage = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to save manual attendance",
+          : "Failed to save manual attendance"
       );
     } finally {
       setSaving(false);
@@ -440,7 +467,7 @@ const ManualAttendancePage = () => {
         </p>
       </div>
 
-      <Separator />
+      {/* <Separator /> */}
 
       {/* Main Layout */}
       <div className="flex gap-6">
@@ -513,7 +540,7 @@ const ManualAttendancePage = () => {
               </TableHeader>
 
               <TableBody>
-                {filteredRecords.length === 0 && (
+                {paginatedRecords.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -526,14 +553,21 @@ const ManualAttendancePage = () => {
                   </TableRow>
                 )}
 
-                {filteredRecords.map((user) => (
+                {paginatedRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <img
-                        src={user.profile}
-                        alt={user.name}
-                        className="h-10 w-10 rounded-sm  object-cover"
-                      />
+                      <Avatar>
+                        <AvatarImage
+                          src={user.profile || ""}
+                          alt={user.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "";
+                          }}
+                        />
+                        <AvatarFallback>
+                          {user.name?.charAt(0)?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     </TableCell>
                     <TableCell>{user.id}</TableCell>
 
@@ -584,6 +618,99 @@ const ManualAttendancePage = () => {
               </TableBody>
             </Table>
           </CardContent>
+
+          <Separator />
+
+          <div className="py-4">
+            <Separator />
+
+            <div className="py-4">
+              {filteredRecords.length > 0 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
+                    </PaginationItem>
+
+                    {(() => {
+                      const pages: (number | string)[] = [];
+                      const total = totalPages;
+
+                      if (total <= 7) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                      } else {
+                        pages.push(1);
+                        if (currentPage > 3) pages.push("...");
+
+                        const start = Math.max(2, currentPage - 1);
+                        const end = Math.min(total - 1, currentPage + 1);
+                        for (let i = start; i <= end; i++) pages.push(i);
+
+                        if (currentPage < total - 2) pages.push("...");
+                        pages.push(total);
+                      }
+
+                      return pages.map((page, index) =>
+                        page === "..." ? (
+                          <PaginationItem key={`ellipsis-${index}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === page}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(Number(page));
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      );
+                    })()}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages)
+                            setCurrentPage(currentPage + 1);
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+
+              {!loadingUsers &&
+                !loadingPrefill &&
+                filteredRecords.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No records found
+                  </div>
+                )}
+            </div>
+          </div>
         </Card>
 
         {/* RIGHT SIDE */}

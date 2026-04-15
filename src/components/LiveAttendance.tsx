@@ -43,7 +43,7 @@ export default function LiveAttendance({ records, loading = false }: LiveAttenda
                             records.map((record) => (
                                 <TableRow key={`${record.userId}-${record.timestamp}`}>
                                     <TableCell>
-                                        {record.time || new Date(record.timestamp).toLocaleTimeString([], {
+                                        {new Date(record.timestamp).toLocaleTimeString([], {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                         })}

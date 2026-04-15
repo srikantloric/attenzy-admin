@@ -46,6 +46,8 @@ const RFIDMappingPage: React.FC = () => {
   const orgId = user?.orgId;
 
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, _] = useState(false);
+  
   const [activeTab, setActiveTab] = useState<UserType>("STUDENT");
   const [assignOpen, setAssignOpen] = useState(false);
   const [rfidInputs, setRfidInputs] = useState<Record<string, string>>({});
@@ -68,10 +70,13 @@ const RFIDMappingPage: React.FC = () => {
   }, [orgId]);
 
   useEffect(() => {
-    const inputDefaults = users.reduce<Record<string, string>>((acc, current) => {
-      acc[current.userId] = current.rfidCode ?? "";
-      return acc;
-    }, {});
+    const inputDefaults = users.reduce<Record<string, string>>(
+      (acc, current) => {
+        acc[current.userId] = current.rfidCode ?? "";
+        return acc;
+      },
+      {}
+    );
 
     setRfidInputs(inputDefaults);
   }, [users]);
@@ -174,32 +179,6 @@ const RFIDMappingPage: React.FC = () => {
   }, [users]);
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
-  const getPageNumbers = () => {
-    const pages = [];
-
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-
-      if (currentPage > 3) pages.push("...");
-
-      for (
-        let i = Math.max(2, currentPage - 1);
-        i <= Math.min(totalPages - 1, currentPage + 1);
-        i++
-      ) {
-        pages.push(i);
-      }
-
-      if (currentPage < totalPages - 2) pages.push("...");
-
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
 
   return (
     <>
@@ -402,13 +381,17 @@ const RFIDMappingPage: React.FC = () => {
 
                         {(() => {
                           const isSaving = Boolean(savingRows[user.userId]);
-                          const currentValue = (rfidInputs[user.userId] ?? "").trim();
+                          const currentValue = (
+                            rfidInputs[user.userId] ?? ""
+                          ).trim();
                           const savedValue = user.rfidCode ?? "";
                           const hasSavedRFID = Boolean(savedValue);
                           const isChanged = currentValue !== savedValue;
 
                           if (isSaving) {
-                            return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+                            return (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            );
                           }
 
                           if (!isChanged && hasSavedRFID) {
@@ -447,62 +430,101 @@ const RFIDMappingPage: React.FC = () => {
 
           <Separator />
 
-          <Pagination>
-            <PaginationContent>
-              {/* Previous */}
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) setCurrentPage(currentPage - 1);
-                  }}
-                  className={
-                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
+          <Separator />
 
-              {/* Pages */}
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <PaginationItem key={index}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      href="#"
-                      isActive={currentPage === page}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentPage(Number(page));
-                      }}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
+          {filteredData.length > 0 && (
+            <Pagination>
+              <PaginationContent>
+                {/* Previous */}
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    className={
+                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
 
-              {/* Next */}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages)
-                      setCurrentPage(currentPage + 1);
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                {/* Page Numbers - Inline version */}
+                {(() => {
+                  const pages: (number | string)[] = [];
+                  const total = totalPages;
+
+                  if (total <= 7) {
+                    for (let i = 1; i <= total; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+
+                    if (currentPage > 3) {
+                      pages.push("...");
+                    }
+
+                    const start = Math.max(2, currentPage - 1);
+                    const end = Math.min(total - 1, currentPage + 1);
+
+                    for (let i = start; i <= end; i++) {
+                      pages.push(i);
+                    }
+
+                    if (currentPage < total - 2) {
+                      pages.push("...");
+                    }
+
+                    pages.push(total);
                   }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+
+                  return pages.map((page, index) =>
+                    page === "..." ? (
+                      <PaginationItem key={`ellipsis-${index}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(Number(page));
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  );
+                })()}
+
+                {/* Next */}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages)
+                        setCurrentPage(currentPage + 1);
+                    }}
+                    className={
+                      currentPage === totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+
+          {/* Show message when no data */}
+          {!loading && filteredData.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found
+            </div>
+          )}
         </Card>
       </div>
 
