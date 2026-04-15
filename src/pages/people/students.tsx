@@ -192,37 +192,6 @@ const StudentsPage: React.FC = () => {
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    pages.push(1);
-
-    if (currentPage > 3) {
-      pages.push("...");
-    }
-
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-
-    for (let i = start; i <= end; i++) {
-      if (!pages.includes(i)) {
-        pages.push(i);
-      }
-    }
-
-    if (currentPage < totalPages - 2) {
-      pages.push("...");
-    }
-
-    pages.push(totalPages);
-
-    return pages;
-  };
-
   /* ================= RENDER ================= */
 
   return (

@@ -43,6 +43,7 @@ import type { AcademicItem } from "@/types/academics";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -621,58 +622,94 @@ const ManualAttendancePage = () => {
           <Separator />
 
           <div className="py-4">
-            <Pagination>
-              <PaginationContent>
-                {/* Previous */}
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage > 1) setCurrentPage(currentPage - 1);
-                    }}
-                    className={
-                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                    }
-                  />
-                </PaginationItem>
+            <Separator />
 
-                {/* Pages */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
+            <div className="py-4">
+              {filteredRecords.length > 0 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
                         href="#"
-                        isActive={currentPage === page}
                         onClick={(e) => {
                           e.preventDefault();
-                          setCurrentPage(page);
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
                         }}
-                      >
-                        {page}
-                      </PaginationLink>
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
                     </PaginationItem>
-                  )
-                )}
 
-                {/* Next */}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage < totalPages)
-                        setCurrentPage(currentPage + 1);
-                    }}
-                    className={
-                      currentPage === totalPages
-                        ? "pointer-events-none opacity-50"
-                        : ""
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                    {(() => {
+                      const pages: (number | string)[] = [];
+                      const total = totalPages;
+
+                      if (total <= 7) {
+                        for (let i = 1; i <= total; i++) pages.push(i);
+                      } else {
+                        pages.push(1);
+                        if (currentPage > 3) pages.push("...");
+
+                        const start = Math.max(2, currentPage - 1);
+                        const end = Math.min(total - 1, currentPage + 1);
+                        for (let i = start; i <= end; i++) pages.push(i);
+
+                        if (currentPage < total - 2) pages.push("...");
+                        pages.push(total);
+                      }
+
+                      return pages.map((page, index) =>
+                        page === "..." ? (
+                          <PaginationItem key={`ellipsis-${index}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === page}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(Number(page));
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      );
+                    })()}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages)
+                            setCurrentPage(currentPage + 1);
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+
+              {!loadingUsers &&
+                !loadingPrefill &&
+                filteredRecords.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No records found
+                  </div>
+                )}
+            </div>
           </div>
         </Card>
 
