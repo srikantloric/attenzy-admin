@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { StudentProfile, User } from "@/types/users";
-import { getUsersByOrg, updateUser } from "@/api/users";
+import { getStudentsByClass, updateUser } from "@/api/users";
+import { listGrades } from "@/api/academics";
+import type { AcademicItem } from "@/types/academics";
 import { toast } from "sonner";
 
 import {
@@ -46,6 +48,13 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type FormMode = "add" | "edit";
 
@@ -61,26 +70,52 @@ const StudentsPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
+  const [grades, setGrades] = useState<AcademicItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+
   const navigate = useNavigate();
 
   /* ================= FETCH ================= */
 
-  const fetchUsers = () => {
+  const fetchUsers = async () => {
     if (!orgId) return;
 
     setLoading(true);
-    getUsersByOrg(orgId)
-      .then((data) => {
-        const students = data.filter((u: User) => u.userType === "STUDENT");
-        setUsers(students);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+
+    try {
+      let data: User[] = [];
+
+      if (selectedClass === "all") {
+        data = await getStudentsByClass(orgId, "STUDENT", "");
+      } else {
+        data = await getStudentsByClass(orgId, "STUDENT", selectedClass);
+      }
+
+      setUsers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGrades = async () => {
+    if (!orgId) return;
+
+    try {
+      const data = await listGrades(orgId);
+      setGrades(data);
+    } catch (err) {
+      console.error("Failed to fetch grades", err);
+    }
   };
 
   useEffect(() => {
+    if (!orgId) return;
+
+    fetchGrades();
     fetchUsers();
-  }, [orgId]);
+  }, [orgId, selectedClass]);
 
   /* ================= FILTER + PAGINATION ================= */
 
@@ -193,9 +228,9 @@ const StudentsPage: React.FC = () => {
 
         <Separator />
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex gap-2">
+          {/* LEFT SIDE → STATUS */}
+          <div className="flex gap-2 items-center flex-wrap">
             {(["all", "active", "inactive"] as const).map((status) => (
               <Button
                 key={status}
@@ -208,14 +243,40 @@ const StudentsPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-8 w-full"
-              placeholder="Search students..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          {/* RIGHT SIDE → CLASS + SEARCH */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* CLASS DROPDOWN */}
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[150px] h-9 text-sm">
+                <SelectValue placeholder="Class" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {/* ALL OPTION */}
+                <SelectItem value="all">All Classes</SelectItem>
+
+                {/* DYNAMIC GRADES */}
+                {grades.map((grade) => (
+                  <SelectItem
+                    key={grade.gradeId ?? grade.name}
+                    value={grade.name}
+                  >
+                    {grade.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* SEARCH */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-8 w-full"
+                placeholder="Search students..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 

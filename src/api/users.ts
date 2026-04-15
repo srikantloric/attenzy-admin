@@ -35,16 +35,18 @@ export async function getUsersByOrg(
   return items;
 }
 
-
 export async function getStudentsByClass(
   orgId: string,
   userType: string,
-  className: string
+  className?: string
 ): Promise<User[]> {
   const query = new URLSearchParams();
 
   query.set("userType", userType);
-  query.set("class", className);
+
+  if (className) {
+    query.set("class", className); // ✅ only when exists
+  }
 
   const res = await fetch(
     `${BACKEND_BASE_URL}/orgs/${orgId}/users?${query.toString()}`
@@ -55,7 +57,6 @@ export async function getStudentsByClass(
   const data = await res.json();
   return data.items ?? [];
 }
-
 
 export async function createUser(orgId: string, payload: UserFormValues) {
   console.log("Creating user with payload:", payload);
