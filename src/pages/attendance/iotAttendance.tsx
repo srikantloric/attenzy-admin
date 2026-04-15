@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -44,7 +44,8 @@ const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
   return (
     <TableRow>
       <TableCell className="flex items-center gap-3">
-        <Avatar>
+        <Avatar size="lg" className="rounded-none">
+          <AvatarImage src={record.profilePhoto} alt="@shadcn" />
           <AvatarFallback>
             {record.userName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
@@ -137,7 +138,7 @@ const IotAttendance: React.FC = () => {
   const availableUserTypes = ["all", "STUDENT", "FACULTY", "STAFF"];
 
   const filteredRecords = useMemo(() => {
-    let data = attendance
+    let data = attendance;
 
     if (classFilter !== "all") {
       data = data.filter((a) => a.userProfile.class === classFilter);
@@ -153,7 +154,7 @@ const IotAttendance: React.FC = () => {
       );
     }
 
-    return data;
+    return [...data].sort((a, b) => b.timestamp - a.timestamp);
   }, [
     attendance,
     selectedDateKey,
@@ -163,15 +164,12 @@ const IotAttendance: React.FC = () => {
     search,
   ]);
 
-
-
   const totalPunches = filteredRecords.length;
 
   const uniqueStudents = useMemo(() => {
     const set = new Set(filteredRecords.map((r) => r.userId));
     return set.size;
   }, [filteredRecords]);
-
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
@@ -305,7 +303,7 @@ const IotAttendance: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Student</TableHead>
+                  <TableHead>Entity</TableHead>
                   <TableHead>Class/Department</TableHead>
                   <TableHead>Device</TableHead>
                   <TableHead>Time</TableHead>

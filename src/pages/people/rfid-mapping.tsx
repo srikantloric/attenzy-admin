@@ -46,7 +46,7 @@ const RFIDMappingPage: React.FC = () => {
   const orgId = user?.orgId;
 
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, _] = useState(false);
   
   const [activeTab, setActiveTab] = useState<UserType>("STUDENT");
   const [assignOpen, setAssignOpen] = useState(false);

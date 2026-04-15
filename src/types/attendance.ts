@@ -3,6 +3,7 @@ export interface AttendanceItem {
   userId: string
   userType: string
   userName: string
+  profilePhoto: string
   userProfile: {
     rollNumber: string
     class: string
