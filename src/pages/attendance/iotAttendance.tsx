@@ -39,15 +39,30 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 const AttendanceRow = React.memo(({ record }: { record: AttendanceItem }) => {
   return (
     <TableRow>
       <TableCell className="flex items-center gap-3">
-        <Avatar size="lg" className="rounded-none">
-          <AvatarImage src={record.profilePhoto} alt="@shadcn" />
+        <Avatar>
+          <AvatarImage
+            src={record.profilePhoto || ""}
+            alt={record.userName}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "";
+            }}
+          />
           <AvatarFallback>
-            {record.userName.slice(0, 2).toUpperCase()}
+            {record.userName?.charAt(0)?.toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
@@ -83,17 +98,21 @@ const IotAttendance: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "present">("all");
+  const [filterStatus, setFilterStatus] = useState<"all">("all");
 
   const [classFilter, setClassFilter] = useState("all");
   const [userTypeFilter, setUserTypeFilter] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+
   const selectedDateKey = useMemo(() => {
     return format(selectedDate, "yyyyMMdd");
   }, [selectedDate]);
 
-  // ✅ Fetch with silent mode
+  // Fetch with silent mode
   const fetchAttendance = async (date: string, isSilent = false) => {
     if (!orgId) return;
 
@@ -119,7 +138,7 @@ const IotAttendance: React.FC = () => {
     fetchAttendance(selectedDateKey);
   }, [orgId, selectedDateKey]);
 
-  // ✅ Silent auto refresh
+  // Silent auto refresh
   useEffect(() => {
     if (!autoRefresh) return;
 
@@ -129,6 +148,11 @@ const IotAttendance: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [autoRefresh, orgId, selectedDateKey]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, classFilter, userTypeFilter, selectedDateKey]);
 
   const availableClasses = useMemo(() => {
     const set = new Set(attendance.map((a) => a.userProfile.class));
@@ -150,19 +174,27 @@ const IotAttendance: React.FC = () => {
 
     if (search) {
       data = data.filter((a) =>
-        a.userName.toLowerCase().includes(search.toLowerCase()),
+        a.userName.toLowerCase().includes(search.toLowerCase())
       );
     }
 
     return [...data].sort((a, b) => b.timestamp - a.timestamp);
-  }, [
-    attendance,
-    selectedDateKey,
-    filterStatus,
-    classFilter,
-    userTypeFilter,
-    search,
-  ]);
+  }, [attendance, filterStatus, classFilter, userTypeFilter, search]);
+
+  // Paginate the filtered records
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredRecords.slice(start, start + rowsPerPage);
+  }, [filteredRecords, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredRecords.length / rowsPerPage);
+
+  // Adjust current page if it exceeds total pages
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages || 1);
+    }
+  }, [filteredRecords.length, rowsPerPage]);
 
   const totalPunches = filteredRecords.length;
 
@@ -172,7 +204,7 @@ const IotAttendance: React.FC = () => {
   }, [filteredRecords]);
 
   return (
-    <div className="flex  flex-col gap-6 overflow-hidden p-6">
+    <div className="flex flex-col gap-6 overflow-hidden p-6">
       <AppBreadcrumb />
 
       {/* Header */}
@@ -235,19 +267,6 @@ const IotAttendance: React.FC = () => {
 
       {/* Filters */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2">
-          {(["all", "present"] as const).map((status) => (
-            <Button
-              key={status}
-              size="sm"
-              variant={filterStatus === status ? "default" : "outline"}
-              onClick={() => setFilterStatus(status)}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Button>
-          ))}
-        </div>
-
         <div className="flex gap-3 items-center">
           <Select value={classFilter} onValueChange={setClassFilter}>
             <SelectTrigger className="w-37.5">
@@ -288,7 +307,7 @@ const IotAttendance: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Card className="flex h-150  flex-col overflow-hidden">
+      <Card className="flex h-150 flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Attendance Logs</CardTitle>
 
@@ -332,8 +351,8 @@ const IotAttendance: React.FC = () => {
                 )}
 
                 {!loading &&
-                  filteredRecords.length > 0 &&
-                  filteredRecords.map((record) => (
+                  paginatedData.length > 0 &&
+                  paginatedData.map((record) => (
                     <AttendanceRow
                       key={`${record.userId}-${record.timestamp}`}
                       record={record}
@@ -343,6 +362,93 @@ const IotAttendance: React.FC = () => {
             </Table>
           </ScrollArea>
         </CardContent>
+
+        {filteredRecords.length > 0 && (
+          <Pagination>
+            <PaginationContent>
+              {/* Previous */}
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
+                />
+              </PaginationItem>
+
+              {/* Pages with ellipsis */}
+              {(() => {
+                const pages: (number | string)[] = [];
+                const total = totalPages;
+
+                if (total <= 7) {
+                  for (let i = 1; i <= total; i++) pages.push(i);
+                } else {
+                  pages.push(1);
+
+                  if (currentPage > 3) {
+                    pages.push("...");
+                  }
+
+                  const start = Math.max(2, currentPage - 1);
+                  const end = Math.min(total - 1, currentPage + 1);
+
+                  for (let i = start; i <= end; i++) {
+                    pages.push(i);
+                  }
+
+                  if (currentPage < total - 2) {
+                    pages.push("...");
+                  }
+
+                  pages.push(total);
+                }
+
+                return pages.map((page, index) =>
+                  page === "..." ? (
+                    <PaginationItem key={`ellipsis-${index}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={currentPage === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(Number(page));
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                );
+              })()}
+
+              {/* Next */}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages)
+                      setCurrentPage(currentPage + 1);
+                  }}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </div>
   );

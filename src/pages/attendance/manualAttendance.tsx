@@ -613,8 +613,6 @@ const ManualAttendancePage = () => {
             </Table>
           </CardContent>
 
-          <Separator />
-
           <div className="py-4">
             <Separator />
 
