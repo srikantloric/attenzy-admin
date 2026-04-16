@@ -94,8 +94,20 @@ const StudentsPage: React.FC = () => {
       );
 
       setUsers(data);
+
+      const classText = selectedClass === "all" ? "All Classes" : selectedClass;
+
+      const sectionText =
+        selectedSection === "all" ? "All Sections" : selectedSection;
+
+      toast.dismiss();
+
+      toast.success(
+        `${data.length} users loaded for ${classText} - ${sectionText}`
+      );
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
