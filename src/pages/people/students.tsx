@@ -71,7 +71,7 @@ const StudentsPage: React.FC = () => {
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
   const [grades, setGrades] = useState<AcademicItem[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedClass, setSelectedClass] = useState<string>("LKG");
 
   const [sections, setSections] = useState<AcademicItem[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>("all");
