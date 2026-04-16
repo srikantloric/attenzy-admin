@@ -307,7 +307,7 @@ const IotAttendance: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Card className="flex h-150 flex-col overflow-hidden">
+      <Card className="flex h-185 flex-col ">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Attendance Logs</CardTitle>
 
@@ -317,7 +317,7 @@ const IotAttendance: React.FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="flex flex-1 overflow-hidden">
+        <CardContent className="flex flex-1 ">
           <ScrollArea className="h-full w-full min-h-75">
             <Table>
               <TableHeader>
@@ -362,6 +362,8 @@ const IotAttendance: React.FC = () => {
             </Table>
           </ScrollArea>
         </CardContent>
+
+        <Separator />
 
         {filteredRecords.length > 0 && (
           <Pagination>
