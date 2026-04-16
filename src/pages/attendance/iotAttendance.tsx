@@ -172,7 +172,7 @@ const IotAttendance: React.FC = () => {
   }, [filteredRecords]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
+    <div className="flex  flex-col gap-6 overflow-hidden p-6">
       <AppBreadcrumb />
 
       {/* Header */}
@@ -288,7 +288,7 @@ const IotAttendance: React.FC = () => {
       </div>
 
       {/* Table */}
-      <Card className="flex min-h-0 flex-1 flex-col">
+      <Card className="flex h-150  flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Attendance Logs</CardTitle>
 
@@ -298,8 +298,8 @@ const IotAttendance: React.FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="min-h-0 flex-1">
-          <ScrollArea className="h-full">
+        <CardContent className="flex flex-1 overflow-hidden">
+          <ScrollArea className="h-full w-full min-h-75">
             <Table>
               <TableHeader>
                 <TableRow>
