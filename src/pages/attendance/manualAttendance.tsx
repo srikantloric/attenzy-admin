@@ -62,16 +62,10 @@ interface ManualAttendanceRow {
   alreadyMarked: boolean;
 }
 
-const STATUS_OPTIONS: AttendanceStatus[] = [
-  "PRESENT",
-  "ABSENT",
-  "LEAVE",
-  "HALF_DAY",
-];
+const STATUS_OPTIONS: AttendanceStatus[] = ["PRESENT", "LEAVE", "HALF_DAY"];
 
 const STATUS_LEGEND: Array<{ short: string; label: AttendanceStatus }> = [
   { short: "P", label: "PRESENT" },
-  { short: "A", label: "ABSENT" },
   { short: "L", label: "LEAVE" },
   { short: "H", label: "HALF_DAY" },
 ];
@@ -79,7 +73,7 @@ const STATUS_LEGEND: Array<{ short: string; label: AttendanceStatus }> = [
 const MAX_UPDATES_PER_REQUEST = 200;
 
 const mapCalendarStatusToManualStatus = (
-  status: CalendarAttendanceStatus
+  status: CalendarAttendanceStatus,
 ): AttendanceStatus => {
   if (status === "HOLIDAY") {
     return "HALF_DAY";
@@ -130,7 +124,7 @@ const getCountsFromResponse = (response: ManualAttendanceUpdateResponse) => {
 
 const applyPrefilledStatuses = (
   rows: ManualAttendanceRow[],
-  statusByUserId: Map<string, AttendanceStatus>
+  statusByUserId: Map<string, AttendanceStatus>,
 ): { updatedRows: ManualAttendanceRow[]; markedCount: number } => {
   let markedCount = 0;
 
@@ -153,7 +147,7 @@ const applyPrefilledStatuses = (
         reason: "",
         alreadyMarked: false,
       };
-    }
+    },
   );
 
   return { updatedRows, markedCount };
@@ -183,7 +177,7 @@ const ManualAttendancePage = () => {
 
   const activeGradeOptions = useMemo(
     () => gradeOptions.filter((grade) => grade.isActive),
-    [gradeOptions]
+    [gradeOptions],
   );
 
   useEffect(() => {
@@ -205,7 +199,7 @@ const ManualAttendancePage = () => {
     setSelectedClass((current) =>
       activeGradeOptions.some((grade) => grade.name === current)
         ? current
-        : activeGradeOptions[0].name
+        : activeGradeOptions[0].name,
     );
   }, [activeGradeOptions, selectedUserType]);
 
@@ -219,13 +213,13 @@ const ManualAttendancePage = () => {
     }
 
     return visibleByUserType.filter((record) =>
-      record.groupLabel.startsWith(selectedClass)
+      record.groupLabel.startsWith(selectedClass),
     );
   }, [selectedClass, selectedUserType, visibleByUserType]);
 
   const filteredRecords = useMemo(() => {
     return visibleByClass.filter((r) =>
-      r.name.toLowerCase().includes(search.toLowerCase())
+      r.name.toLowerCase().includes(search.toLowerCase()),
     );
   }, [visibleByClass, search]);
 
@@ -238,11 +232,11 @@ const ManualAttendancePage = () => {
 
   const markedVisibleCount = useMemo(
     () => visibleByClass.filter((record) => record.alreadyMarked).length,
-    [visibleByClass]
+    [visibleByClass],
   );
 
   const prefillAttendanceForDate = async (
-    sourceRows: ManualAttendanceRow[]
+    sourceRows: ManualAttendanceRow[],
   ): Promise<ManualAttendanceRow[]> => {
     if (!orgId || !date || sourceRows.length === 0) {
       return sourceRows;
@@ -261,21 +255,21 @@ const ManualAttendancePage = () => {
         if (status) {
           statusByUserId.set(
             calendarUser.userId,
-            mapCalendarStatusToManualStatus(status)
+            mapCalendarStatusToManualStatus(status),
           );
         }
       });
 
       const { updatedRows } = applyPrefilledStatuses(
         sourceRows,
-        statusByUserId
+        statusByUserId,
       );
       return updatedRows;
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to prefill attendance status"
+          : "Failed to prefill attendance status",
       );
       return sourceRows.map((row) => ({
         ...row,
@@ -303,11 +297,11 @@ const ManualAttendancePage = () => {
       const users = await getStudentsByClass(
         orgId,
         selectedUserType,
-        selectedClass
+        selectedClass,
       );
 
       const nextRecords = await prefillAttendanceForDate(
-        users.map(mapUserToRow)
+        users.map(mapUserToRow),
       );
       setRecords(nextRecords);
 
@@ -318,7 +312,7 @@ const ManualAttendancePage = () => {
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load users"
+        error instanceof Error ? error.message : "Failed to load users",
       );
     } finally {
       setLoadingUsers(false);
@@ -337,7 +331,7 @@ const ManualAttendancePage = () => {
 
         if (configuredGrades.length === 0) {
           toast.warning(
-            "No active grades are configured for this organization"
+            "No active grades are configured for this organization",
           );
           return;
         }
@@ -345,11 +339,11 @@ const ManualAttendancePage = () => {
         setSelectedClass((current) =>
           current && configuredGrades.some((grade) => grade.name === current)
             ? current
-            : configuredGrades[0].name
+            : configuredGrades[0].name,
         );
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to load grades"
+          error instanceof Error ? error.message : "Failed to load grades",
         );
       } finally {
         setLoadingGrades(false);
@@ -434,11 +428,11 @@ const ManualAttendancePage = () => {
         toast.success(
           `Manual attendance updated for ${success} user${
             success === 1 ? "" : "s"
-          }`
+          }`,
         );
       } else {
         toast.warning(
-          `Manual attendance updated with ${success} success and ${failed} failures`
+          `Manual attendance updated with ${success} success and ${failed} failures`,
         );
       }
 
@@ -448,7 +442,7 @@ const ManualAttendancePage = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to save manual attendance"
+          : "Failed to save manual attendance",
       );
     } finally {
       setSaving(false);
@@ -619,8 +613,6 @@ const ManualAttendancePage = () => {
             </Table>
           </CardContent>
 
-          <Separator />
-
           <div className="py-4">
             <Separator />
 
@@ -679,7 +671,7 @@ const ManualAttendancePage = () => {
                               {page}
                             </PaginationLink>
                           </PaginationItem>
-                        )
+                        ),
                       );
                     })()}
 

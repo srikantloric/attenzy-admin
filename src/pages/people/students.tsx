@@ -71,7 +71,7 @@ const StudentsPage: React.FC = () => {
   const [confirmUser, setConfirmUser] = useState<User | null>(null);
 
   const [grades, setGrades] = useState<AcademicItem[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedClass, setSelectedClass] = useState<string>("LKG");
 
   const [sections, setSections] = useState<AcademicItem[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>("all");
@@ -94,8 +94,20 @@ const StudentsPage: React.FC = () => {
       );
 
       setUsers(data);
+
+      const classText = selectedClass === "all" ? "All Classes" : selectedClass;
+
+      const sectionText =
+        selectedSection === "all" ? "All Sections" : selectedSection;
+
+      toast.dismiss();
+
+      toast.success(
+        `${data.length} users loaded for ${classText} - ${sectionText}`
+      );
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }

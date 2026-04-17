@@ -38,6 +38,11 @@ export interface AuthActionProps {
     payload?: AuthProps;
 }
 
+export type UpdateProfileInput = {
+    name?: string;
+    avatar?: string;
+};
+
 export type AWSCognitoContextType = {
     isLoggedIn: boolean;
     isInitialized?: boolean;
@@ -47,7 +52,8 @@ export type AWSCognitoContextType = {
     register: (email: string, password: string, firstName: string, lastName: string) => Promise<unknown>;
     resetPassword: (verificationCode: string, newPassword: string) => Promise<any>;
     forgotPassword: (email: string) => Promise<void>;
-    updateProfile: VoidFunction;
+    updateProfile: (payload: UpdateProfileInput) => Promise<void>;
+    changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
     codeVerification: (verificationCode: string) => Promise<any>;
     resendConfirmationCode: () => Promise<any>;
 };

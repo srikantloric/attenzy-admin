@@ -8,7 +8,7 @@ import { LOGIN, LOGOUT } from '@/contexts/auth-reducer/actions';
 import authReducer from '@/contexts/auth-reducer/auth';
 
 // types
-import type { AWSCognitoContextType, InitialLoginContextProps } from '@/types/auth';
+import type { AWSCognitoContextType, InitialLoginContextProps, UpdateProfileInput } from '@/types/auth';
 import Loader from '@/components/Loader';
 
 // constant
@@ -41,11 +41,14 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
   const buildUserFromSession = (session: CognitoUserSession) => {
     const idToken = session.getIdToken();
     const payload = idToken.decodePayload();
+    const avatar = payload.picture || payload['custom:profilePhoto'] || payload.image;
 
     return {
       userId: payload.sub,
       email: payload.email,
       name: payload.name || payload.email?.split("@")[0],
+      avatar,
+      image: avatar,
       role: payload["cognito:groups"]?.[0],
       partnerId: payload["custom:partnerId"],
       orgId: payload["custom:orgId"],
@@ -276,7 +279,96 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
     });
   };
 
-  const updateProfile = () => { };
+  const updateProfile = async (payload: UpdateProfileInput) => {
+    const cognitoUser = userPool.getCurrentUser();
+
+    if (!cognitoUser) {
+      throw new Error('No active user session');
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      cognitoUser.getSession((err: any, session: CognitoUserSession) => {
+        if (err || !session?.isValid()) {
+          reject(err || new Error('Invalid session'));
+          return;
+        }
+        resolve();
+      });
+    });
+
+    const attributes: CognitoUserAttribute[] = [];
+
+    if (typeof payload.name === 'string' && payload.name.trim()) {
+      attributes.push(new CognitoUserAttribute({ Name: 'name', Value: payload.name.trim() }));
+    }
+
+    if (typeof payload.avatar === 'string' && payload.avatar.trim()) {
+      attributes.push(new CognitoUserAttribute({ Name: 'picture', Value: payload.avatar.trim() }));
+    }
+
+    if (!attributes.length) {
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      cognitoUser.updateAttributes(attributes, (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    const nextUser = state.user
+      ? {
+        ...state.user,
+        name: payload.name?.trim() || state.user.name,
+        avatar: payload.avatar?.trim() || state.user.avatar,
+        image: payload.avatar?.trim() || state.user.image,
+      }
+      : {
+        userId: cognitoUser.getUsername(),
+        email: cognitoUser.getUsername(),
+        name: payload.name?.trim(),
+        avatar: payload.avatar?.trim(),
+        image: payload.avatar?.trim(),
+      };
+
+    dispatch({
+      type: LOGIN,
+      payload: {
+        isLoggedIn: true,
+        isInitialized: true,
+        user: nextUser,
+      },
+    });
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    const cognitoUser = userPool.getCurrentUser();
+
+    if (!cognitoUser) {
+      throw new Error('No active user session');
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      cognitoUser.getSession((err: any, session: CognitoUserSession) => {
+        if (err || !session?.isValid()) {
+          reject(err || new Error('Invalid session'));
+          return;
+        }
+
+        cognitoUser.changePassword(oldPassword, newPassword, (changeErr) => {
+          if (changeErr) {
+            reject(changeErr);
+            return;
+          }
+          resolve();
+        });
+      });
+    });
+  };
 
   if (state.isInitialized !== undefined && !state.isInitialized) {
     return <Loader />;
@@ -284,7 +376,7 @@ export const AWSCognitoProvider = ({ children }: { children: ReactElement }) => 
 
   return (
     <AWSCognitoContext
-      value={{ ...state, login, logout, register, forgotPassword, resetPassword, updateProfile, codeVerification, resendConfirmationCode }}
+      value={{ ...state, login, logout, register, forgotPassword, resetPassword, updateProfile, changePassword, codeVerification, resendConfirmationCode }}
     >
       {children}
     </AWSCognitoContext>
