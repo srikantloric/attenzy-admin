@@ -98,7 +98,7 @@ const IotAttendance: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all">("all");
+  const [filterStatus, _] = useState<"all">("all");
 
   const [classFilter, setClassFilter] = useState("all");
   const [userTypeFilter, setUserTypeFilter] = useState("all");
