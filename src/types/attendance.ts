@@ -23,6 +23,9 @@ export interface AttendanceItem {
   deviceId: string | null
   deviceName: string | null
 
+  timestamp: number
+  rfidCode: string | null
+
   createdAt: number
   updatedAt: number
 }

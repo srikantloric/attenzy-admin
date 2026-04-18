@@ -274,7 +274,7 @@ const IotAttendance: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               {availableClasses.map((cls) => (
-                <SelectItem key={cls} value={cls}>
+                <SelectItem key={cls} value={cls!}>
                   {cls === "all" ? "All Classes" : cls}
                 </SelectItem>
               ))}
