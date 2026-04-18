@@ -1,6 +1,5 @@
 import type { AttendanceResponse } from "@/types/attendance";
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import axiosServices from "@/utils/axios";
 
 
 export async function getAttendanceByOrg(
@@ -8,13 +7,9 @@ export async function getAttendanceByOrg(
   classId: string,
   date: string
 ): Promise<AttendanceResponse["items"]> {
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attendance?date=${date}&userType=STUDENT&classId=${classId}`
+  const { data } = await axiosServices.get<AttendanceResponse>(
+    `/orgs/${orgId}/attendance?date=${date}&userType=STUDENT&classId=${classId}`
   );
-
-  if (!res.ok) throw new Error("Failed to fetch attendance");
-
-  const data: AttendanceResponse = await res.json();
   return data.items;
 }
 
@@ -23,15 +18,9 @@ export async function getAttendanceByStudent(
   orgId: string,
   userId: string
 ): Promise<AttendanceResponse["items"]> {
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attscan?userId=${userId}`
+  const { data } = await axiosServices.get<AttendanceResponse>(
+    `/orgs/${orgId}/attscan?userId=${userId}`
   );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch student attendance");
-  }
-
-  const data: AttendanceResponse = await res.json();
   return data.items;
 }
 
@@ -45,15 +34,8 @@ export async function getAttendanceByDateRange(
     endDate,
   });
 
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attscan?${params.toString()}`
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch attendance");
-  }
-
-  return res.json();
+  const res = await axiosServices.get(`/orgs/${orgId}/attscan?${params.toString()}`);
+  return res.data;
 }
 
 export async function getClassAttendance(
@@ -66,15 +48,10 @@ export async function getClassAttendance(
     date,
   });
 
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attscan?${params.toString()}`
+  const res = await axiosServices.get<AttendanceResponse>(
+    `/orgs/${orgId}/attscan?${params.toString()}`
   );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch class attendance");
-  }
-
-  return res.json() as Promise<AttendanceResponse>;
+  return res.data;
 }
 
 export async function getCalendarView(
@@ -87,13 +64,8 @@ export async function getCalendarView(
     classId,
   });
 
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/calendar-view?${params.toString()}`
+  const res = await axiosServices.get(
+    `/orgs/${orgId}/calendar-view?${params.toString()}`
   );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch calendar view");
-  }
-
-  return res.json();
+  return res.data;
 }
