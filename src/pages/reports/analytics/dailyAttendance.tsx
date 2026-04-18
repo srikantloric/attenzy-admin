@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import useAuth from "@/hooks/useAuth";
-import { listGrades, listSections } from "@/api/academics";
+import { listGrades } from "@/api/academics";
 import { getAttendanceByOrg } from "@/api/reports/studentAttendance";
 
 import type { AcademicItem } from "@/types/academics";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
   Table,
@@ -64,7 +65,6 @@ export default function DailyAttendance() {
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [noData, setNoData] = useState(false);
-  const [search, setSearch] = useState("");
 
   /* ================= FETCH CLASSES ================= */
 
@@ -85,6 +85,7 @@ export default function DailyAttendance() {
 
   /* ================= GENERATE ATTENDANCE ================= */
 
+  // handleGenerate
   const handleGenerate = async () => {
     if (!orgId || !selectedClass || !selectedDate) {
       alert("Please select date and class");
@@ -95,23 +96,21 @@ export default function DailyAttendance() {
       setLoading(true);
       setNoData(false);
 
-      const data = await getAttendanceByOrg(orgId);
-
       const formattedDate = format(selectedDate, "yyyyMMdd");
 
-      const filtered = data.filter((item: any) => {
-        return (
-          item.date === formattedDate &&
-          item.userProfile?.class === selectedClass
-        );
-      });
+      const data = await getAttendanceByOrg(
+        orgId,
+        selectedClass,
+        formattedDate
+      );
 
-      if (filtered.length === 0) {
+      if (data.length === 0) {
         setNoData(true);
       }
 
-      const result = filtered.map((item: any) => ({
+      const result = data.map((item: any) => ({
         userId: item.userId,
+        profilePhoto: item.profilePhoto,
         name: item.userName,
         class: item.userProfile?.class,
         section: item.userProfile?.section,
@@ -133,21 +132,18 @@ export default function DailyAttendance() {
   /* ================= SUMMARY ================= */
 
   const total = attendanceData.length;
-
   const present = attendanceData.filter((a) => a.status === "PRESENT").length;
 
-  const filteredRecords = attendanceData.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const {
+    search,
+    setSearch,
     currentPage,
     setCurrentPage,
     rowsPerPage,
     filteredData,
     paginatedData,
   } = useFilterPagination({
-    data: filteredRecords,
+    data: attendanceData,
     searchKey: "name",
     getIsActive: () => true,
   });
@@ -227,10 +223,9 @@ export default function DailyAttendance() {
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">
-                Total Students Present
-              </p>
-              <p className="text-xl font-bold">{total}</p>
+              <p className="text-sm text-muted-foreground">Total Students</p>
+              <p className="text-xl font-bold">{total}</p>{" "}
+              {/* was wrongly labeled */}
             </CardContent>
           </Card>
 
@@ -301,15 +296,33 @@ export default function DailyAttendance() {
                   paginatedData.length > 0 &&
                   paginatedData.map((item: any) => (
                     <TableRow key={`${item.userId}-${item.time}`}>
-                      <TableCell>{item.name}</TableCell>
+                      <TableCell className="flex gap-2 items-center font-medium min-w-[140px] whitespace-nowrap">
+                        <Avatar>
+                          <AvatarImage
+                            src={item.profilePhoto || ""}
+                            alt={item.name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "";
+                            }}
+                          />
+                          <AvatarFallback>
+                            {item.name?.charAt(0)?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex flex-col items-start">
+                          <p className="font-bold">{item.name.toUpperCase()}</p>
+                          <span className="text-xs text-muted-foreground">
+                            {item.userId}
+                          </span>
+                        </div>
+                      </TableCell>
 
                       <TableCell>{item.class ?? "-"}</TableCell>
 
                       <TableCell>{item.section ?? "-"}</TableCell>
 
-                      <TableCell>
-                        {item.rollNumber ?? "-"}
-                      </TableCell>
+                      <TableCell>{item.rollNumber ?? "-"}</TableCell>
 
                       <TableCell>
                         {item.firstScan
@@ -323,12 +336,16 @@ export default function DailyAttendance() {
                           : "-"}
                       </TableCell>
 
-                      <TableCell>
-                        {item.source ?? "-"}
-                      </TableCell>
+                      <TableCell>{item.source ?? "-"}</TableCell>
 
                       <TableCell>
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            item.status === "PRESENT"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {item.status}
                         </span>
                       </TableCell>
