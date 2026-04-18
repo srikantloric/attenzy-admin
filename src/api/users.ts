@@ -80,7 +80,7 @@ export async function getSignedUploadUrl(
     fileSize,
   });
 
-  return res.data as { uploadUrl: string; fileUrl: string };
+  return res.data as { uploadUrl: string; publicUrl: string };
 }
 
 export async function updateUser(
