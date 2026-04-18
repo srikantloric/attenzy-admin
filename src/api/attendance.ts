@@ -1,8 +1,7 @@
 import type { AttendanceResponse } from "@/types/attendance";
 import type { AttendanceStatus } from "@/types/attendance";
 import type { AttendanceCalendarResponse } from "@/types/reports/attendance";
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import axiosServices from "@/utils/axios";
 
 
 export async function getAttendanceByOrg(orgId: string, date?: string) {
@@ -13,13 +12,9 @@ export async function getAttendanceByOrg(orgId: string, date?: string) {
   }
 
   const query = params.toString();
-  const url = `${BACKEND_BASE_URL}/orgs/${orgId}/attscan${query ? `?${query}` : ""}`;
-
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error("Failed to fetch attendance");
-  }
-  const data: AttendanceResponse = await res.json();
+  const { data } = await axiosServices.get<AttendanceResponse>(
+    `/orgs/${orgId}/attscan${query ? `?${query}` : ""}`
+  );
   return data.items;
 }
 
@@ -68,21 +63,15 @@ export async function updateManualAttendance(
     throw new Error("Max updates per request is 200");
   }
 
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attendance/manual`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.message || "Failed to update manual attendance");
+  try {
+    const { data } = await axiosServices.patch<ManualAttendanceUpdateResponse>(
+      `/orgs/${orgId}/attendance/manual`,
+      payload
+    );
+    return data;
+  } catch (error: any) {
+    throw new Error(error?.message || "Failed to update manual attendance");
   }
-
-  return res.json();
 }
 
 /* =========================
@@ -94,16 +83,10 @@ export async function getAttendanceCalendarView(
   month: string
 ): Promise<AttendanceCalendarResponse> {
   const query = new URLSearchParams({ month });
-
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/calendar-view?${query.toString()}`
+  const { data } = await axiosServices.get<AttendanceCalendarResponse>(
+    `/orgs/${orgId}/calendar-view?${query.toString()}`
   );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch attendance calendar view");
-  }
-
-  return res.json();
+  return data;
 }
 
 /* =========================

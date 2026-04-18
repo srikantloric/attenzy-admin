@@ -1,19 +1,30 @@
 export interface AttendanceItem {
   orgId: string
+  date: string
   userId: string
   userType: string
   userName: string
-  profilePhoto: string
+  profilePhoto: string | null
+
   userProfile: {
-    rollNumber: string
-    class: string
-    section: string
-    department: string
+    rollNumber?: string | null
+    class?: string
+    section?: string
+    department?: string
   }
-  deviceId: string
-  deviceName: string
-  rfidCode: string
-  timestamp: number
+
+  status: string
+  source: string
+
+  firstScan: number | null
+  lastScan: number | null
+  totalScans: number
+
+  deviceId: string | null
+  deviceName: string | null
+
+  createdAt: number
+  updatedAt: number
 }
 
 export interface AttendanceResponse {

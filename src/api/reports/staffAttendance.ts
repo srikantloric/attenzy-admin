@@ -1,18 +1,12 @@
 import type { AttendanceCalendarResponse } from "@/types/reports/attendance"
-
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL
+import axiosServices from "@/utils/axios"
 
 export async function getStaffCalendarView(
   orgId: string,
   month: string
 ): Promise<AttendanceCalendarResponse> {
-  const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/calendar-view?month=${month}&userType=STAFF`
+  const res = await axiosServices.get(
+    `/orgs/${orgId}/calendar-view?month=${month}&userType=STAFF`
   )
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch staff attendance")
-  }
-
-  return res.json()
+  return res.data
 }

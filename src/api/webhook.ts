@@ -62,19 +62,10 @@ export async function testWebhook(
     eventType: string
   }
 ) {
-  const res = await fetch(
-    `${import.meta.env.VITE_BACKEND_BASE_URL}/webhooks/${webhookId}/test`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }
-  )
-
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.message || "Test failed")
+  try {
+    const res = await axiosServices.post(`/webhooks/${webhookId}/test`, payload)
+    return res.data
+  } catch (error: any) {
+    throw new Error(error?.message || "Test failed")
   }
-
-  return res.json()
 }
