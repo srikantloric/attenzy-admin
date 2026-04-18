@@ -8,7 +8,7 @@ export async function getAttendanceByOrg(
 ): Promise<AttendanceResponse["items"]> {
 
   const res = await fetch(
-    `${BACKEND_BASE_URL}/orgs/${orgId}/attscan`
+    `${BACKEND_BASE_URL}/orgs/${orgId}/attendance?userType=STUDENT`
   )
 
   if (!res.ok) {

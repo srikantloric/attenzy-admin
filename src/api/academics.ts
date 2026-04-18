@@ -5,9 +5,6 @@ import type {
   UpdateAcademicPayload
 } from "@/types/academics"
 
-/* =====================================================
-   GRADES
-===================================================== */
 
 /* LIST */
 export async function listGrades(
@@ -54,7 +51,6 @@ export async function deleteGrade(
   )
   return res.data
 }
-
 
 
 /* =====================================================

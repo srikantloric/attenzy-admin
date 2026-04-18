@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import useAuth from "@/hooks/useAuth";
-
-import { listGrades } from "@/api/academics";
-import { getAttendanceByOrg } from "@/api/attendance";
+import { listGrades, listSections } from "@/api/academics";
+import { getAttendanceByOrg } from "@/api/reports/studentAttendance";
 
 import type { AcademicItem } from "@/types/academics";
 
@@ -60,8 +59,7 @@ export default function DailyAttendance() {
   );
 
   const [grades, setGrades] = useState<AcademicItem[]>([]);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSection, setSelectedSection] = useState("");
+  const [selectedClass, setSelectedClass] = useState<string>();
 
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,14 +97,12 @@ export default function DailyAttendance() {
 
       const data = await getAttendanceByOrg(orgId);
 
-      const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      const formattedDate = format(selectedDate, "yyyyMMdd");
 
       const filtered = data.filter((item: any) => {
         return (
           item.date === formattedDate &&
-          item.userProfile?.class === selectedClass &&
-          (selectedSection === "" ||
-            item.userProfile?.section === selectedSection)
+          item.userProfile?.class === selectedClass
         );
       });
 
@@ -120,8 +116,10 @@ export default function DailyAttendance() {
         class: item.userProfile?.class,
         section: item.userProfile?.section,
         rollNumber: item.userProfile?.rollNumber,
-        firstScan: item.time,
-        status: "PRESENT",
+        firstScan: item.firstScan,
+        lastScan: item.lastScan,
+        source: item.source,
+        status: item.status,
       }));
 
       setAttendanceData(result);
@@ -209,23 +207,6 @@ export default function DailyAttendance() {
             </SelectContent>
           </Select>
 
-          {/* SECTION SELECT */}
-
-          <Select
-            value={selectedSection}
-            onValueChange={(val) => setSelectedSection(val)}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Select Section" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="A">A</SelectItem>
-              <SelectItem value="B">B</SelectItem>
-              <SelectItem value="C">C</SelectItem>
-            </SelectContent>
-          </Select>
-
           {/* GENERATE BUTTON */}
 
           <Button type="button" onClick={handleGenerate} className="w-[140px]">
@@ -290,6 +271,8 @@ export default function DailyAttendance() {
                   <TableHead>Section</TableHead>
                   <TableHead>Roll No</TableHead>
                   <TableHead>First Scan</TableHead>
+                  <TableHead>Last Scan</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -319,10 +302,30 @@ export default function DailyAttendance() {
                   paginatedData.map((item: any) => (
                     <TableRow key={`${item.userId}-${item.time}`}>
                       <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.class}</TableCell>
-                      <TableCell>{item.section}</TableCell>
-                      <TableCell>{item.rollNumber}</TableCell>
-                      <TableCell>{item.firstScan}</TableCell>
+
+                      <TableCell>{item.class ?? "-"}</TableCell>
+
+                      <TableCell>{item.section ?? "-"}</TableCell>
+
+                      <TableCell>
+                        {item.rollNumber ?? "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        {item.firstScan
+                          ? new Date(item.firstScan).toLocaleTimeString()
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        {item.lastScan
+                          ? new Date(item.lastScan).toLocaleTimeString()
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        {item.source ?? "-"}
+                      </TableCell>
 
                       <TableCell>
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">
