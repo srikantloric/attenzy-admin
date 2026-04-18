@@ -222,9 +222,7 @@ export function Drawer(props: React.ComponentProps<typeof Sidebar>) {
           user={{
             name: user?.name ?? "",
             email: user?.email ?? "",
-            avatar:
-              user?.avatar ||
-              "https://png.pngtree.com/png-vector/20240528/ourmid/pngtree-indian-doctor-woman-smiling-at-camera-png-image_12531120.png",
+            avatar: user?.avatar || "https://ui-avatars.com/api/?name=" + user?.name,
           }}
         />
       </SidebarFooter>

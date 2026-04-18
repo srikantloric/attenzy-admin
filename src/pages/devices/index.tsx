@@ -1,6 +1,7 @@
 import useAuth from "@/hooks/useAuth";
 import PartnerDevice from "./partnerDevicePage";
 import OrganizationDevice from "./organizationDevicePage";
+import PlatformDevice from "./platformDevicePage";
 
 function DevicePage() {
     const { user } = useAuth();
@@ -9,7 +10,7 @@ function DevicePage() {
 
     switch (user?.role) {
         case 'PLATFORM_ADMIN':
-            return <PartnerDevice />;
+            return <PlatformDevice />;
         case 'CHANNEL_PARTNER':
             return <PartnerDevice />;
 

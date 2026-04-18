@@ -64,3 +64,7 @@ export async function getOrganizationById(
 ): Promise<CreateOrganizationResponse> {
   return (await axiosServices.get("/organizations/" + orgId)).data;
 }
+
+export async function listAllOrganizations(): Promise<GetOrganizationsResponse> {
+  return (await axiosServices.get("/organizations")).data;
+}

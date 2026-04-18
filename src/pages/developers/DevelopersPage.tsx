@@ -54,9 +54,9 @@ function DevelopersPage() {
       >
         <TabsList variant="line">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="keys">API Keys</TabsTrigger>
+          {/* <TabsTrigger value="keys">API Keys</TabsTrigger> */}
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="apis">API Reference</TabsTrigger>
+          {/* <TabsTrigger value="apis">API Reference</TabsTrigger> */}
         </TabsList>
 
         <Outlet />

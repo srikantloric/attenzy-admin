@@ -131,6 +131,7 @@ const pages: NavItemType = {
       type: "item",
       url: "/reports",
       icon: icons.report,
+      roles:["ORGANIZATION"]
     },
   ],
 };
