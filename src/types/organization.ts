@@ -15,6 +15,7 @@ export interface OrganizationApi  {
   orgEmail: string
   orgPhone: string
   orgAddress: string
+  password?: string
   partnerId: string
   deviceCount: number
 
@@ -45,6 +46,7 @@ export interface OrganizationUI {
   address: string
   partnerId: string
   devices: number
+  password?: string
 
   profileImageUrl?: string;
   

@@ -14,8 +14,6 @@ import ManualAttendancePage from "@/pages/attendance/manualAttendance";
 import PartnersPage from "@/pages/partners/PartnersPage";
 import PartnerDetailsPage from "@/components/partners/PartnerDetailsPage";
 
-import Organizations from "@/pages/organizations/organizationsPage";
-import OrganizationDetailsPage from "@/components/organizations/OrganizationDetailsPage";
 
 import DevelopersPage from "@/pages/developers/DevelopersPage";
 import OverviewTab from "@/pages/developers/OverviewTab";
@@ -49,11 +47,16 @@ import CalanderWorkingDayTab from "@/pages/settings/CalanderWorkingDayTab";
 import AlertsNotificationsTab from "@/pages/settings/AlertsNotificationsTab";
 import AccessControlsTab from "@/pages/settings/AccessControlsTab";
 import AddPeoplePage from "@/pages/people/add-people";
+import OrganizationsPage from "@/pages/organizations";
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
 const Attendance = Loadable(
-  lazy(() => import("@/pages/attendance/manualAttendance"))
+  lazy(() => import("@/pages/attendance/manualAttendance")),
+);
+
+const OrgDetailsPage = Loadable(
+  lazy(() => import("@/pages/organizations/OrganizationDetailsPage")),
 );
 
 // ==============================|| MAIN ROUTES ||============================== //
@@ -208,7 +211,7 @@ const MainRoutes = {
     // Organizations
     {
       path: "organizations",
-      element: <Organizations />,
+      element: <OrganizationsPage />,
       handle: { breadcrumb: "Organizations" },
     },
 
@@ -271,7 +274,7 @@ const MainRoutes = {
 
     {
       path: "organizations/:organizationId",
-      element: <OrganizationDetailsPage />,
+      element: <OrgDetailsPage />,
       handle: { breadcrumb: "Organization Details" },
     },
     // Developers (nested tabs)
