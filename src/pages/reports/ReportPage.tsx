@@ -150,6 +150,17 @@ function ReportPage() {
                     link: "working-days-report"
                 }
             ]
+        },
+        {
+            category: "Payroll Management",
+            reports: [
+                {
+                    title: "Staff & Faculty Payroll Report",
+                    description:
+                        "Monthly payroll with half-day and leave-based deductions",
+                    link: "payroll-report"
+                }
+            ]
         }
     ]
 

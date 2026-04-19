@@ -35,11 +35,15 @@ export interface StudentProfile {
 export interface StaffProfile {
   designation: string;
   department: string;
+  monthlyPayment: number;
+  ctc: number;
 }
 
 export interface FacultyProfile {
   department: string;
   subjects: string;
+  monthlyPayment: number;
+  ctc: number;
 }
 
 export interface AssignRFIDResponse {

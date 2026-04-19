@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
@@ -8,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 import {
   Select,
@@ -32,6 +38,10 @@ import { userSchema, type UserFormValues } from "@/schemas/user.schema";
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { createUser, getSignedUploadUrl } from "@/api/users";
+import {
+  upsertPayrollPaymentDetails,
+} from "@/api/payrollManagement";
+import type { PayrollPaymentMode } from "@/types/payroll-management";
 
 import { listGrades, listSections, listDepartments } from "@/api/academics";
 import type { AcademicItem } from "@/types/academics";
@@ -60,6 +70,17 @@ const AddPeoplePage = () => {
   const [sections, setSections] = useState<AcademicItem[]>([]);
   const [departments, setDepartments] = useState<AcademicItem[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    employment: true,
+    payment: false,
+  });
+  const [paymentMode, setPaymentMode] = useState<PayrollPaymentMode>("BANK");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [upiId, setUpiId] = useState("");
 
   const {
     register,
@@ -77,9 +98,45 @@ const AddPeoplePage = () => {
   });
 
   const selectedType = watch("userType");
+  const isPayrollUser = selectedType === "STAFF" || selectedType === "FACULTY";
   const dob = watch("dob");
   const photo = watch("profilePhoto");
   const gender = watch("gender");
+
+  const hasValue = (value: unknown) =>
+    value !== undefined && value !== null && String(value).trim().length > 0;
+
+  const requiresBank = paymentMode === "BANK" || paymentMode === "BANK_AND_UPI";
+  const requiresUpi = paymentMode === "UPI" || paymentMode === "BANK_AND_UPI";
+
+  const completionItems = isPayrollUser
+    ? [
+        hasValue(watch("name")),
+        hasValue(watch("phone")),
+        hasValue(watch("email")),
+        hasValue(watch("rfidCode")),
+        hasValue(watch("profile.department")),
+        selectedType === "STAFF"
+          ? hasValue(watch("profile.designation"))
+          : hasValue(watch("profile.subjects")),
+        Number(watch("profile.monthlyPayment")) > 0,
+        Number(watch("profile.ctc")) > 0,
+        hasValue(paymentMode),
+        requiresBank
+          ? hasValue(accountHolderName) &&
+            hasValue(accountNumber) &&
+            hasValue(ifscCode) &&
+            hasValue(bankName)
+          : true,
+        requiresUpi ? hasValue(upiId) : true,
+      ]
+    : [];
+
+  const formProgress = isPayrollUser
+    ? Math.round(
+        (completionItems.filter(Boolean).length / Math.max(completionItems.length, 1)) * 100,
+      )
+    : 0;
 
   /* ================= FETCH ================= */
 
@@ -104,6 +161,13 @@ const AddPeoplePage = () => {
 
   useEffect(() => {
     resetField("profile");
+    setPaymentMode("BANK");
+    setAccountHolderName("");
+    setAccountNumber("");
+    setIfscCode("");
+    setBankName("");
+    setBranchName("");
+    setUpiId("");
   }, [selectedType]);
 
   /* ================= FILE UPLOAD ================= */
@@ -171,11 +235,49 @@ const AddPeoplePage = () => {
   const onSubmit = async (data: UserFormValues) => {
     if (!orgId) return;
 
+    if (isPayrollUser) {
+      if (requiresBank && (!accountHolderName || !accountNumber || !ifscCode || !bankName)) {
+        toast.error("Bank details are required for selected payment mode");
+        return;
+      }
+
+      if (requiresUpi && !upiId) {
+        toast.error("UPI ID is required for selected payment mode");
+        return;
+      }
+    }
+
     try {
-      await createUser(orgId, data);
-      toast.success(`${data.userType} added successfully`);
-      navigate(`/${data.userType.toLowerCase()}s`);
-      console.log(data);
+      const normalizedData = userSchema.parse(data);
+      const created = await createUser(orgId, normalizedData);
+      const userId = created?.userId || created?.item?.userId || created?.data?.userId;
+
+      if (
+        (normalizedData.userType === "STAFF" || normalizedData.userType === "FACULTY") &&
+        userId
+      ) {
+        await upsertPayrollPaymentDetails(orgId, {
+          userId,
+          userName: normalizedData.name,
+          userType: normalizedData.userType,
+          department: normalizedData.profile.department,
+          paymentMode,
+          bankDetails: requiresBank
+            ? {
+                accountHolderName,
+                accountNumber,
+                ifscCode: ifscCode.toUpperCase(),
+                bankName,
+                branchName,
+              }
+            : undefined,
+          upiDetails: requiresUpi ? { upiId } : undefined,
+          isActive: true,
+        });
+      }
+
+      toast.success(`${normalizedData.userType} added successfully`);
+      navigate(`/${normalizedData.userType.toLowerCase()}s`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to create user");
     }
@@ -217,6 +319,21 @@ const AddPeoplePage = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
           >
+            {isPayrollUser && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Form Progress</span>
+                  <span>{formProgress}%</span>
+                </div>
+                <div className="h-2 rounded bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${formProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* PROFILE PHOTO */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground">
@@ -385,63 +502,305 @@ const AddPeoplePage = () => {
 
             {selectedType === "STAFF" && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <Label className="mb-1">Designation *</Label>
-                    <Input {...register("profile.designation")} />
-                  </div>
+                <Collapsible
+                  open={openSections.employment}
+                  onOpenChange={(open) =>
+                    setOpenSections((prev) => ({ ...prev, employment: open }))
+                  }
+                >
+                  <div className="rounded-lg border">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 text-left"
+                      >
+                        <span className="font-medium">Employment & Compensation</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            openSections.employment ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-3 pb-3 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <Label className="mb-1">Designation *</Label>
+                          <Input {...register("profile.designation")} />
+                        </div>
 
-                  <div className="space-y-1.5">
-                    <Label>Department *</Label>
-                    <Select
-                      onValueChange={(val) =>
-                        setValue("profile.department", val)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((d) => (
-                          <SelectItem key={d.departmentId} value={d.name}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        <div className="space-y-1.5">
+                          <Label>Department *</Label>
+                          <Select
+                            value={watch("profile.department") || ""}
+                            onValueChange={(val) => setValue("profile.department", val)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Department" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {departments.map((d) => (
+                                <SelectItem key={d.departmentId} value={d.name}>
+                                  {d.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="mb-1">Monthly Payment *</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            {...register("profile.monthlyPayment", { valueAsNumber: true })}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="mb-1">CTC *</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            {...register("profile.ctc", { valueAsNumber: true })}
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                </div>
+                </Collapsible>
+
+                <Collapsible
+                  open={openSections.payment}
+                  onOpenChange={(open) =>
+                    setOpenSections((prev) => ({ ...prev, payment: open }))
+                  }
+                >
+                  <div className="rounded-lg border">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 text-left"
+                      >
+                        <span className="font-medium">Payment Details</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            openSections.payment ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-3 pb-3 space-y-4">
+                      <div className="space-y-1.5">
+                        <Label>Payment Mode *</Label>
+                        <Select
+                          value={paymentMode}
+                          onValueChange={(val) => setPaymentMode(val as PayrollPaymentMode)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="BANK">Bank</SelectItem>
+                            <SelectItem value="UPI">UPI</SelectItem>
+                            <SelectItem value="BANK_AND_UPI">Bank + UPI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {requiresBank && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <Input
+                            placeholder="Account holder name"
+                            value={accountHolderName}
+                            onChange={(event) => setAccountHolderName(event.target.value)}
+                          />
+                          <Input
+                            placeholder="Account number"
+                            value={accountNumber}
+                            onChange={(event) => setAccountNumber(event.target.value)}
+                          />
+                          <Input
+                            placeholder="IFSC code"
+                            value={ifscCode}
+                            onChange={(event) => setIfscCode(event.target.value.toUpperCase())}
+                          />
+                          <Input
+                            placeholder="Bank name"
+                            value={bankName}
+                            onChange={(event) => setBankName(event.target.value)}
+                          />
+                          <Input
+                            className="md:col-span-2"
+                            placeholder="Branch name (optional)"
+                            value={branchName}
+                            onChange={(event) => setBranchName(event.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      {requiresUpi && (
+                        <Input
+                          placeholder="UPI ID"
+                          value={upiId}
+                          onChange={(event) => setUpiId(event.target.value)}
+                        />
+                      )}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               </>
             )}
 
             {selectedType === "FACULTY" && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <Label>Department *</Label>
-                    <Select
-                      onValueChange={(val) =>
-                        setValue("profile.department", val)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((d) => (
-                          <SelectItem key={d.departmentId} value={d.name}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <Collapsible
+                  open={openSections.employment}
+                  onOpenChange={(open) =>
+                    setOpenSections((prev) => ({ ...prev, employment: open }))
+                  }
+                >
+                  <div className="rounded-lg border">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 text-left"
+                      >
+                        <span className="font-medium">Employment & Compensation</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            openSections.employment ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-3 pb-3 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                          <Label>Department *</Label>
+                          <Select
+                            value={watch("profile.department") || ""}
+                            onValueChange={(val) => setValue("profile.department", val)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Department" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {departments.map((d) => (
+                                <SelectItem key={d.departmentId} value={d.name}>
+                                  {d.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                  <div>
-                    <Label className="mb-1">Subjects *</Label>
-                    <Input {...register("profile.subjects")} />
+                        <div>
+                          <Label className="mb-1">Subjects *</Label>
+                          <Input {...register("profile.subjects")} />
+                        </div>
+
+                        <div>
+                          <Label className="mb-1">Monthly Payment *</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            {...register("profile.monthlyPayment", { valueAsNumber: true })}
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="mb-1">CTC *</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            {...register("profile.ctc", { valueAsNumber: true })}
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                </div>
+                </Collapsible>
+
+                <Collapsible
+                  open={openSections.payment}
+                  onOpenChange={(open) =>
+                    setOpenSections((prev) => ({ ...prev, payment: open }))
+                  }
+                >
+                  <div className="rounded-lg border">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 text-left"
+                      >
+                        <span className="font-medium">Payment Details</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            openSections.payment ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-3 pb-3 space-y-4">
+                      <div className="space-y-1.5">
+                        <Label>Payment Mode *</Label>
+                        <Select
+                          value={paymentMode}
+                          onValueChange={(val) => setPaymentMode(val as PayrollPaymentMode)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="BANK">Bank</SelectItem>
+                            <SelectItem value="UPI">UPI</SelectItem>
+                            <SelectItem value="BANK_AND_UPI">Bank + UPI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {requiresBank && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <Input
+                            placeholder="Account holder name"
+                            value={accountHolderName}
+                            onChange={(event) => setAccountHolderName(event.target.value)}
+                          />
+                          <Input
+                            placeholder="Account number"
+                            value={accountNumber}
+                            onChange={(event) => setAccountNumber(event.target.value)}
+                          />
+                          <Input
+                            placeholder="IFSC code"
+                            value={ifscCode}
+                            onChange={(event) => setIfscCode(event.target.value.toUpperCase())}
+                          />
+                          <Input
+                            placeholder="Bank name"
+                            value={bankName}
+                            onChange={(event) => setBankName(event.target.value)}
+                          />
+                          <Input
+                            className="md:col-span-2"
+                            placeholder="Branch name (optional)"
+                            value={branchName}
+                            onChange={(event) => setBranchName(event.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      {requiresUpi && (
+                        <Input
+                          placeholder="UPI ID"
+                          value={upiId}
+                          onChange={(event) => setUpiId(event.target.value)}
+                        />
+                      )}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               </>
             )}
 
