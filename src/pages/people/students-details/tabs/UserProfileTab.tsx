@@ -50,7 +50,13 @@ function StudentsProfileTab() {
       | undefined,
     address: user.address || "",
     externalId: user.externalId || "",
-    profile: { ...user.profile },
+    profile: {
+      ...user.profile,
+      ...(user.userType === "STAFF" || user.userType === "FACULTY" ? {
+        monthlyPayment: user.profile?.monthlyPayment ?? undefined,
+        ctc: user.profile?.ctc ?? undefined,
+      } : {}),
+    },
   };
 
   const [formData, setFormData] = useState(initialData);
@@ -189,7 +195,7 @@ function StudentsProfileTab() {
 
           <div className="flex items-start gap-2 text-sm">
             <MapPin size={16} className="mt-0.5" />
-            <p className="break-words">
+            <p className="break-word">
               {user.address || "Address not available"}
             </p>
           </div>
@@ -291,6 +297,8 @@ function StudentsProfileTab() {
               const profile = formData.profile as {
                 department: string;
                 subjects: string;
+                monthlyPayment?: number;
+                ctc?: number;
               };
 
               return (
@@ -305,7 +313,7 @@ function StudentsProfileTab() {
                           profile: {
                             ...profile,
                             department: e.target.value,
-                          },
+                          } as any,
                         })
                       }
                     />
@@ -321,7 +329,7 @@ function StudentsProfileTab() {
                           profile: {
                             ...profile,
                             subjects: e.target.value,
-                          },
+                          } as any,
                         })
                       }
                     />
@@ -336,6 +344,8 @@ function StudentsProfileTab() {
               const profile = formData.profile as {
                 designation: string;
                 department: string;
+                monthlyPayment?: number;
+                ctc?: number;
               };
 
               return (
@@ -350,7 +360,7 @@ function StudentsProfileTab() {
                           profile: {
                             ...profile,
                             designation: e.target.value,
-                          },
+                          } as any,
                         })
                       }
                     />
@@ -366,7 +376,7 @@ function StudentsProfileTab() {
                           profile: {
                             ...profile,
                             department: e.target.value,
-                          },
+                          } as any,
                         })
                       }
                     />

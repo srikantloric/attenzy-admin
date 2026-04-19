@@ -1,14 +1,16 @@
 // project-imports
-import pages from './pages';
-import settings from './settings';
+import pages from "./pages";
+import payroll from "./payroll";
+import report from "./report";
+import settings from "./settings";
 
 // types
-import type { NavItemType } from '@/types/menu';
+import type { NavItemType } from "@/types/menu";
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems: { items: NavItemType[] } = {
-    items: [pages, settings]
+  items: [pages, payroll, report, settings],
 };
 
 export default menuItems;

@@ -2,7 +2,6 @@ import type { NavItemType } from "@/types/menu";
 import {
   FingerprintPattern,
   Hotel,
-  Notebook,
   SatelliteDish,
   User,
   Users,
@@ -13,7 +12,7 @@ const icons = {
   dashboard: IconLayoutDashboard,
   user: User,
   device: SatelliteDish,
-  report: Notebook,
+
   attendance: FingerprintPattern,
   orgnization: Hotel,
   partners: Users,
@@ -125,14 +124,7 @@ const pages: NavItemType = {
       icon: icons.partners,
       roles: ["PLATFORM_ADMIN"],
     },
-    {
-      id: "reports",
-      title: "Reports",
-      type: "item",
-      url: "/reports",
-      icon: icons.report,
-      roles:["ORGANIZATION"]
-    },
+   
   ],
 };
 export default pages;

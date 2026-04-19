@@ -242,7 +242,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="relative flex h-full w-full flex-col bg-linear-to-tl from-secondary via-[#00292B]/90 to-secondary
+          className="relative flex h-full w-full flex-col bg-linear-to-b from-secondary via-[#00292B]/90 to-slate-900
            text-white
           dark:bg-linear-to-tl dark:from-secondary dark:via-[#00292B]/10 dark:to-secondary
           "

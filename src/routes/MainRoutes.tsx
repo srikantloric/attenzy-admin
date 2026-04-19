@@ -42,12 +42,17 @@ import AttendanceTrendGraph from "@/pages/reports/analytics/attendanceTrendGraph
 import OrganizationAttendance from "@/pages/reports/analytics/organizationAttendance";
 import TopAbsentees from "@/pages/reports/leaderboard/topAbsentees";
 import StudentLeaderboard from "@/pages/reports/leaderboard/studentLeaderboard";
+import PayrollReport from "@/pages/reports/payroll/PayrollReport";
+import PayrollManagement from "@/pages/payroll/PayrollManagement";
+import PaymentSetup from "@/pages/payroll/PaymentSetup";
+import IndividualPayouts from "@/pages/payroll/IndividualPayouts";
 import ImportExportTab from "@/pages/settings/ImportExportTab";
 import CalanderWorkingDayTab from "@/pages/settings/CalanderWorkingDayTab";
 import AlertsNotificationsTab from "@/pages/settings/AlertsNotificationsTab";
 import AccessControlsTab from "@/pages/settings/AccessControlsTab";
 import AddPeoplePage from "@/pages/people/add-people";
 import OrganizationsPage from "@/pages/organizations";
+import PaymentDetails from "@/pages/payroll/PaymentDetails";
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
@@ -268,6 +273,58 @@ const MainRoutes = {
           path: "rank-students",
           element: <StudentLeaderboard />,
           handle: { breadcrumb: "Student Leaderboard" },
+        },
+        {
+          path: "payroll-report",
+          element: <PayrollReport />,
+          handle: { breadcrumb: "Payroll Report" },
+        },
+      ],
+    },
+
+    {
+      path: "payroll",
+      handle: { breadcrumb: "Payroll" },
+      children: [
+        {
+          index: true,
+          element: <PayrollManagement />,
+          handle: { breadcrumb: "Payroll Management" },
+        },
+        {
+          path: "management",
+          element: <PayrollManagement />,
+          handle: { breadcrumb: "Payroll Management" },
+        },
+        {
+          path: "payment-setup",
+          element: <PaymentSetup />,
+          handle: { breadcrumb: "Payment Setup" },
+        },
+        {
+          path: "payment-details",
+          element: <PaymentDetails />,
+          handle: { breadcrumb: "Payment Details" },
+        },
+        {
+          path: "deductions",
+          element: <PaymentSetup />,
+          handle: { breadcrumb: "Payment Setup" },
+        },
+        {
+          path: "individual-payouts",
+          element: <IndividualPayouts />,
+          handle: { breadcrumb: "Payouts & Dues" },
+        },
+        {
+          path: "dues",
+          element: <IndividualPayouts />,
+          handle: { breadcrumb: "Payouts & Dues" },
+        },
+        {
+          path: "report",
+          element: <PayrollReport />,
+          handle: { breadcrumb: "Payroll Report" },
         },
       ],
     },

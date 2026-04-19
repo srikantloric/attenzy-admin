@@ -41,6 +41,8 @@ export const userSchema = z.discriminatedUnion("userType", [
     profile: z.object({
       designation: z.string().min(1, "Designation is required"),
       department: z.string().min(1, "Department is required"),
+      monthlyPayment: z.number().optional(),
+      ctc: z.number().optional(),
     }),
   }),
 
@@ -51,10 +53,12 @@ export const userSchema = z.discriminatedUnion("userType", [
     profile: z.object({
       department: z.string().min(1, "Department is required"),
       subjects: z.string().min(1, "Subjects required"),
+      monthlyPayment: z.number().optional(),
+      ctc: z.number().optional(),
     }),
   }),
 ]);
 
 /* ================= TYPES ================= */
 
-export type UserFormValues = z.infer<typeof userSchema>;
+export type UserFormValues = z.input<typeof userSchema>;
