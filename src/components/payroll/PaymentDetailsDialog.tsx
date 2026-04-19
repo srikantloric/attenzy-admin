@@ -278,7 +278,7 @@ export default function PaymentDetailsDialog({
     <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : closeDialog())}>
       <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-hidden border-0 bg-background p-0 shadow-2xl">
         <div className="grid max-h-[92vh] md:grid-cols-[0.95fr_1.05fr]">
-          <div className="bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white">
+          <div className="bg-linear-to-br from-secondary via-slate-900 to-slate-800 p-6 text-white">
             <DialogHeader className="text-left">
               <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/80">
                 <Plus className="h-3.5 w-3.5" />
