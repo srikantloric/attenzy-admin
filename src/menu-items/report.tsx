@@ -1,5 +1,5 @@
 import type { NavItemType } from "@/types/menu";
-import {  Notebook } from "lucide-react";
+import {  Notebook } from "lucide-react"; 
 
 // icons
 const icons = {

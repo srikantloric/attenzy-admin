@@ -53,6 +53,7 @@ import AccessControlsTab from "@/pages/settings/AccessControlsTab";
 import AddPeoplePage from "@/pages/people/add-people";
 import OrganizationsPage from "@/pages/organizations";
 import PaymentDetails from "@/pages/payroll/PaymentDetails";
+import IntegrationsPage from "@/pages/integrations/integrations";
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
@@ -218,6 +219,12 @@ const MainRoutes = {
       path: "organizations",
       element: <OrganizationsPage />,
       handle: { breadcrumb: "Organizations" },
+    },
+
+    {
+      path: "integrations",
+      element: <IntegrationsPage/>,
+      handle: { breadcrumb: "Integrations"}
     },
 
     {
