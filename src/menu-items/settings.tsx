@@ -13,7 +13,7 @@ const settings: NavItemType = {
   id: "group-other",
   title: "Other",
   type: "group",
-  roles: ["CHANNEL_PARTNER", "ORGANIZATION", "PLATFORM_ADMIN"],
+  roles: ["CHANNEL_PARTNER", "ORGANIZATION", "PLATFORM_ADMIN"], 
   children: [
     {
       id: "developers",
