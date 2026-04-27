@@ -11,11 +11,19 @@ import {
   Plus,
 } from "lucide-react";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 
 export default function WhatsAppSection() {
+  const location = useLocation();
+  const isChildRoute = location.pathname.includes("/configuration");
+
+  if (isChildRoute) {
+    return <Outlet />;
+  }
+
   return (
     <div className="lg:p-6 md:p-3 space-y-6">
-        <AppBreadcrumb />
+      <AppBreadcrumb />
 
       {/* Header */}
       <div>
@@ -75,6 +83,7 @@ export default function WhatsAppSection() {
           icon={<Settings />}
           title="Configuration Settings"
           desc="Control limits & preferences"
+          route="/integrations/whatsapp/configuration"
         />
       </div>
 
@@ -129,15 +138,23 @@ export default function WhatsAppSection() {
           </CardContent>
         </Card>
       </div>
+
+      <Outlet />
+
     </div>
   );
 }
 
 /* Reusable components */
 
-function ActionCard({ icon, title, desc }: any) {
+function ActionCard({ icon, title, desc, route }: any) {
+  const navigate = useNavigate();
+
   return (
-    <Card>
+    <Card
+      onClick={() => navigate(route)}
+      className="cursor-pointer hover:shadow-md transition"
+    >
       <CardContent className="p-5 flex gap-4">
         <div className="bg-muted p-3 rounded-xl">{icon}</div>
         <div>

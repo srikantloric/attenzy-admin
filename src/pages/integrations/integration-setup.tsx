@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,6 +153,8 @@ export default function IntegrationSetup() {
                     </CardContent>
                 </Card>
             )}
+
+            <Outlet />
         </div>
     );
 }
