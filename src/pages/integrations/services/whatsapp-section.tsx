@@ -139,8 +139,6 @@ export default function WhatsAppSection() {
         </Card>
       </div>
 
-      <Outlet />
-
     </div>
   );
 }
