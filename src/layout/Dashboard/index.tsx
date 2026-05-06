@@ -15,7 +15,7 @@ function MainLayout() {
           <Drawer />
 
           {/* Main Content */}
-          <SidebarInset className="min-w-0 flex flex-col">
+          <SidebarInset className="min-w-0 flex flex-col overflow-hidden">
 
             <AppBar />
 
