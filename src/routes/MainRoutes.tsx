@@ -54,6 +54,9 @@ import AddPeoplePage from "@/pages/people/add-people";
 import OrganizationsPage from "@/pages/organizations";
 import PaymentDetails from "@/pages/payroll/PaymentDetails";
 import IntegrationsPage from "@/pages/integrations/integrations";
+import IntegrationSetup from "@/pages/integrations/integration-setup";
+import WhatsAppConfiguration from "@/pages/integrations/services/whatsapp-configuration";
+import WhatsAppSection from "@/pages/integrations/services/whatsapp-section";
 
 // lazy pages
 const Dashboard = Loadable(lazy(() => import("@/pages/dashboard")));
@@ -64,6 +67,13 @@ const Attendance = Loadable(
 const OrgDetailsPage = Loadable(
   lazy(() => import("@/pages/organizations/OrganizationDetailsPage")),
 );
+
+const formatLabel = (text: string) => {
+  return text
+    ?.split("-")
+    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
 
 // ==============================|| MAIN ROUTES ||============================== //
 const MainRoutes = {
@@ -223,8 +233,36 @@ const MainRoutes = {
 
     {
       path: "integrations",
-      element: <IntegrationsPage/>,
-      handle: { breadcrumb: "Integrations"}
+      handle: { breadcrumb: "Integration" },
+
+      children: [
+        {
+          index: true,
+          element: <IntegrationsPage />,
+        },
+        {
+          path: ":type",
+          element: <IntegrationSetup />,
+          handle: {
+            breadcrumb: ({ params }: any) =>
+              formatLabel(params.type),
+          },
+
+          children: [
+            {
+              index: true,
+              element: <WhatsAppSection />,
+            },
+            {
+              path: "configuration",
+              element: <WhatsAppConfiguration />,
+              handle: {
+                breadcrumb: "Configuration",
+              },
+            },
+          ],
+        },
+      ],
     },
 
     {

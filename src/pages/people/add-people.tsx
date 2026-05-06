@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,9 +37,7 @@ import { userSchema, type UserFormValues } from "@/schemas/user.schema";
 import { toast } from "sonner";
 import useAuth from "@/hooks/useAuth";
 import { createUser, getSignedUploadUrl } from "@/api/users";
-import {
-  upsertPayrollPaymentDetails,
-} from "@/api/payrollManagement";
+import { upsertPayrollPaymentDetails } from "@/api/payrollManagement";
 import type { PayrollPaymentMode } from "@/types/payroll-management";
 
 import { listGrades, listSections, listDepartments } from "@/api/academics";
@@ -103,40 +100,8 @@ const AddPeoplePage = () => {
   const photo = watch("profilePhoto");
   const gender = watch("gender");
 
-  const hasValue = (value: unknown) =>
-    value !== undefined && value !== null && String(value).trim().length > 0;
-
   const requiresBank = paymentMode === "BANK" || paymentMode === "BANK_AND_UPI";
   const requiresUpi = paymentMode === "UPI" || paymentMode === "BANK_AND_UPI";
-
-  const completionItems = isPayrollUser
-    ? [
-        hasValue(watch("name")),
-        hasValue(watch("phone")),
-        hasValue(watch("email")),
-        hasValue(watch("rfidCode")),
-        hasValue(watch("profile.department")),
-        selectedType === "STAFF"
-          ? hasValue(watch("profile.designation"))
-          : hasValue(watch("profile.subjects")),
-        Number(watch("profile.monthlyPayment")) > 0,
-        Number(watch("profile.ctc")) > 0,
-        hasValue(paymentMode),
-        requiresBank
-          ? hasValue(accountHolderName) &&
-            hasValue(accountNumber) &&
-            hasValue(ifscCode) &&
-            hasValue(bankName)
-          : true,
-        requiresUpi ? hasValue(upiId) : true,
-      ]
-    : [];
-
-  const formProgress = isPayrollUser
-    ? Math.round(
-        (completionItems.filter(Boolean).length / Math.max(completionItems.length, 1)) * 100,
-      )
-    : 0;
 
   /* ================= FETCH ================= */
 
@@ -223,7 +188,7 @@ const AddPeoplePage = () => {
       toast.error(
         err?.message || // custom thrown error
           err?.response?.data?.message || // backend error
-          "Upload failed"
+          "Upload failed",
       );
     } finally {
       setUploading(false);
@@ -236,7 +201,10 @@ const AddPeoplePage = () => {
     if (!orgId) return;
 
     if (isPayrollUser) {
-      if (requiresBank && (!accountHolderName || !accountNumber || !ifscCode || !bankName)) {
+      if (
+        requiresBank &&
+        (!accountHolderName || !accountNumber || !ifscCode || !bankName)
+      ) {
         toast.error("Bank details are required for selected payment mode");
         return;
       }
@@ -250,10 +218,12 @@ const AddPeoplePage = () => {
     try {
       const normalizedData = userSchema.parse(data);
       const created = await createUser(orgId, normalizedData);
-      const userId = created?.userId || created?.item?.userId || created?.data?.userId;
+      const userId =
+        created?.userId || created?.item?.userId || created?.data?.userId;
 
       if (
-        (normalizedData.userType === "STAFF" || normalizedData.userType === "FACULTY") &&
+        (normalizedData.userType === "STAFF" ||
+          normalizedData.userType === "FACULTY") &&
         userId
       ) {
         await upsertPayrollPaymentDetails(orgId, {
@@ -319,21 +289,6 @@ const AddPeoplePage = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5 mx-2 mt-1 overflow-y-auto overflow-hidden pr-2 flex-1"
           >
-            {isPayrollUser && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Form Progress</span>
-                  <span>{formProgress}%</span>
-                </div>
-                <div className="h-2 rounded bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${formProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* PROFILE PHOTO */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-muted-foreground">
@@ -412,10 +367,12 @@ const AddPeoplePage = () => {
             </div>
 
             {/* BASIC FIELDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <Label className="mb-1">Name *</Label>
-                <Input {...register("name")} />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div className="col-span-2">
+                <Label className="mb-1">
+                  Name <span className="text-destructive">*</span>
+                </Label>
+                <Input {...register("name")} required />
                 {errors.name && (
                   <p className="text-sm text-destructive">
                     {errors.name.message}
@@ -423,7 +380,7 @@ const AddPeoplePage = () => {
                 )}
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <Label className="mb-1">Father's Name</Label>
                 <Input {...register("fatherName")} />
               </div>
@@ -449,7 +406,93 @@ const AddPeoplePage = () => {
               </div>
             </div>
 
-            <Separator />
+            {/* COMMON PERSONAL */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
+              <div className="space-y-1.5">
+                <Label>Date of Birth</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={`w-full justify-start font-normal ${
+                        !dob && "text-muted-foreground"
+                      }`}
+                    >
+                      {dob ? new Date(dob).toLocaleDateString() : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={dob ? new Date(dob) : undefined}
+                      defaultMonth={dob ? new Date(dob) : undefined}
+                      captionLayout="dropdown"
+                      onSelect={(date) => {
+                        if (date) {
+                          const iso = date.toISOString();
+
+                          setValue("dob", iso, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }
+                      }}
+                      disabled={(date) => date > new Date()} // prevent future DOB
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Gender</Label>
+                <Select
+                  value={gender}
+                  onValueChange={(val) =>
+                    setValue("gender", val as any, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Blood Group</Label>
+                <Select
+                  onValueChange={(val) => setValue("bloodGroup", val as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Blood Group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BLOOD_GROUPS.map((bg) => (
+                      <SelectItem key={bg} value={bg}>
+                        {bg}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
+                <Label className="mb-1">Address</Label>
+                <Input {...register("address")} />
+              </div>
+            </div>
 
             {/* TYPE SPECIFIC */}
 
@@ -514,7 +557,9 @@ const AddPeoplePage = () => {
                         type="button"
                         className="w-full flex items-center justify-between p-3 text-left"
                       >
-                        <span className="font-medium">Employment & Compensation</span>
+                        <span className="font-medium">
+                          Employment & Compensation
+                        </span>
                         <ChevronDown
                           className={`h-4 w-4 transition-transform ${
                             openSections.employment ? "rotate-180" : ""
@@ -533,7 +578,9 @@ const AddPeoplePage = () => {
                           <Label>Department *</Label>
                           <Select
                             value={watch("profile.department") || ""}
-                            onValueChange={(val) => setValue("profile.department", val)}
+                            onValueChange={(val) =>
+                              setValue("profile.department", val)
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select Department" />
@@ -553,7 +600,9 @@ const AddPeoplePage = () => {
                           <Input
                             type="number"
                             min={0}
-                            {...register("profile.monthlyPayment", { valueAsNumber: true })}
+                            {...register("profile.monthlyPayment", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
 
@@ -562,7 +611,9 @@ const AddPeoplePage = () => {
                           <Input
                             type="number"
                             min={0}
-                            {...register("profile.ctc", { valueAsNumber: true })}
+                            {...register("profile.ctc", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
                       </div>
@@ -595,7 +646,9 @@ const AddPeoplePage = () => {
                         <Label>Payment Mode *</Label>
                         <Select
                           value={paymentMode}
-                          onValueChange={(val) => setPaymentMode(val as PayrollPaymentMode)}
+                          onValueChange={(val) =>
+                            setPaymentMode(val as PayrollPaymentMode)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select payment mode" />
@@ -603,7 +656,9 @@ const AddPeoplePage = () => {
                           <SelectContent>
                             <SelectItem value="BANK">Bank</SelectItem>
                             <SelectItem value="UPI">UPI</SelectItem>
-                            <SelectItem value="BANK_AND_UPI">Bank + UPI</SelectItem>
+                            <SelectItem value="BANK_AND_UPI">
+                              Bank + UPI
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -613,28 +668,38 @@ const AddPeoplePage = () => {
                           <Input
                             placeholder="Account holder name"
                             value={accountHolderName}
-                            onChange={(event) => setAccountHolderName(event.target.value)}
+                            onChange={(event) =>
+                              setAccountHolderName(event.target.value)
+                            }
                           />
                           <Input
                             placeholder="Account number"
                             value={accountNumber}
-                            onChange={(event) => setAccountNumber(event.target.value)}
+                            onChange={(event) =>
+                              setAccountNumber(event.target.value)
+                            }
                           />
                           <Input
                             placeholder="IFSC code"
                             value={ifscCode}
-                            onChange={(event) => setIfscCode(event.target.value.toUpperCase())}
+                            onChange={(event) =>
+                              setIfscCode(event.target.value.toUpperCase())
+                            }
                           />
                           <Input
                             placeholder="Bank name"
                             value={bankName}
-                            onChange={(event) => setBankName(event.target.value)}
+                            onChange={(event) =>
+                              setBankName(event.target.value)
+                            }
                           />
                           <Input
                             className="md:col-span-2"
                             placeholder="Branch name (optional)"
                             value={branchName}
-                            onChange={(event) => setBranchName(event.target.value)}
+                            onChange={(event) =>
+                              setBranchName(event.target.value)
+                            }
                           />
                         </div>
                       )}
@@ -666,7 +731,9 @@ const AddPeoplePage = () => {
                         type="button"
                         className="w-full flex items-center justify-between p-3 text-left"
                       >
-                        <span className="font-medium">Employment & Compensation</span>
+                        <span className="font-medium">
+                          Employment & Compensation
+                        </span>
                         <ChevronDown
                           className={`h-4 w-4 transition-transform ${
                             openSections.employment ? "rotate-180" : ""
@@ -680,7 +747,9 @@ const AddPeoplePage = () => {
                           <Label>Department *</Label>
                           <Select
                             value={watch("profile.department") || ""}
-                            onValueChange={(val) => setValue("profile.department", val)}
+                            onValueChange={(val) =>
+                              setValue("profile.department", val)
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select Department" />
@@ -705,7 +774,9 @@ const AddPeoplePage = () => {
                           <Input
                             type="number"
                             min={0}
-                            {...register("profile.monthlyPayment", { valueAsNumber: true })}
+                            {...register("profile.monthlyPayment", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
 
@@ -714,7 +785,9 @@ const AddPeoplePage = () => {
                           <Input
                             type="number"
                             min={0}
-                            {...register("profile.ctc", { valueAsNumber: true })}
+                            {...register("profile.ctc", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
                       </div>
@@ -747,7 +820,9 @@ const AddPeoplePage = () => {
                         <Label>Payment Mode *</Label>
                         <Select
                           value={paymentMode}
-                          onValueChange={(val) => setPaymentMode(val as PayrollPaymentMode)}
+                          onValueChange={(val) =>
+                            setPaymentMode(val as PayrollPaymentMode)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select payment mode" />
@@ -755,7 +830,9 @@ const AddPeoplePage = () => {
                           <SelectContent>
                             <SelectItem value="BANK">Bank</SelectItem>
                             <SelectItem value="UPI">UPI</SelectItem>
-                            <SelectItem value="BANK_AND_UPI">Bank + UPI</SelectItem>
+                            <SelectItem value="BANK_AND_UPI">
+                              Bank + UPI
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -765,28 +842,38 @@ const AddPeoplePage = () => {
                           <Input
                             placeholder="Account holder name"
                             value={accountHolderName}
-                            onChange={(event) => setAccountHolderName(event.target.value)}
+                            onChange={(event) =>
+                              setAccountHolderName(event.target.value)
+                            }
                           />
                           <Input
                             placeholder="Account number"
                             value={accountNumber}
-                            onChange={(event) => setAccountNumber(event.target.value)}
+                            onChange={(event) =>
+                              setAccountNumber(event.target.value)
+                            }
                           />
                           <Input
                             placeholder="IFSC code"
                             value={ifscCode}
-                            onChange={(event) => setIfscCode(event.target.value.toUpperCase())}
+                            onChange={(event) =>
+                              setIfscCode(event.target.value.toUpperCase())
+                            }
                           />
                           <Input
                             placeholder="Bank name"
                             value={bankName}
-                            onChange={(event) => setBankName(event.target.value)}
+                            onChange={(event) =>
+                              setBankName(event.target.value)
+                            }
                           />
                           <Input
                             className="md:col-span-2"
                             placeholder="Branch name (optional)"
                             value={branchName}
-                            onChange={(event) => setBranchName(event.target.value)}
+                            onChange={(event) =>
+                              setBranchName(event.target.value)
+                            }
                           />
                         </div>
                       )}
@@ -803,100 +890,6 @@ const AddPeoplePage = () => {
                 </Collapsible>
               </>
             )}
-
-            <Separator />
-
-            {/* COMMON PERSONAL */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="space-y-1.5">
-                <Label>Date of Birth</Label>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={`w-full justify-start font-normal ${
-                        !dob && "text-muted-foreground"
-                      }`}
-                    >
-                      {dob ? new Date(dob).toLocaleDateString() : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent
-                    className="w-auto overflow-hidden p-0"
-                    align="start"
-                  >
-                    <Calendar
-                      mode="single"
-                      selected={dob ? new Date(dob) : undefined}
-                      defaultMonth={dob ? new Date(dob) : undefined}
-                      captionLayout="dropdown"
-                      onSelect={(date) => {
-                        if (date) {
-                          const iso = date.toISOString();
-                      
-                          setValue("dob", iso, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          });
-                        }
-                      }}
-                      disabled={(date) => date > new Date()} // prevent future DOB
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Gender</Label>
-                <Select
-                  value={gender}
-                  onValueChange={(val) =>
-                    setValue("gender", val as any, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GENDERS.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Blood Group</Label>
-                <Select
-                  onValueChange={(val) => setValue("bloodGroup", val as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Blood Group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BLOOD_GROUPS.map((bg) => (
-                      <SelectItem key={bg} value={bg}>
-                        {bg}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-1">Address</Label>
-              <Input {...register("address")} />
-            </div>
-
-            <Separator />
 
             {/* ACTIONS */}
             <div className="flex justify-end gap-3">

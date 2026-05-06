@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import LiveAttendance from "@/components/LiveAttendance";
 import LiveAttendanceWithDevice from "@/components/LiveAttendanceWithDevice";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
+import { DashboardLoadingSkeleton } from "@/components/dashboard/SkeletonLoaders";
 
 import useAuth from "@/hooks/useAuth";
 import { getAttendanceByOrg } from "@/api/attendance";
@@ -401,14 +402,7 @@ function OrganizationDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6 p-2 lg:p-6 md:p-3">
-        <AppBreadcrumb />
-        <div className="text-sm text-muted-foreground">
-          Loading dashboard...
-        </div>
-      </div>
-    );
+    return <DashboardLoadingSkeleton />;
   }
 
   if (error) {
@@ -430,7 +424,7 @@ function OrganizationDashboard() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <div className="space-y-4 lg:col-span-9">
+        <div className="min-w-0 space-y-4 lg:col-span-9">
           <div className="grid gap-4 md:grid-cols-3">
             <DashboardCard
               title="Attendance Coverage"
@@ -687,7 +681,7 @@ function OrganizationDashboard() {
           </Card>
         </div>
 
-        <div className="space-y-4 lg:col-span-3">
+        <div className="min-w-0 space-y-4 lg:col-span-3">
           <Card className="overflow-hidden  p-0">
             <div className="bg-linear-to-br from-teal-900 to-emerald-700 p-4 text-white">
               <div className="flex items-center justify-between">
