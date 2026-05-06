@@ -1,7 +1,6 @@
 import { Outlet, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import WhatsAppSection from "./services/whatsapp-section";
 import { AppBreadcrumb } from "@/components/AppBreadCrumb";
 
