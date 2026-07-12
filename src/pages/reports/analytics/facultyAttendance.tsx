@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import useAuth from "@/hooks/useAuth";
 import { getFacultyCalendarView } from "@/api/reports/facultyAttendance";
@@ -18,6 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import attenzyLogo from "@/assets/attenzy-logo-transparent.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { AttendanceTable } from "@/components/attendance/AttendanceTable";
 import {
@@ -114,13 +123,14 @@ export default function FacultyAttendance() {
     if (!data) return;
 
     const sheetData: (string | number)[][] = [];
-    const header = ["Name", "P/W", "%", ...data.days];
+    const header = ["Name", "ID", "P/W", "%", ...data.days];
 
     sheetData.push(header);
 
     filteredUsers.forEach((user) => {
       const row: (string | number)[] = [
         user.name,
+        user.userId,
         `${user.summary.present}/${user.summary.workingDays}`,
         user.summary.attendancePercentage,
       ];
@@ -148,6 +158,109 @@ export default function FacultyAttendance() {
     });
 
     saveAs(blob, `Faculty-Attendance-${appliedYear}-${appliedMonth}.xlsx`);
+  };
+
+  const fileUrlToDataUrl = async (url: string): Promise<string> => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Unable to load image"));
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const exportToPdf = async () => {
+    if (!data) return;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    let logoDataUrl: string | null = null;
+    try {
+      logoDataUrl = await fileUrlToDataUrl(attenzyLogo);
+    } catch {
+      logoDataUrl = null;
+    }
+
+    const drawHeader = () => {
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageWidth, 88, "F");
+
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, "PNG", 24, 20, 50, 50);
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Attenzy Faculty Attendance Report", logoDataUrl ? 84 : 24, 42);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`Period: ${appliedMonthLabel ?? appliedMonth} ${appliedYear}`, logoDataUrl ? 84 : 24, 60);
+      doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, hh:mm a")}`, pageWidth - 24, 60, {
+        align: "right",
+      });
+
+      doc.setTextColor(30, 41, 59);
+    };
+
+    const tableHeader = ["Name", "ID", "P/W", "%", ...data.days];
+    const tableBody = filteredUsers.map((user) => [
+      user.name,
+      user.userId,
+      `${user.summary.present}/${user.summary.workingDays}`,
+      `${user.summary.attendancePercentage}%`,
+      ...data.days.map((day) => user.attendance?.[day]?.[0] ?? "-"),
+    ]);
+
+    autoTable(doc, {
+      head: [tableHeader],
+      body: tableBody,
+      startY: 102,
+      margin: { left: 20, right: 20, bottom: 28, top: 20 },
+      styles: {
+        fontSize: 7,
+        textColor: [15, 23, 42],
+        cellPadding: 2,
+        halign: "center",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [30, 64, 175],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { cellWidth: 120, halign: "left" },
+        1: { cellWidth: 84, halign: "left" },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 36 },
+      },
+      didDrawPage: () => {
+        drawHeader();
+
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth - 24, pageHeight - 12, {
+          align: "right",
+        });
+      },
+    });
+
+    doc.save(`Faculty-Attendance-${appliedYear}-${appliedMonth}.pdf`);
   };
 
   const appliedMonthLabel = monthOptions.find(
@@ -244,9 +357,26 @@ export default function FacultyAttendance() {
                 onChange={(e) => setSearch(e.target.value)}
               />
 
-              <Button variant="outline" size="icon" onClick={exportToExcel}>
-                <Download size={16} />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Download size={16} />
+                    Download
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => void exportToPdf()}>
+                    <FileText size={16} />
+                    Download PDF
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onSelect={exportToExcel}>
+                    <FileSpreadsheet size={16} />
+                    Download Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardHeader>
 
