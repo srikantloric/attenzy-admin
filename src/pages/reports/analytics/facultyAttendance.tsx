@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { AlertTriangle, Calendar, CheckIcon, Download, FileSpreadsheet, FileText, XIcon } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -73,7 +73,7 @@ export default function FacultyAttendance() {
   ];
 
   const yearOptions = Array.from({ length: 5 }).map((_, i) =>
-    (currentDate.getFullYear() - i).toString()
+    (currentDate.getFullYear() - i).toString(),
   );
 
   /* ================= FETCH ================= */
@@ -87,7 +87,7 @@ export default function FacultyAttendance() {
       const monthParam = `${year}-${month}`;
 
       const res = await getFacultyCalendarView(orgId, monthParam);
-
+      console.log("Faculty Attendance Data:", res);
       setData(res);
 
       // apply filters only after fetch
@@ -106,7 +106,7 @@ export default function FacultyAttendance() {
     if (!data) return [];
 
     return data.users.filter((u) =>
-      u.name.toLowerCase().includes(search.toLowerCase())
+      u.name.toLowerCase().includes(search.toLowerCase()),
     );
   }, [data, search]);
 
@@ -206,10 +206,19 @@ export default function FacultyAttendance() {
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`Period: ${appliedMonthLabel ?? appliedMonth} ${appliedYear}`, logoDataUrl ? 84 : 24, 60);
-      doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, hh:mm a")}`, pageWidth - 24, 60, {
-        align: "right",
-      });
+      doc.text(
+        `Period: ${appliedMonthLabel ?? appliedMonth} ${appliedYear}`,
+        logoDataUrl ? 84 : 24,
+        60,
+      );
+      doc.text(
+        `Generated: ${format(new Date(), "dd MMM yyyy, hh:mm a")}`,
+        pageWidth - 24,
+        60,
+        {
+          align: "right",
+        },
+      );
 
       doc.setTextColor(30, 41, 59);
     };
@@ -254,9 +263,14 @@ export default function FacultyAttendance() {
 
         doc.setFontSize(9);
         doc.setTextColor(100, 116, 139);
-        doc.text(`Page ${doc.getCurrentPageInfo().pageNumber}`, pageWidth - 24, pageHeight - 12, {
-          align: "right",
-        });
+        doc.text(
+          `Page ${doc.getCurrentPageInfo().pageNumber}`,
+          pageWidth - 24,
+          pageHeight - 12,
+          {
+            align: "right",
+          },
+        );
       },
     });
 
@@ -264,18 +278,18 @@ export default function FacultyAttendance() {
   };
 
   const appliedMonthLabel = monthOptions.find(
-    (m) => m.value === appliedMonth
+    (m) => m.value === appliedMonth,
   )?.label;
 
   return (
     <div className="w-full py-6 space-y-6">
       {/* FILTER CARD */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Faculty Attendance Record</CardTitle>
-        </CardHeader>
+      <div>
+        <CardTitle className="text-2xl font-semibold mb-4">
+          Monthly Faculty Attendance Record
+        </CardTitle>
 
-        <CardContent className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-wrap gap-4 items-end">
           {/* Month */}
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="w-40">
@@ -309,80 +323,123 @@ export default function FacultyAttendance() {
           <Button onClick={handleRefresh}>
             {loading ? "Loading..." : "Generate"}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* SUMMARY CARDS */}
+      {data && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+          <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 p-2">
+              <CheckIcon className="w-8 h-8 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Present</p>
+              <p className="text-2xl font-semibold">
+                {data.overallSummary.present}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 p-2">
+              <XIcon className="w-8 h-8 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Absent</p>
+              <p className="text-2xl font-semibold">
+                {data.overallSummary.absent}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 p-2">
+              <AlertTriangle className="w-8 h-8 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Leave</p>
+              <p className="text-2xl font-semibold">
+                {data.overallSummary.leave}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 p-2">
+              <Calendar className="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Holiday</p>
+              <p className="text-2xl font-semibold">
+                {data.overallSummary.holiday}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ATTENDANCE LEGEND */}
       {data && (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="px-2 py-1 rounded bg-green-100 text-green-700 font-medium">
-            P — Present
-          </span>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 text-sm ">
+            <span className="px-2 py-1 rounded bg-green-100 text-green-700 font-medium">
+              P — Present
+            </span>
 
-          <span className="px-2 py-1 rounded bg-red-100 text-red-700 font-medium">
-            A — Absent
-          </span>
+            <span className="px-2 py-1 rounded bg-red-100 text-red-700 font-medium">
+              A — Absent
+            </span>
 
-          <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 font-medium">
-            L — Leave
-          </span>
+            <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 font-medium">
+              L — Leave
+            </span>
 
-          <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 font-medium">
-            H — Holiday
-          </span>
+            <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 font-medium">
+              H — Holiday
+            </span>
 
-          <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 font-medium">
-            — No Data
-          </span>
+            <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 font-medium">
+              — No Data
+            </span>
 
-          <span className="text-blue-600 font-medium ml-2">
-            (P/W — Present Days / Working Days)
-          </span>
+            <span className="text-blue-600 font-medium ml-2">
+              (P/W — Present Days / Working Days)
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Search faculty..."
+              className="w-full sm:w-60"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download size={16} />
+                  Download
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void exportToPdf()}>
+                  <FileText size={16} />
+                  Download PDF
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onSelect={exportToExcel}>
+                  <FileSpreadsheet size={16} />
+                  Download Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       )}
 
       {/* TABLE CARD */}
       {data && (
-        <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-lg font-semibold">
-              Monthly Attendance — {appliedMonthLabel} {appliedYear}
-            </CardTitle>
-
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search faculty..."
-                className="w-full sm:w-60"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Download size={16} />
-                    Download
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => void exportToPdf()}>
-                    <FileText size={16} />
-                    Download PDF
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onSelect={exportToExcel}>
-                    <FileSpreadsheet size={16} />
-                    Download Excel
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <AttendanceTable days={data.days} users={paginatedUsers} />
-          </CardContent>
+        <>
+          <AttendanceTable days={data.days} users={paginatedUsers} />
           <div className="py-4">
             <Pagination>
               <PaginationContent>
@@ -415,7 +472,7 @@ export default function FacultyAttendance() {
                         {page}
                       </PaginationLink>
                     </PaginationItem>
-                  )
+                  ),
                 )}
 
                 {/* Next */}
@@ -437,7 +494,7 @@ export default function FacultyAttendance() {
               </PaginationContent>
             </Pagination>
           </div>
-        </Card>
+        </>
       )}
     </div>
   );
