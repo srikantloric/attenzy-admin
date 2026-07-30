@@ -29,17 +29,17 @@ function getBadge(status?: AttendanceStatus) {
   return (
     <span
       className={`inline-flex items-center justify-center 
-      h-6 w-6 rounded-md text-xs font-semibold
+      h-8 w-8 rounded-sm text-xs font-semibold
       ${
         display === "P"
           ? "bg-green-100 text-green-700"
           : display === "A"
-          ? "bg-red-100 text-red-700"
-          : display === "L"
-          ? "bg-yellow-100 text-yellow-700"
-          : display === "H"
-          ? "bg-blue-100 text-blue-700"
-          : "bg-muted text-muted-foreground"
+            ? "bg-red-100 text-red-700"
+            : display === "L"
+              ? "bg-yellow-100 text-yellow-700"
+              : display === "H"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-muted text-muted-foreground"
       }`}
     >
       {display}
@@ -51,7 +51,7 @@ function getBadge(status?: AttendanceStatus) {
 
 export function AttendanceTable({ days, users }: Props) {
   return (
-    <div className=" overflow-x-auto rounded-lg border">
+    <div className=" overflow-x-auto rounded-lg border border-border">
       <Table className=" text-xs sm:text-sm">
         {/* HEADER */}
         <TableHeader>
@@ -60,8 +60,12 @@ export function AttendanceTable({ days, users }: Props) {
               Name
             </TableHead>
 
-            <TableHead className="text-center">P/W</TableHead>
-            <TableHead className="text-center">%</TableHead>
+            <TableHead className="text-center bg-background border-r">
+              P/W
+            </TableHead>
+            <TableHead className="text-center bg-background border-r">
+              %
+            </TableHead>
 
             {days.map((day) => (
               <TableHead key={day} className="text-center">
@@ -76,7 +80,7 @@ export function AttendanceTable({ days, users }: Props) {
           {users.map((user) => (
             <TableRow key={user.userId}>
               {/* Sticky Name Column */}
-              <TableCell className="flex gap-2 items-center sticky left-0 z-20 bg-background border-r font-medium min-w-[180px] whitespace-nowrap">
+              <TableCell className="flex gap-2 items-center sticky left-0 z-20 bg-background border-r font-medium min-w-45 whitespace-nowrap">
                 <Avatar>
                   <AvatarImage
                     src={user.profilePhoto || ""}
@@ -99,18 +103,18 @@ export function AttendanceTable({ days, users }: Props) {
               </TableCell>
 
               {/* P/W */}
-              <TableCell className="text-center font-semibold">
+              <TableCell className="text-center font-semibold bg-background border-r">
                 {user.summary.present}/{user.summary.workingDays}
               </TableCell>
 
               {/* % */}
-              <TableCell className="text-center font-semibold">
-                {user.summary.attendancePercentage}%
+              <TableCell className="text-center font-semibold bg-background border-r">
+                {user.summary.attendancePercentage.toFixed(1)}%
               </TableCell>
 
               {/* Daily Cells */}
               {days.map((day) => (
-                <TableCell key={day} className="text-center">
+                <TableCell key={day} className="text-center cursor-pointer ">
                   {getBadge(user.attendance?.[day])}
                 </TableCell>
               ))}
