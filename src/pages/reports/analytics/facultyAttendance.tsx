@@ -11,7 +11,7 @@ import { getFacultyCalendarView } from "@/api/reports/facultyAttendance";
 import type { AttendanceCalendarResponse } from "@/types/reports/attendance";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {  CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,

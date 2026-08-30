@@ -1,15 +1,15 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react";
 
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
 import {
   Combobox,
@@ -18,19 +18,19 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from "@/components/ui/combobox"
+} from "@/components/ui/combobox";
 
-import { getOrganizationsByPartner } from "@/api/organization"
-import { addDevice, getDeviceById } from "@/api/device"
-import useAuth from "@/hooks/useAuth"
-import { toast } from "sonner"
+import { getOrganizationsByPartner } from "@/api/organization";
+import { addDevice, getDeviceById } from "@/api/device";
+import useAuth from "@/hooks/useAuth";
+import { toast } from "sonner";
 
-import type { Organization } from "@/types/organization"
+import type { Organization } from "@/types/organization";
 
 interface PartnerAddDeviceProps {
-  open: boolean
-  setOpen: (status: boolean) => void
-  onSuccess?: () => void
+  open: boolean;
+  setOpen: (status: boolean) => void;
+  onSuccess?: () => void;
 }
 
 const AddDevice: React.FC<PartnerAddDeviceProps> = ({
@@ -38,22 +38,20 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
   setOpen,
   onSuccess,
 }) => {
-  const { user } = useAuth()
-  const partnerId = user?.partnerId
+  const { user } = useAuth();
+  const partnerId = user?.partnerId;
 
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const [organizations, setOrganizations] = useState<Organization[]>([])
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
-  const selectedOrg = organizations.find(
-    (o) => o.orgId === selectedOrgId
-  )
+  const selectedOrg = organizations.find((o) => o.orgId === selectedOrgId);
 
   // 🔹 Debounce for deviceId only
-  const deviceCheckTimer = useRef<number | null>(null)
-  const [checkingDeviceId, setCheckingDeviceId] = useState(false)
+  const deviceCheckTimer = useRef<number | null>(null);
+  const [checkingDeviceId, setCheckingDeviceId] = useState(false);
 
   const [form, setForm] = useState({
     deviceId: "",
@@ -61,16 +59,13 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
     orgId: "",
     location: "",
     description: "",
-  })
+  });
 
-  const [deviceIdError, setDeviceIdError] = useState<string | null>(null)
+  const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
 
-  const handleChange = (
-    key: keyof typeof form,
-    value: string
-  ) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
-  }
+  const handleChange = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const resetForm = () => {
     setForm({
@@ -79,54 +74,65 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
       orgId: "",
       location: "",
       description: "",
-    })
-    setSelectedOrgId(null)
-    setDeviceIdError(null)
-    setSuccess(false)
-  }
+    });
+    setSelectedOrgId(null);
+    setDeviceIdError(null);
+    setSuccess(false);
+  };
 
   // 🔍 Debounced backend check — deviceId ONLY
   useEffect(() => {
     if (!form.deviceId) {
-      setDeviceIdError(null)
-      return
+      setDeviceIdError(null);
+      return;
     }
 
     if (deviceCheckTimer.current) {
-      clearTimeout(deviceCheckTimer.current)
+      clearTimeout(deviceCheckTimer.current);
     }
 
     deviceCheckTimer.current = window.setTimeout(async () => {
       try {
-        setCheckingDeviceId(true)
-        const existing = await getDeviceById(form.deviceId)
-        setDeviceIdError(
-          existing ? "Device ID already exists" : null
-        )
-      } catch {
-        setDeviceIdError("Unable to verify device ID")
+        setCheckingDeviceId(true);
+        const existing = await getDeviceById(form.deviceId);
+
+        if (existing) {
+          setDeviceIdError("Device ID already exists");
+          return;
+        }
+
+        setDeviceIdError(null);
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message;
+
+        if (msg === "Device not found") {
+          setDeviceIdError(null);
+          return;
+        }
+
+        setDeviceIdError("Unable to verify device ID");
       } finally {
-        setCheckingDeviceId(false)
+        setCheckingDeviceId(false);
       }
-    }, 500)
-  }, [form.deviceId])
+    }, 500);
+  }, [form.deviceId]);
 
   const handleSubmit = async () => {
     if (!partnerId) {
-      toast.error("Partner information missing. Please login again.")
-      return
+      toast.error("Partner information missing. Please login again.");
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       // 🔐 Final authoritative backend check (deviceId)
-      const existing = await getDeviceById(form.deviceId)
+      const existing = await getDeviceById(form.deviceId);
       if (existing) {
         toast.error("Device already exists", {
           description: "This Device ID already exists in the system.",
-        })
-        return
+        });
+        return;
       }
 
       // Backend will enforce serialNumber uniqueness if applicable
@@ -137,34 +143,33 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
         description: form.description,
         orgId: form.orgId,
         partnerId,
-      })
+      });
 
-      onSuccess?.()
+      onSuccess?.();
 
-      setSuccess(true)
-      toast.success("Device added successfully")
+      setSuccess(true);
+      toast.success("Device added successfully");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+      toast.error(err.message || "Something went wrong");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (!open || !partnerId) return
+    if (!open || !partnerId) return;
 
     const loadOrgs = async () => {
       try {
-        const res = await getOrganizationsByPartner(partnerId)
-        setOrganizations(res.items as Organization[])
+        const res = await getOrganizationsByPartner(partnerId);
+        setOrganizations(res.items as Organization[]);
       } catch {
-        toast.error("Failed to load organizations")
+        toast.error("Failed to load organizations");
       }
-    }
+    };
 
-    loadOrgs()
-  }, [open, partnerId])
-
+    loadOrgs();
+  }, [open, partnerId]);
 
   return (
     <Sheet
@@ -172,9 +177,9 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
       open={open}
       onOpenChange={(v) => {
         if (!v) {
-          resetForm()
+          resetForm();
         }
-        setOpen(v)
+        setOpen(v);
       }}
     >
       <SheetContent side="right" className="sm:max-w-md">
@@ -193,8 +198,8 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
                 <Button
                   className="bg-primary"
                   onClick={() => {
-                    resetForm()
-                    setOpen(false)
+                    resetForm();
+                    setOpen(false);
                   }}
                 >
                   Close
@@ -210,10 +215,7 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
                   placeholder="attenzy001"
                   value={form.deviceId}
                   onChange={(e) =>
-                    handleChange(
-                      "deviceId",
-                      e.target.value.trim()
-                    )
+                    handleChange("deviceId", e.target.value.trim())
                   }
                 />
 
@@ -224,42 +226,33 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
                 )}
 
                 {deviceIdError && (
-                  <p className="text-xs text-red-600">
-                    {deviceIdError}
-                  </p>
+                  <p className="text-xs text-red-600">{deviceIdError}</p>
                 )}
               </div>
 
               {/* Serial Number */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Serial Number
-                </label>
+                <label className="text-sm font-medium">Serial Number</label>
                 <Input
                   placeholder="SN001"
                   value={form.serialNumber}
                   onChange={(e) =>
-                    handleChange(
-                      "serialNumber",
-                      e.target.value.trim()
-                    )
+                    handleChange("serialNumber", e.target.value.trim())
                   }
                 />
               </div>
 
               {/* Organization */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Organization
-                </label>
+                <label className="text-sm font-medium">Organization</label>
 
                 <Combobox
                   items={organizations.map((o) => o.orgId)}
                   value={selectedOrgId}
                   onValueChange={(value) => {
-                    if (!value) return
-                    setSelectedOrgId(value)
-                    handleChange("orgId", value)
+                    if (!value) return;
+                    setSelectedOrgId(value);
+                    handleChange("orgId", value);
                   }}
                 >
                   <ComboboxInput
@@ -267,22 +260,15 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
                     value={selectedOrg?.orgName ?? ""}
                   />
                   <ComboboxContent>
-                    <ComboboxEmpty>
-                      No organizations found.
-                    </ComboboxEmpty>
+                    <ComboboxEmpty>No organizations found.</ComboboxEmpty>
                     <ComboboxList>
                       {(id) => {
-                        const org = organizations.find(
-                          (o) => o.orgId === id
-                        )!
+                        const org = organizations.find((o) => o.orgId === id)!;
                         return (
-                          <ComboboxItem
-                            key={org.orgId}
-                            value={org.orgId}
-                          >
+                          <ComboboxItem key={org.orgId} value={org.orgId}>
                             {org.orgName}
                           </ComboboxItem>
-                        )
+                        );
                       }}
                     </ComboboxList>
                   </ComboboxContent>
@@ -291,35 +277,21 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
 
               {/* Location */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Location
-                </label>
+                <label className="text-sm font-medium">Location</label>
                 <Input
                   placeholder="Main Gate"
                   value={form.location}
-                  onChange={(e) =>
-                    handleChange(
-                      "location",
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => handleChange("location", e.target.value)}
                 />
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Description
-                </label>
+                <label className="text-sm font-medium">Description</label>
                 <Textarea
                   maxLength={150}
                   value={form.description}
-                  onChange={(e) =>
-                    handleChange(
-                      "description",
-                      e.target.value
-                    )
-                  }
+                  onChange={(e) => handleChange("description", e.target.value)}
                 />
                 <div className="text-right text-xs text-muted-foreground">
                   {form.description.length} / 150
@@ -331,8 +303,8 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    resetForm()
-                    setOpen(false)
+                    resetForm();
+                    setOpen(false);
                   }}
                   disabled={loading}
                 >
@@ -360,7 +332,7 @@ const AddDevice: React.FC<PartnerAddDeviceProps> = ({
         </div>
       </SheetContent>
     </Sheet>
-  )
-}
+  );
+};
 
-export default AddDevice
+export default AddDevice;

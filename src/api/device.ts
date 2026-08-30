@@ -41,7 +41,9 @@ export async function addDevice(payload: {
 export async function getDeviceById(deviceId: string) {
   try {
     const { data } = await axiosServices.get(`/devices/${deviceId}`);
+    console.log("getDeviceById data:", data);
     if (data?.message === "Device not found") return null;
+
     return data.item ?? data;
   } catch (error: any) {
     if (error?.status === 404) return null;
